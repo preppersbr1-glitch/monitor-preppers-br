@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor PREPPERS BR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a08;
+    --bg2: #080f0c;
+    --bg3: #0d1a14;
+    --green: #00ff88;
+    --green2: #00cc6a;
+    --green3: #004422;
+    --amber: #ffb300;
+    --red: #ff3333;
+    --blue: #00aaff;
+    --text: #c8fce8;
+    --muted: #4a7a60;
+    --border: #1a3d2a;
+    --card: #0a1610;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,136,0.015) 2px,
+      rgba(0,255,136,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Grid noise */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5,10,8,0.95);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--green3);
+    border: 1px solid var(--green2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+  }
+
+  .logo-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 4px;
+    margin-top: 1px;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  .dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .dot.red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.3; }
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  nav a {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--green);
+    border-color: var(--green3);
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* TICKER */
+  .ticker-bar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    height: 36px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ticker-label {
+    flex-shrink: 0;
+    background: var(--green);
+    color: #000;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 0 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    letter-spacing: 2px;
+  }
+
+  .ticker-scroll {
+    display: flex;
+    gap: 0;
+    animation: ticker 40s linear infinite;
+    white-space: nowrap;
+    padding-left: 20px;
+  }
+
+  .ticker-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-right: 1px solid var(--border);
+  }
+
+  .ticker-item .name { color: var(--muted); }
+  .ticker-item .val { color: var(--text); }
+  .ticker-item .chg.up { color: var(--green); }
+  .ticker-item .chg.dn { color: var(--red); }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* MAIN GRID */
+  main {
+    position: relative;
+    z-index: 1;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,255,136,0.03);
+  }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '▮';
+    color: var(--green2);
+    font-size: 8px;
+  }
+
+  .card-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .badge-live { background: rgba(255,51,51,0.15); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+  .badge-ok { background: rgba(0,255,136,0.1); color: var(--green2); border: 1px solid rgba(0,255,136,0.2); }
+  .badge-warn { background: rgba(255,179,0,0.1); color: var(--amber); border: 1px solid rgba(255,179,0,0.3); }
+
+  /* WEATHER */
+  .weather-card {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  .weather-body {
+    padding: 20px;
+  }
+
+  .weather-loading {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 40px 20px;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .weather-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .weather-icon {
+    font-size: 56px;
+    line-height: 1;
+    filter: drop-shadow(0 0 20px rgba(0,170,255,0.4));
+  }
+
+  .weather-temp {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--blue);
+    text-shadow: 0 0 30px rgba(0,170,255,0.4);
+    line-height: 1;
+  }
+
+  .weather-unit { font-size: 20px; color: var(--muted); }
+
+  .weather-desc {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .weather-location {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 2px;
+  }
+
+  .weather-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .weather-stat {
+    background: rgba(0,255,136,0.04);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px;
+  }
+
+  .weather-stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .weather-stat-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* NEWS */
+  .news-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .news-body {
+    padding: 0;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .news-body::-webkit-scrollbar { width: 4px; }
+  .news-body::-webkit-scrollbar-track { background: transparent; }
+  .news-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .news-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .news-item:hover { background: rgba(0,255,136,0.04); }
+
+  .news-source-tag {
+    flex-shrink: 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-top: 2px;
+  }
+
+  .tag-world { background: rgba(0,170,255,0.1); color: var(--blue); border: 1px solid rgba(0,170,255,0.2); }
+  .tag-geo { background: rgba(255,51,51,0.1); color: var(--red); border: 1px solid rgba(255,51,51,0.2); }
+  .tag-br { background: rgba(0,255,136,0.1); color: var(--green2); border: 1px solid rgba(0,255,136,0.2); }
+  .tag-econ { background: rgba(255,179,0,0.1); color: var(--amber); border: 1px solid rgba(255,179,0,0.2); }
+
+  .news-content {}
+  .news-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+    letter-spacing: 0.5px;
+  }
+
+  .news-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ALERTS */
+  .alerts-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .alerts-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .alert-item {
+    border-radius: 3px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 3px solid;
+  }
+
+  .alert-item.critical {
+    background: rgba(255,51,51,0.08);
+    border-color: var(--red);
+  }
+
+  .alert-item.warning {
+    background: rgba(255,179,0,0.08);
+    border-color: var(--amber);
+  }
+
+  .alert-item.info {
+    background: rgba(0,170,255,0.08);
+    border-color: var(--blue);
+  }
+
+  .alert-icon { font-size: 20px; flex-shrink: 0; }
+
+  .alert-content {}
+  .alert-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .alert-critical .alert-title { color: var(--red); }
+  .alert-warning .alert-title { color: var(--amber); }
+  .alert-info .alert-title { color: var(--blue); }
+
+  .alert-desc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  .alert-time {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* SOLAR */
+  .solar-card {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .solar-body {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .solar-stat {
+    text-align: center;
+    background: rgba(255,179,0,0.04);
+    border: 1px solid rgba(255,179,0,0.1);
+    border-radius: 4px;
+    padding: 14px 8px;
+  }
+
+  .solar-stat-icon { font-size: 24px; margin-bottom: 6px; }
+
+  .solar-stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+
+  .solar-stat-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .solar-stat-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* MARKETS */
+  .markets-card {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .markets-body {
+    padding: 0;
+  }
+
+  .market-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .market-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .market-ticker {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .market-price {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .market-change {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  .up { color: var(--green); }
+  .dn { color: var(--red); }
+  .neu { color: var(--muted); }
+
+  /* DEFESA CIVIL */
+  .defesa-card {
+    grid-column: 1 / 3;
+    grid-row: 4;
+  }
+
+  .defesa-body {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .defesa-item {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .defesa-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .defesa-item.level-1::before { background: var(--green2); }
+  .defesa-item.level-2::before { background: var(--amber); }
+  .defesa-item.level-3::before { background: var(--red); }
+
+  .defesa-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .defesa-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .defesa-region {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .defesa-level {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 7px;
+    border-radius: 2px;
+  }
+
+  .level-1 .defesa-level { background: rgba(0,255,136,0.1); color: var(--green2); border: 1px solid rgba(0,255,136,0.2); }
+  .level-2 .defesa-level { background: rgba(255,179,0,0.1); color: var(--amber); border: 1px solid rgba(255,179,0,0.3); }
+  .level-3 .defesa-level { background: rgba(255,51,51,0.1); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+
+  /* CLOCK */
+  .clock {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--green2);
+    letter-spacing: 2px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+    .weather-card { grid-column: 1; grid-row: auto; }
+    .news-card, .alerts-card, .solar-card, .defesa-card { grid-column: 1; grid-row: auto; }
+    .markets-card { grid-column: 1; grid-row: auto; }
+    .solar-body { grid-template-columns: repeat(2,1fr); }
+  }
+
+  /* Separator line */
+  .sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green3), transparent);
+    margin: 4px 0;
+  }
+
+  .loading-news {
+    padding: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    animation: blink 1.5s infinite;
+  }
+
+  .news-ai-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    background: rgba(0,255,136,0.08);
+    color: var(--green2);
+    border: 1px solid rgba(0,255,136,0.15);
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .refresh-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover {
+    border-color: var(--green2);
+    color: var(--green2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🛡️</div>
+    <div>
+      <div class="logo-text">MONITOR PREPPERS BR</div>
+      <div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#" class="active">MONITOR</a>
+    <a href="#">DEFESA CIVIL</a>
+    <a href="#">SOLAR</a>
+    <a href="#">COMUNIDADE</a>
+    <a href="#">CURSOS</a>
+    <a href="#">MEMBROS</a>
+  </nav>
+  <div class="header-status">
+    <div class="status-pill"><span class="dot"></span> SISTEMA ONLINE</div>
+    <div class="status-pill"><span class="dot amber"></span> ALERTA ATIVO</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-label">▶ LIVE</div>
+  <div style="overflow:hidden;flex:1">
+    <div class="ticker-scroll" id="ticker">
+      <div class="ticker-item"><span class="name">BTC/USD</span><span class="val">$--</span><span class="chg up" id="btc-chg">--</span></div>
+      <div class="ticker-item"><span class="name">USD/BRL</span><span class="val" id="usd-val">R$--</span><span class="chg" id="usd-chg">--</span></div>
+      <div class="ticker-item"><span class="name">OURO</span><span class="val" id="gold-val">$--</span><span class="chg up" id="gold-chg">--</span></div>
+      <div class="ticker-item"><span class="name">PRATA</span><span class="val" id="silver-val">$--</span><span class="chg" id="silver-chg">--</span></div>
+      <div class="ticker-item"><span class="name">IBOVESPA</span><span class="val" id="ibov-val">--</span><span class="chg" id="ibov-chg">--</span></div>
+      <div class="ticker-item"><span class="name">S&P 500</span><span class="val" id="sp-val">--</span><span class="chg" id="sp-chg">--</span></div>
+      <div class="ticker-item"><span class="name">ETH/USD</span><span class="val" id="eth-val">$--</span><span class="chg" id="eth-chg">--</span></div>
+      <div class="ticker-item"><span class="name">PETRÓLEO WTI</span><span class="val" id="oil-val">$--</span><span class="chg" id="oil-chg">--</span></div>
+      <!-- duplicado para scroll contínuo -->
+      <div class="ticker-item"><span class="name">BTC/USD</span><span class="val">$--</span><span class="chg up">--</span></div>
+      <div class="ticker-item"><span class="name">USD/BRL</span><span class="val">R$--</span><span class="chg">--</span></div>
+      <div class="ticker-item"><span class="name">OURO</span><span class="val">$--</span><span class="chg up">--</span></div>
+      <div class="ticker-item"><span class="name">PRATA</span><span class="val">$--</span><span class="chg">--</span></div>
+      <div class="ticker-item"><span class="name">IBOVESPA</span><span class="val">--</span><span class="chg">--</span></div>
+      <div class="ticker-item"><span class="name">S&P 500</span><span class="val">--</span><span class="chg">--</span></div>
+      <div class="ticker-item"><span class="name">ETH/USD</span><span class="val">$--</span><span class="chg">--</span></div>
+      <div class="ticker-item"><span class="name">PETRÓLEO WTI</span><span class="val">$--</span><span class="chg">--</span></div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- NEWS CARD -->
+  <div class="card news-card">
+    <div class="card-header">
+      <span class="card-title">NOTÍCIAS GLOBAIS</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="news-ai-badge">📡 RSS</span>
+        <span class="card-badge badge-live">● LIVE</span>
+        <button class="refresh-btn" onclick="loadNews()">↻ ATUALIZAR</button>
+      </div>
+    </div>
+    <div class="news-body" id="news-container">
+      <div class="loading-news">▋ CARREGANDO NOTÍCIAS VIA IA...</div>
+    </div>
+  </div>
+
+  <!-- WEATHER CARD -->
+  <div class="card weather-card">
+    <div class="card-header">
+      <span class="card-title">CLIMA LOCAL</span>
+      <span class="card-badge badge-ok">DETECTANDO</span>
+    </div>
+    <div class="weather-body" id="weather-container">
+      <div class="weather-loading">▋ LOCALIZANDO...<br><br>Permita o acesso à localização</div>
+    </div>
+  </div>
+
+  <!-- ALERTS CARD -->
+  <div class="card alerts-card">
+    <div class="card-header">
+      <span class="card-title">ALERTAS CRÍTICOS</span>
+      <span class="card-badge badge-warn">2 ATIVOS</span>
+    </div>
+    <div class="alerts-body" id="alerts-container">
+      <div class="alert-item warning">
+        <div class="alert-icon">⚡</div>
+        <div class="alert-content">
+          <div class="alert-title" style="color:var(--amber)">TEMPESTADE SOLAR — CLASSE M</div>
+          <div class="alert-desc">EJEÇÃO DE MASSA CORONAL DETECTADA • IMPACTO EM 18-24H</div>
+        </div>
+        <div class="alert-time">14:32</div>
+      </div>
+      <div class="alert-item critical">
+        <div class="alert-icon">🌀</div>
+        <div class="alert-content">
+          <div class="alert-title" style="color:var(--red)">CICLONE EXTRATROPICAL — SUL DO BR</div>
+          <div class="alert-desc">DEFESA CIVIL EMITE ALERTA NÍVEL 3 • RS / SC</div>
+        </div>
+        <div class="alert-time">11:07</div>
+      </div>
+      <div class="alert-item info">
+        <div class="alert-icon">📡</div>
+        <div class="alert-content">
+          <div class="alert-title" style="color:var(--blue)">SISMO M3.2 — LITORAL SP</div>
+          <div class="alert-desc">USGS CONFIRMA • PROFUNDIDADE 8KM • SEM ALERTA DE TSUNAMI</div>
+        </div>
+        <div class="alert-time">09:44</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOLAR CARD -->
+  <div class="card solar-card">
+    <div class="card-header">
+      <span class="card-title">MONITORAMENTO SOLAR</span>
+      <span class="card-badge badge-warn">CLASSE M</span>
+    </div>
+    <div class="solar-body">
+      <div class="solar-stat">
+        <div class="solar-stat-icon">☀️</div>
+        <div class="solar-stat-label">FLARE</div>
+        <div class="solar-stat-val" style="color:var(--amber)">M2.4</div>
+        <div class="solar-stat-sub" style="color:var(--amber)">MODERADO</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">🌐</div>
+        <div class="solar-stat-label">Kp INDEX</div>
+        <div class="solar-stat-val" style="color:var(--amber)">5.3</div>
+        <div class="solar-stat-sub" style="color:var(--amber)">G1 STORM</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">💨</div>
+        <div class="solar-stat-label">VENTO SOLAR</div>
+        <div class="solar-stat-val" style="color:var(--green)">487</div>
+        <div class="solar-stat-sub" style="color:var(--muted)">KM/S</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">🔴</div>
+        <div class="solar-stat-label">CME IMPACTO</div>
+        <div class="solar-stat-val" style="color:var(--red)">18H</div>
+        <div class="solar-stat-sub" style="color:var(--red)">ESTIMADO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKETS -->
+  <div class="card markets-card">
+    <div class="card-header">
+      <span class="card-title">MERCADOS</span>
+      <span class="card-badge badge-live">● LIVE</span>
+    </div>
+    <div class="markets-body" id="markets-container">
+      <div class="market-item">
+        <div><div class="market-ticker">BTC</div><div class="market-name">Bitcoin</div></div>
+        <div><div class="market-price up" id="btc-price">$--</div><div class="market-change up" id="btc-pct">--</div></div>
+      </div>
+      <div class="market-item">
+        <div><div class="market-ticker">ETH</div><div class="market-name">Ethereum</div></div>
+        <div><div class="market-price up" id="eth-price">$--</div><div class="market-change up" id="eth-pct">--</div></div>
+      </div>
+      <div class="market-item">
+        <div><div class="market-ticker">USD/BRL</div><div class="market-name">Dólar</div></div>
+        <div><div class="market-price" id="usd-price">R$--</div><div class="market-change" id="usd-pct">--</div></div>
+      </div>
+      <div class="market-item">
+        <div><div class="market-ticker">OURO</div><div class="market-name">Gold (oz)</div></div>
+        <div><div class="market-price up" id="gold-price">$--</div><div class="market-change up" id="gold-pct">--</div></div>
+      </div>
+      <div class="market-item">
+        <div><div class="market-ticker">PRATA</div><div class="market-name">Silver (oz)</div></div>
+        <div><div class="market-price" id="silver-price">$--</div><div class="market-change" id="silver-pct">--</div></div>
+      </div>
+      <div class="market-item">
+        <div><div class="market-ticker">WTI</div><div class="market-name">Petróleo</div></div>
+        <div><div class="market-price" id="oil-price">$--</div><div class="market-change" id="oil-pct">--</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEFESA CIVIL -->
+  <div class="card defesa-card">
+    <div class="card-header">
+      <span class="card-title">DEFESA CIVIL — MONITORAMENTO BR</span>
+      <div style="display:flex;gap:8px">
+        <span class="card-badge badge-warn">3 ALERTAS</span>
+        <span class="card-badge badge-live">● AO VIVO</span>
+      </div>
+    </div>
+    <div class="defesa-body">
+      <div class="defesa-item level-3">
+        <span class="defesa-level">NÍVEL 3</span>
+        <div class="defesa-type">🌀 CICLONE EXTRATROPICAL</div>
+        <div class="defesa-title">Alerta de Vento e Chuva Intensa</div>
+        <div class="defesa-region">📍 RS, SC, PR — Litoral e Serra</div>
+      </div>
+      <div class="defesa-item level-2">
+        <span class="defesa-level">NÍVEL 2</span>
+        <div class="defesa-type">🌧️ CHUVA INTENSA</div>
+        <div class="defesa-title">Risco de Deslizamento</div>
+        <div class="defesa-region">📍 SP, RJ — Serra do Mar</div>
+      </div>
+      <div class="defesa-item level-2">
+        <span class="defesa-level">NÍVEL 2</span>
+        <div class="defesa-type">🔥 INCÊNDIO FLORESTAL</div>
+        <div class="defesa-title">Risco Muito Alto de Fogo</div>
+        <div class="defesa-region">📍 MT, MS, GO — Centro-Oeste</div>
+      </div>
+      <div class="defesa-item level-1">
+        <span class="defesa-level">NÍVEL 1</span>
+        <div class="defesa-type">🌊 RESSACA</div>
+        <div class="defesa-title">Ondas de 3-4m Previstas</div>
+        <div class="defesa-region">📍 Litoral Norte SP / RJ</div>
+      </div>
+      <div class="defesa-item level-1">
+        <span class="defesa-level">NÍVEL 1</span>
+        <div class="defesa-type">⚡ TEMPESTADE</div>
+        <div class="defesa-title">Raios e Granizo Possíveis</div>
+        <div class="defesa-region">📍 MG, ES — Interior</div>
+      </div>
+      <div class="defesa-item level-1">
+        <span class="defesa-level">NÍVEL 1</span>
+        <div class="defesa-type">🏜️ SECA SEVERA</div>
+        <div class="defesa-title">Umidade Relativa Crítica</div>
+        <div class="defesa-region">📍 DF, MG — Triângulo Mineiro</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── HELPERS ────────────────────────────────────
+const fmt = (n, dec=0) => n.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+const pct = n => (n>=0?'+':'')+n.toFixed(2)+'%';
+const cls = n => n>=0?'up':'dn';
+
+function safeSet(id, text, className) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (text !== undefined) el.textContent = text;
+  if (className !== undefined) el.className = className;
+}
+
+// Atualiza ticker duplicado (para scroll contínuo)
+function syncTicker() {
+  const ticker = document.getElementById('ticker');
+  if (!ticker) return;
+  const items = ticker.querySelectorAll('.ticker-item');
+  const half = items.length / 2;
+  for (let i = 0; i < half; i++) {
+    const src = items[i];
+    const dst = items[i + half];
+    if (src && dst) dst.innerHTML = src.innerHTML;
+  }
+}
+
+// ── CLOCK ──────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  safeSet('clock', now.toLocaleTimeString('pt-BR') + ' BRT');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── WEATHER ────────────────────────────────────
+const weatherIcons = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'❄️', 73:'❄️', 75:'❄️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️'
+};
+
+const weatherDescs = {
+  0:'Céu Limpo', 1:'Principalmente Limpo', 2:'Parcialmente Nublado', 3:'Nublado',
+  45:'Névoa', 48:'Névoa Intensa',
+  51:'Garoa Leve', 53:'Garoa Moderada', 55:'Garoa Forte',
+  61:'Chuva Leve', 63:'Chuva Moderada', 65:'Chuva Forte',
+  71:'Neve Leve', 73:'Neve Moderada', 75:'Neve Forte',
+  80:'Pancadas Leves', 81:'Pancadas Moderadas', 82:'Pancadas Fortes',
+  95:'Tempestade', 96:'Tempestade com Granizo', 99:'Tempestade Severa'
+};
+
+async function loadWeather(lat, lon, cityName) {
+  try {
+    const r = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature,weather_code,precipitation&wind_speed_unit=kmh`
+    );
+    const d = await r.json();
+    const c = d.current;
+    const code = c.weather_code;
+    document.getElementById('weather-container').innerHTML = `
+      <div class="weather-main">
+        <div class="weather-icon">${weatherIcons[code] || '🌡️'}</div>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <div class="weather-temp">${Math.round(c.temperature_2m)}</div>
+            <div class="weather-unit">°C</div>
+          </div>
+          <div class="weather-desc">${weatherDescs[code] || 'Condições Variadas'}</div>
+          <div class="weather-location">📍 ${cityName}</div>
+        </div>
+      </div>
+      <div class="weather-grid">
+        <div class="weather-stat">
+          <div class="weather-stat-label">SENSAÇÃO</div>
+          <div class="weather-stat-val">${Math.round(c.apparent_temperature)}°</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">UMIDADE</div>
+          <div class="weather-stat-val">${c.relative_humidity_2m}%</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">VENTO</div>
+          <div class="weather-stat-val">${Math.round(c.wind_speed_10m)}</div>
+          <div style="font-family:monospace;font-size:9px;color:var(--muted);margin-top:2px">KM/H</div>
+        </div>
+        <div class="weather-stat">
+          <div class="weather-stat-label">PRECIP.</div>
+          <div class="weather-stat-val">${c.precipitation}</div>
+          <div style="font-family:monospace;font-size:9px;color:var(--muted);margin-top:2px">MM</div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('weather-container').innerHTML =
+      '<div class="weather-loading">ERRO AO CARREGAR CLIMA</div>';
+  }
+}
+
+function initWeather() {
+  if (!navigator.geolocation) {
+    loadWeather(-23.55, -46.63, 'São Paulo, SP');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const {latitude: lat, longitude: lon} = pos.coords;
+      let city = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+      try {
+        const gr = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const gd = await gr.json();
+        city = gd.address.city || gd.address.town || gd.address.county || city;
+        const state = gd.address.state_code || '';
+        city = state ? `${city}, ${state}` : city;
+      } catch(e) {}
+      loadWeather(lat, lon, city);
+    },
+    () => loadWeather(-23.55, -46.63, 'São Paulo, SP')
+  );
+}
+
+initWeather();
+
+// ── MARKETS (COMPLETO) ────────────────────────
+
+// Helper: Yahoo Finance via proxy CORS (tenta múltiplos proxies)
+async function fetchYahoo(symbol) {
+  const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=2d';
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
+    'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
+  ];
+  for (const proxyUrl of proxies) {
+    try {
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d.chart && d.chart.result && d.chart.result[0]) {
+        const meta = d.chart.result[0].meta;
+        const price = meta.regularMarketPrice;
+        const prev = meta.previousClose || meta.chartPreviousClose || price;
+        const chgPct = prev ? ((price - prev) / prev) * 100 : 0;
+        return { price, chgPct };
+      }
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+async function loadMarkets() {
+  // TUDO via Yahoo Finance com proxy — sem CoinGecko (rate limit)
+  const yahooQuotes = [
+    { symbol: 'BTC-USD', ids: {price:'btc-price', val:'btc-val', pctCard:'btc-pct', chgTicker:'btc-chg'}, prefix:'$', dec:0 },
+    { symbol: 'ETH-USD', ids: {price:'eth-price', val:'eth-val', pctCard:'eth-pct', chgTicker:'eth-chg'}, prefix:'$', dec:0 },
+    { symbol: 'GC=F',   ids: {price:'gold-price', val:'gold-val', pctCard:'gold-pct', chgTicker:'gold-chg'}, prefix:'$', dec:0 },
+    { symbol: 'SI=F',   ids: {price:'silver-price', val:'silver-val', pctCard:'silver-pct', chgTicker:'silver-chg'}, prefix:'$', dec:2 },
+    { symbol: 'CL=F',   ids: {price:'oil-price', val:'oil-val', pctCard:'oil-pct', chgTicker:'oil-chg'}, prefix:'$', dec:2 },
+    { symbol: '^BVSP',  ids: {val:'ibov-val', chgTicker:'ibov-chg'}, prefix:'', dec:0 },
+    { symbol: '^GSPC',  ids: {val:'sp-val', chgTicker:'sp-chg'}, prefix:'', dec:0 },
+  ];
+
+  // USD/BRL via Frankfurter (API dedicada, confiável)
+  try {
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=BRL');
+    const d = await r.json();
+    if (d.rates && d.rates.BRL) {
+      const v = d.rates.BRL.toFixed(2);
+      safeSet('usd-price', 'R$'+v);
+      safeSet('usd-val', 'R$'+v);
+      safeSet('usd-pct', '—', 'market-change neu');
+      safeSet('usd-chg', '—', 'chg neu');
+    }
+  } catch(e) { console.warn('FX fetch error:', e); }
+
+  // Buscar todos os Yahoo quotes em paralelo
+  const yahooResults = await Promise.allSettled(
+    yahooQuotes.map(q => fetchYahoo(q.symbol).then(data => ({ config: q, data })))
+  );
+
+  for (const result of yahooResults) {
+    if (result.status !== 'fulfilled' || !result.value.data) continue;
+    const { config, data } = result.value;
+    const { price, chgPct } = data;
+    const priceStr = config.prefix + fmt(price, config.dec);
+
+    if (config.ids.price) safeSet(config.ids.price, priceStr, 'market-price '+cls(chgPct));
+    if (config.ids.val) safeSet(config.ids.val, config.prefix ? priceStr : fmt(price, config.dec));
+    if (config.ids.pctCard) safeSet(config.ids.pctCard, pct(chgPct), 'market-change '+cls(chgPct));
+    if (config.ids.chgTicker) safeSet(config.ids.chgTicker, pct(chgPct), 'chg '+cls(chgPct));
+  }
+
+  // Sincronizar ticker duplicado
+  syncTicker();
+}
+
+loadMarkets();
+setInterval(loadMarkets, 120000); // Atualiza a cada 2 min
+
+// ── MONITORAMENTO SOLAR (NOAA SWPC — DADOS REAIS) ──
+async function loadSolar() {
+  const solarContainer = document.querySelector('.solar-body');
+  const solarBadge = document.querySelector('.solar-card .card-badge');
+  
+  let flareClass = '—', flareLevel = 'QUIET', flareColor = 'var(--green)';
+  let kpVal = '—', kpLabel = 'QUIET', kpColor = 'var(--green)';
+  let windSpeed = '—', windColor = 'var(--green)';
+  let bz = '—', bzColor = 'var(--green)';
+
+  // 1) Buscar últimos flares solares (NOAA SWPC JSON)
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json');
+    const d = await r.json();
+    if (d && d.length > 0) {
+      // Pegar o flare mais recente
+      const latest = d[d.length - 1];
+      const maxClass = latest.max_class || latest.current_class || '';
+      if (maxClass) {
+        flareClass = maxClass;
+        const letter = maxClass.charAt(0).toUpperCase();
+        if (letter === 'X') { flareLevel = 'EXTREMO'; flareColor = 'var(--red)'; }
+        else if (letter === 'M') { flareLevel = 'MODERADO'; flareColor = 'var(--amber)'; }
+        else if (letter === 'C') { flareLevel = 'FRACO'; flareColor = 'var(--amber)'; }
+        else if (letter === 'B') { flareLevel = 'MÍNIMO'; flareColor = 'var(--green)'; }
+        else if (letter === 'A') { flareLevel = 'QUIETO'; flareColor = 'var(--green)'; }
+      }
+    }
+  } catch(e) {
+    // Fallback: tentar endpoint alternativo
+    try {
+      const r2 = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json');
+      const d2 = await r2.json();
+      if (d2 && d2.length > 0) {
+        const latest = d2[d2.length - 1];
+        flareClass = latest.max_class || 'B1.0';
+        const letter = flareClass.charAt(0).toUpperCase();
+        if (letter === 'X') { flareLevel = 'EXTREMO'; flareColor = 'var(--red)'; }
+        else if (letter === 'M') { flareLevel = 'MODERADO'; flareColor = 'var(--amber)'; }
+        else if (letter === 'C') { flareLevel = 'FRACO'; flareColor = 'var(--amber)'; }
+        else { flareLevel = 'QUIETO'; flareColor = 'var(--green)'; }
+      }
+    } catch(e2) { console.warn('Solar flare fetch error:', e2); }
+  }
+
+  // 2) Kp Index (NOAA planetary K-index)
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+    const d = await r.json();
+    if (d && d.length > 1) {
+      // Última linha contém dados mais recentes (header é d[0])
+      const latest = d[d.length - 1];
+      const kp = parseFloat(latest[1]); // Kp value
+      if (!isNaN(kp)) {
+        kpVal = kp.toFixed(1);
+        if (kp >= 8) { kpLabel = 'G4+ SEVERO'; kpColor = 'var(--red)'; }
+        else if (kp >= 7) { kpLabel = 'G3 FORTE'; kpColor = 'var(--red)'; }
+        else if (kp >= 6) { kpLabel = 'G2 MODERADO'; kpColor = 'var(--amber)'; }
+        else if (kp >= 5) { kpLabel = 'G1 MENOR'; kpColor = 'var(--amber)'; }
+        else if (kp >= 4) { kpLabel = 'ATIVO'; kpColor = 'var(--amber)'; }
+        else { kpLabel = 'QUIETO'; kpColor = 'var(--green)'; }
+      }
+    }
+  } catch(e) { console.warn('Kp fetch error:', e); }
+
+  // 3) Vento Solar (NOAA DSCOVR real-time solar wind)
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json');
+    const d = await r.json();
+    if (d && d.WindSpeed) {
+      windSpeed = Math.round(parseFloat(d.WindSpeed));
+      if (windSpeed >= 700) windColor = 'var(--red)';
+      else if (windSpeed >= 500) windColor = 'var(--amber)';
+      else windColor = 'var(--green)';
+    }
+  } catch(e) { console.warn('Solar wind fetch error:', e); }
+
+  // 4) Bz (componente magnético) — indicador de impacto geomagnético
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json');
+    const d = await r.json();
+    if (d && d.Bz) {
+      const bzVal = parseFloat(d.Bz);
+      bz = bzVal.toFixed(1);
+      // Bz negativo = mais geoefetivo (pior)
+      if (bzVal <= -10) { bzColor = 'var(--red)'; }
+      else if (bzVal <= -5) { bzColor = 'var(--amber)'; }
+      else { bzColor = 'var(--green)'; }
+    }
+  } catch(e) { console.warn('Bz fetch error:', e); }
+
+  // Determinar badge geral
+  let badgeText = 'QUIETO', badgeClass = 'card-badge badge-ok';
+  const kpNum = parseFloat(kpVal);
+  if (flareClass.charAt(0) === 'X' || kpNum >= 7) {
+    badgeText = 'CLASSE X'; badgeClass = 'card-badge badge-live';
+  } else if (flareClass.charAt(0) === 'M' || kpNum >= 5) {
+    badgeText = 'CLASSE M'; badgeClass = 'card-badge badge-warn';
+  } else if (flareClass.charAt(0) === 'C' || kpNum >= 4) {
+    badgeText = 'CLASSE C'; badgeClass = 'card-badge badge-warn';
+  } else {
+    badgeText = 'QUIETO'; badgeClass = 'card-badge badge-ok';
+  }
+
+  if (solarBadge) {
+    solarBadge.textContent = badgeText;
+    solarBadge.className = badgeClass;
+  }
+
+  if (solarContainer) {
+    solarContainer.innerHTML = `
+      <div class="solar-stat">
+        <div class="solar-stat-icon">☀️</div>
+        <div class="solar-stat-label">FLARE</div>
+        <div class="solar-stat-val" style="color:${flareColor}">${flareClass}</div>
+        <div class="solar-stat-sub" style="color:${flareColor}">${flareLevel}</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">🌐</div>
+        <div class="solar-stat-label">Kp INDEX</div>
+        <div class="solar-stat-val" style="color:${kpColor}">${kpVal}</div>
+        <div class="solar-stat-sub" style="color:${kpColor}">${kpLabel}</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">💨</div>
+        <div class="solar-stat-label">VENTO SOLAR</div>
+        <div class="solar-stat-val" style="color:${windColor}">${windSpeed}</div>
+        <div class="solar-stat-sub" style="color:var(--muted)">KM/S</div>
+      </div>
+      <div class="solar-stat">
+        <div class="solar-stat-icon">🧲</div>
+        <div class="solar-stat-label">Bz (nT)</div>
+        <div class="solar-stat-val" style="color:${bzColor}">${bz}</div>
+        <div class="solar-stat-sub" style="color:${bzColor}">${parseFloat(bz) <= -5 ? 'GEOEFETIVO' : 'NORMAL'}</div>
+      </div>
+    `;
+  }
+}
+
+loadSolar();
+setInterval(loadSolar, 300000); // Atualiza a cada 5 min
+
+// ── ALERTAS CRÍTICOS (DINÂMICOS — USGS Sismos + NOAA) ──
+async function loadAlerts() {
+  const container = document.getElementById('alerts-container');
+  const badge = document.querySelector('.alerts-card .card-badge');
+  if (!container) return;
+
+  const alerts = [];
+
+  // 1) Sismos significativos (USGS — últimas 24h, magnitude 4.5+)
+  try {
+    const r = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
+    const d = await r.json();
+    if (d.features && d.features.length > 0) {
+      // Pegar os 2 maiores sismos
+      const sorted = d.features.sort((a,b) => b.properties.mag - a.properties.mag).slice(0, 2);
+      for (const eq of sorted) {
+        const mag = eq.properties.mag.toFixed(1);
+        const place = eq.properties.place || 'Local desconhecido';
+        const time = new Date(eq.properties.time);
+        const timeStr = time.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        const depth = ((eq.geometry.coordinates[2])||0).toFixed(0);
+        
+        let level = 'info', icon = '📡', color = 'var(--blue)';
+        if (mag >= 7) { level = 'critical'; icon = '🔴'; color = 'var(--red)'; }
+        else if (mag >= 5.5) { level = 'warning'; icon = '🟠'; color = 'var(--amber)'; }
+
+        alerts.push({
+          level, icon, color,
+          title: `SISMO M${mag} — ${place.toUpperCase()}`,
+          desc: `USGS CONFIRMA • PROFUNDIDADE ${depth}KM`,
+          time: timeStr
+        });
+      }
+    }
+  } catch(e) { console.warn('USGS fetch error:', e); }
+
+  // 2) Alertas geomagnéticos baseados em dados solares
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/alerts.json');
+    const d = await r.json();
+    if (d && d.length > 0) {
+      // Pegar últimos 2 alertas do SWPC
+      const recent = d.slice(-3);
+      for (const alert of recent) {
+        const msg = alert.message || '';
+        const prodId = alert.product_id || '';
+        let title = '', desc = '', level = 'info', icon = '⚡', color = 'var(--blue)';
+        
+        if (msg.includes('WARNING') || msg.includes('WATCH')) {
+          level = 'warning'; icon = '⚡'; color = 'var(--amber)';
+        }
+        if (msg.includes('Geomagnetic') || prodId.includes('WAR')) {
+          title = 'ALERTA GEOMAGNÉTICO — NOAA/SWPC';
+          level = 'warning'; color = 'var(--amber)';
+        } else if (msg.includes('Solar Flare') || msg.includes('X-ray')) {
+          title = 'ATIVIDADE SOLAR ELEVADA';
+          level = 'warning'; color = 'var(--amber)';
+        } else if (msg.includes('Radio Blackout') || msg.includes('R1') || msg.includes('R2')) {
+          title = 'POSSÍVEL APAGÃO DE RÁDIO';
+          level = 'critical'; icon = '📡'; color = 'var(--red)';
+        } else {
+          title = 'ALERTA CLIMA ESPACIAL — SWPC';
+        }
+
+        // Extrair primeira linha significativa da mensagem
+        const lines = msg.split('\n').filter(l => l.trim().length > 10);
+        desc = (lines[0] || 'Consulte SWPC/NOAA para detalhes').substring(0, 80).toUpperCase();
+
+        const issueTime = alert.issue_datetime || '';
+        let timeStr = '—';
+        if (issueTime) {
+          try { timeStr = new Date(issueTime).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}); }
+          catch(e) { timeStr = issueTime.substring(11,16); }
+        }
+
+        alerts.push({ level, icon, color, title, desc, time: timeStr });
+      }
+    }
+  } catch(e) { console.warn('SWPC alerts fetch error:', e); }
+
+  // Se não há alertas, mostrar status normal
+  if (alerts.length === 0) {
+    alerts.push({
+      level: 'info', icon: '✅', color: 'var(--green)',
+      title: 'NENHUM ALERTA CRÍTICO ATIVO',
+      desc: 'TODOS OS SISTEMAS DENTRO DA NORMALIDADE',
+      time: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})
+    });
+  }
+
+  // Limitar a 4 alertas
+  const shown = alerts.slice(0, 4);
+
+  // Atualizar badge
+  const critCount = shown.filter(a => a.level === 'critical').length;
+  const warnCount = shown.filter(a => a.level === 'warning').length;
+  const total = critCount + warnCount;
+  if (badge) {
+    if (critCount > 0) {
+      badge.textContent = `${total} CRÍTICO${total>1?'S':''}`;
+      badge.className = 'card-badge badge-live';
+    } else if (warnCount > 0) {
+      badge.textContent = `${total} ATIVO${total>1?'S':''}`;
+      badge.className = 'card-badge badge-warn';
+    } else {
+      badge.textContent = 'NORMAL';
+      badge.className = 'card-badge badge-ok';
+    }
+  }
+
+  container.innerHTML = shown.map(a => `
+    <div class="alert-item ${a.level}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-content">
+        <div class="alert-title" style="color:${a.color}">${a.title}</div>
+        <div class="alert-desc">${a.desc}</div>
+      </div>
+      <div class="alert-time">${a.time}</div>
+    </div>
+  `).join('');
+}
+
+loadAlerts();
+setInterval(loadAlerts, 300000);
+
+// ── DEFESA CIVIL BR (Alertas do INMET via API) ──
+async function loadDefesaCivil() {
+  const container = document.querySelector('.defesa-body');
+  const badge = document.querySelector('.defesa-card .card-badge');
+  if (!container) return;
+
+  let alertItems = [];
+
+  // Buscar alertas meteorológicos do INMET (API pública)
+  try {
+    const r = await fetch('https://apiprevmet3.inmet.gov.br/avisos/ativos');
+    const d = await r.json();
+    
+    if (d && (Array.isArray(d) ? d.length > 0 : (d.aviso || d.hoje || d.data))) {
+      // A resposta do INMET pode variar. Tentar extrair alertas
+      let avisos = [];
+      if (Array.isArray(d)) avisos = d;
+      else if (d.hoje) avisos = Array.isArray(d.hoje) ? d.hoje : [d.hoje];
+      else if (d.aviso) avisos = Array.isArray(d.aviso) ? d.aviso : [d.aviso];
+      else if (typeof d === 'object') {
+        // INMET retorna objeto com datas como chaves
+        for (const key of Object.keys(d)) {
+          const val = d[key];
+          if (Array.isArray(val)) avisos.push(...val);
+          else if (val && typeof val === 'object' && val.descricao) avisos.push(val);
+        }
+      }
+
+      const severityMap = {
+        'Grande Perigo': 3, 'Perigo': 2, 'Perigo Potencial': 1,
+        'grande perigo': 3, 'perigo': 2, 'perigo potencial': 1
+      };
+      const iconMap = {
+        'Chuva': '🌧️', 'chuva': '🌧️', 'Tempestade': '⛈️', 'tempestade': '⛈️',
+        'Vento': '💨', 'vento': '💨', 'Granizo': '🧊', 'granizo': '🧊',
+        'Geada': '❄️', 'geada': '❄️', 'Seca': '🏜️', 'seca': '🏜️',
+        'Onda de Calor': '🌡️', 'calor': '🌡️', 'Incêndio': '🔥', 'incêndio': '🔥',
+        'Neve': '❄️', 'neve': '❄️', 'Ressaca': '🌊', 'ressaca': '🌊',
+        'Vendaval': '🌀', 'vendaval': '🌀', 'Ciclone': '🌀', 'ciclone': '🌀'
+      };
+
+      for (const aviso of avisos.slice(0, 6)) {
+        const sev = aviso.severidade || aviso.nivel || aviso.severity || '';
+        const level = severityMap[sev] || 1;
+        const tipo = aviso.aviso || aviso.tipo || aviso.descricao || aviso.evento || 'ALERTA METEOROLÓGICO';
+        const desc = aviso.descricao || aviso.texto || aviso.title || tipo;
+        const area = aviso.municipios || aviso.area || aviso.estados || aviso.regiao || 'Brasil';
+        
+        let icon = '⚠️';
+        for (const [key, emoji] of Object.entries(iconMap)) {
+          if (tipo.toLowerCase().includes(key.toLowerCase()) || desc.toLowerCase().includes(key.toLowerCase())) {
+            icon = emoji; break;
+          }
+        }
+
+        // Truncar área se muito longa
+        const areaStr = typeof area === 'string' ? area.substring(0, 60) : 'Área não especificada';
+
+        alertItems.push({
+          level,
+          type: `${icon} ${tipo.toUpperCase().substring(0, 40)}`,
+          title: desc.substring(0, 60),
+          region: `📍 ${areaStr}`
+        });
+      }
+    }
+  } catch(e) { 
+    console.warn('INMET fetch error:', e);
+  }
+
+  // Fallback: buscar alertas via AlertaBrasil / CEMADEN se INMET falhar
+  if (alertItems.length === 0) {
+    try {
+      // Tentar API alternativa: open-meteo weather alerts para cidades brasileiras
+      const cities = [
+        {name:'São Paulo, SP', lat:-23.55, lon:-46.63},
+        {name:'Rio de Janeiro, RJ', lat:-22.91, lon:-43.17},
+        {name:'Porto Alegre, RS', lat:-30.03, lon:-51.23},
+        {name:'Curitiba, PR', lat:-25.43, lon:-49.27}
+      ];
+
+      for (const city of cities) {
+        try {
+          const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=weather_code,wind_speed_10m,precipitation&wind_speed_unit=kmh`
+          );
+          const d = await r.json();
+          if (d.current) {
+            const wc = d.current.weather_code;
+            const wind = d.current.wind_speed_10m;
+            const precip = d.current.precipitation;
+
+            // Gerar alerta se condições severas
+            if (wc >= 95) {
+              alertItems.push({
+                level: 3, type: '⛈️ TEMPESTADE SEVERA',
+                title: `Tempestade Ativa — Ventos de ${Math.round(wind)} km/h`,
+                region: `📍 ${city.name}`
+              });
+            } else if (wc >= 80 || precip > 10) {
+              alertItems.push({
+                level: 2, type: '🌧️ CHUVA INTENSA',
+                title: `Precipitação de ${precip}mm — Monitorar`,
+                region: `📍 ${city.name}`
+              });
+            } else if (wind > 60) {
+              alertItems.push({
+                level: 2, type: '💨 VENDAVAL',
+                title: `Ventos de ${Math.round(wind)} km/h`,
+                region: `📍 ${city.name}`
+              });
+            }
+          }
+        } catch(e2) {}
+      }
+    } catch(e) { console.warn('Weather alerts fetch error:', e); }
+  }
+
+  // Se ainda não há alertas, mostrar status normal
+  if (alertItems.length === 0) {
+    alertItems.push({
+      level: 1, type: '✅ SEM ALERTAS',
+      title: 'Nenhum Alerta Meteorológico Ativo',
+      region: '📍 Brasil — Monitoramento Contínuo'
+    });
+  }
+
+  // Atualizar badge
+  const maxLevel = Math.max(...alertItems.map(a => a.level));
+  const count = alertItems.filter(a => a.level >= 2).length;
+  if (badge) {
+    if (maxLevel >= 3) {
+      badge.textContent = `${alertItems.length} ALERTA${alertItems.length>1?'S':''}`;
+      badge.className = 'card-badge badge-live';
+    } else if (count > 0) {
+      badge.textContent = `${count} ALERTA${count>1?'S':''}`;
+      badge.className = 'card-badge badge-warn';
+    } else {
+      badge.textContent = 'NORMAL';
+      badge.className = 'card-badge badge-ok';
+    }
+  }
+
+  container.innerHTML = alertItems.slice(0, 6).map(a => `
+    <div class="defesa-item level-${a.level}">
+      <span class="defesa-level">NÍVEL ${a.level}</span>
+      <div class="defesa-type">${a.type}</div>
+      <div class="defesa-title">${a.title}</div>
+      <div class="defesa-region">${a.region}</div>
+    </div>
+  `).join('');
+}
+
+loadDefesaCivil();
+setInterval(loadDefesaCivil, 600000); // Atualiza a cada 10 min
+
+// ── NEWS via RSS MULTI-FONTE (PT-BR) ──────────────────
+
+// CORS Proxies (encadeados como fallback)
+const CORS_PROXIES = [
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+  url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+];
+
+async function fetchRSS(url) {
+  for (const makeProxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = makeProxy(url);
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const text = await r.text();
+        if (text.includes('<item') || text.includes('<entry')) return text;
+      }
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+// Fontes RSS diretas de veículos brasileiros e internacionais (em PT-BR)
+const RSS_SOURCES = [
+  // ── GEOPOLÍTICA & GUERRAS ──
+  { url: 'https://rss.uol.com.br/feed/noticias.xml', source: 'UOL', category: 'GEO', priority: 1, max: 3,
+    keywords: ['guerra','conflito','otan','míssil','tropas','invasão','ataque','bombardeio','militar','exército','ucrânia','rússia','israel','hamas','irã','china','taiwan','coreia'] },
+  { url: 'https://feeds.bbci.co.uk/portuguese/rss.xml', source: 'BBC Brasil', category: 'GEO', priority: 1, max: 3,
+    keywords: ['guerra','conflito','geopolítica','sanções','nuclear','militar','ataque','tropas','tensão','otan','míssil','bombardeio'] },
+  { url: 'https://g1.globo.com/rss/g1/mundo/', source: 'G1 Mundo', category: 'GEO', priority: 1, max: 4,
+    keywords: null },
+  // ── DESASTRES NATURAIS ──
+  { url: 'https://g1.globo.com/rss/g1/', source: 'G1', category: 'MUNDIAL', priority: 2, max: 3,
+    keywords: ['terremoto','tsunami','furacão','enchente','erupção','desastre','ciclone','tornado','tufão','vulcão','sismo','inundação','deslizamento','avalanche'] },
+  { url: 'https://feeds.bbci.co.uk/portuguese/rss.xml', source: 'BBC Brasil', category: 'MUNDIAL', priority: 2, max: 2,
+    keywords: ['terremoto','tsunami','furacão','enchente','erupção','desastre','ciclone','pandemia','epidemia','vírus','surto'] },
+  // ── ECONOMIA & CRISES ──
+  { url: 'https://g1.globo.com/rss/g1/economia/', source: 'G1 Economia', category: 'ECON', priority: 2, max: 3,
+    keywords: null },
+  { url: 'https://rss.uol.com.br/feed/economia.xml', source: 'UOL Economia', category: 'ECON', priority: 2, max: 2,
+    keywords: ['crise','inflação','recessão','dólar','juros','selic','bolsa','queda','colapso','petróleo','ouro','bitcoin','banco central'] },
+  // ── BRASIL EMERGÊNCIAS ──
+  { url: 'https://g1.globo.com/rss/g1/', source: 'G1', category: 'BR', priority: 2, max: 3,
+    keywords: ['enchente','deslizamento','incêndio','seca','tempestade','defesa civil','alerta','apagão','crise hídrica','barragem','inundação','ciclone','granizo','vendaval'] },
+];
+
+function parseRSSXML(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+  
+  // Suporte a RSS 2.0 (<item>) e Atom (<entry>)
+  let items = doc.querySelectorAll('item');
+  if (items.length === 0) items = doc.querySelectorAll('entry');
+  
+  const results = [];
+  items.forEach(function(item) {
+    // Título
+    var title = '';
+    var titleEl = item.querySelector('title');
+    if (titleEl) title = titleEl.textContent || '';
+    
+    // Link (RSS usa <link>, Atom pode usar <link href="">)
+    var link = '#';
+    var linkEl = item.querySelector('link');
+    if (linkEl) {
+      link = linkEl.textContent || linkEl.getAttribute('href') || '#';
+    }
+    
+    // Data
+    var pubDate = '';
+    var dateEl = item.querySelector('pubDate') || item.querySelector('published') || item.querySelector('updated');
+    if (dateEl) pubDate = dateEl.textContent || '';
+    
+    // Descrição (para filtrar por keywords)
+    var desc = '';
+    var descEl = item.querySelector('description') || item.querySelector('summary') || item.querySelector('content');
+    if (descEl) desc = descEl.textContent || '';
+    
+    // Fonte
+    var sourceEl = item.querySelector('source');
+    var sourceName = sourceEl ? sourceEl.textContent : '';
+    
+    // Calcular tempo relativo
+    var time = '';
+    var timestamp = 0;
+    if (pubDate) {
+      try {
+        var d = new Date(pubDate);
+        timestamp = d.getTime();
+        var now = new Date();
+        var diffMin = Math.floor((now - d) / 60000);
+        if (diffMin < 0) diffMin = 0;
+        if (diffMin < 5) time = 'Agora';
+        else if (diffMin < 60) time = diffMin + 'min';
+        else {
+          var diffH = Math.floor(diffMin / 60);
+          if (diffH < 24) time = diffH + 'h atrás';
+          else {
+            var diffD = Math.floor(diffH / 24);
+            if (diffD === 1) time = 'Ontem';
+            else time = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+          }
+        }
+      } catch(e) {}
+    }
+    
+    // Limpar título (remover "- Fonte" do final se existir)
+    var cleanTitle = title.trim();
+    var extractedSrc = '';
+    var dashIdx = cleanTitle.lastIndexOf(' - ');
+    if (dashIdx > 15) {
+      extractedSrc = cleanTitle.substring(dashIdx + 3).trim();
+      cleanTitle = cleanTitle.substring(0, dashIdx).trim();
+    }
+    
+    // Limpar link (remover espaços, pegar URL limpa)
+    link = link.trim();
+    
+    results.push({
+      title: cleanTitle,
+      link: link,
+      source: sourceName || extractedSrc || '',
+      desc: desc.toLowerCase(),
+      fullTitle: (cleanTitle + ' ' + desc).toLowerCase(),
+      time: time,
+      timestamp: timestamp
+    });
+  });
+  return results;
+}
+
+// Filtrar por keywords (retorna true se match ou se keywords é null = aceitar tudo)
+function matchesKeywords(item, keywords) {
+  if (!keywords) return true;
+  var text = item.fullTitle;
+  for (var i = 0; i < keywords.length; i++) {
+    if (text.indexOf(keywords[i]) !== -1) return true;
+  }
+  return false;
+}
+
+// Deduplicar por título similar
+function deduplicateNews(items) {
+  var seen = {};
+  return items.filter(function(item) {
+    var norm = item.title.toLowerCase()
+      .replace(/[^\w\u00C0-\u024F\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 40);
+    if (seen[norm]) return false;
+    seen[norm] = true;
+    return true;
+  });
+}
+
+async function loadNews() {
+  var container = document.getElementById('news-container');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-news">▋ BUSCANDO NOTÍCIAS...</div>';
+
+  var catClass = {MUNDIAL:'tag-world', GEO:'tag-geo', BR:'tag-br', ECON:'tag-econ'};
+  var catLabel = {MUNDIAL:'🌍 GLOBAL', GEO:'⚠️ GEO', BR:'🇧🇷 BR', ECON:'📈 ECON'};
+  
+  var allNews = [];
+  
+  // Deduplica URLs para não buscar o mesmo feed 2x
+  var uniqueUrls = {};
+  var feedsByUrl = {};
+  for (var i = 0; i < RSS_SOURCES.length; i++) {
+    var feed = RSS_SOURCES[i];
+    if (!uniqueUrls[feed.url]) {
+      uniqueUrls[feed.url] = true;
+      feedsByUrl[feed.url] = [];
+    }
+    feedsByUrl[feed.url].push(feed);
+  }
+  
+  var urls = Object.keys(uniqueUrls);
+  
+  // Buscar feeds únicos em paralelo
+  var fetchPromises = urls.map(function(url) {
+    return fetchRSS(url).then(function(xml) { return { url: url, xml: xml }; });
+  });
+  
+  var results = await Promise.allSettled(fetchPromises);
+  
+  for (var r = 0; r < results.length; r++) {
+    if (results[r].status !== 'fulfilled' || !results[r].value.xml) continue;
+    var result = results[r].value;
+    var xml = result.xml;
+    var feedUrl = result.url;
+    var feeds = feedsByUrl[feedUrl] || [];
+    
+    var parsedItems = parseRSSXML(xml);
+    
+    // Para cada config de feed que usa essa URL, filtrar e adicionar
+    for (var f = 0; f < feeds.length; f++) {
+      var feedCfg = feeds[f];
+      var matched = [];
+      for (var p = 0; p < parsedItems.length && matched.length < feedCfg.max; p++) {
+        if (matchesKeywords(parsedItems[p], feedCfg.keywords)) {
+          matched.push({
+            title: parsedItems[p].title,
+            link: parsedItems[p].link,
+            source: parsedItems[p].source || feedCfg.source,
+            time: parsedItems[p].time,
+            timestamp: parsedItems[p].timestamp,
+            category: feedCfg.category,
+            priority: feedCfg.priority
+          });
+        }
+      }
+      allNews = allNews.concat(matched);
+    }
+  }
+  
+  // Deduplicar
+  allNews = deduplicateNews(allNews);
+  
+  // Ordenar: prioridade (1 > 2 > 3), depois mais recente
+  allNews.sort(function(a, b) {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return (b.timestamp || 0) - (a.timestamp || 0);
+  });
+  
+  // Limitar
+  allNews = allNews.slice(0, 12);
+
+  // ── FALLBACK: se RSS falhar, buscar notícias via Google News com temas variados ──
+  if (allNews.length < 3) {
+    var fallbackFeeds = [
+      { url: 'https://news.google.com/rss/topics/CAAqKggKIiRDQkFTRlFvSUwyMHZNRFZxYUdjU0JYQjBMVUpTR2dKQ1VpZ0FQAQ?hl=pt-BR&gl=BR&ceid=BR:pt-419', category: 'MUNDIAL', source: 'Google News', max: 4 },
+      { url: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0JYQjBMVUpTR2dKQ1VpZ0FQAQ?hl=pt-BR&gl=BR&ceid=BR:pt-419', category: 'ECON', source: 'Google News', max: 3 },
+      { url: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0JYQjBMVUpTR2dKQ1VpZ0FQAQ?hl=pt-BR&gl=BR&ceid=BR:pt-419', category: 'BR', source: 'Google News', max: 3 },
+    ];
+    
+    var fbResults = await Promise.allSettled(
+      fallbackFeeds.map(function(fb) {
+        return fetchRSS(fb.url).then(function(xml) { return { xml: xml, cfg: fb }; });
+      })
+    );
+    
+    for (var fb = 0; fb < fbResults.length; fb++) {
+      if (fbResults[fb].status !== 'fulfilled' || !fbResults[fb].value.xml) continue;
+      var fbData = fbResults[fb].value;
+      var fbItems = parseRSSXML(fbData.xml);
+      for (var fi = 0; fi < Math.min(fbItems.length, fbData.cfg.max); fi++) {
+        allNews.push({
+          title: fbItems[fi].title,
+          link: fbItems[fi].link,
+          source: fbItems[fi].source || fbData.cfg.source,
+          time: fbItems[fi].time,
+          timestamp: fbItems[fi].timestamp,
+          category: fbData.cfg.category,
+          priority: 3
+        });
+      }
+    }
+    allNews = deduplicateNews(allNews);
+    allNews.sort(function(a, b) {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
+    allNews = allNews.slice(0, 12);
+  }
+
+  // ── FALLBACK FINAL: USGS sismos (último recurso) ──
+  if (allNews.length === 0) {
+    try {
+      var eq = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson');
+      var eqData = await eq.json();
+      if (eqData.features) {
+        for (var e = 0; e < Math.min(eqData.features.length, 3); e++) {
+          var quake = eqData.features[e];
+          var mag = quake.properties.mag.toFixed(1);
+          var place = quake.properties.place || 'Local desconhecido';
+          var eqTime = new Date(quake.properties.time);
+          var diffH = Math.floor((Date.now() - eqTime) / 3600000);
+          allNews.push({
+            title: 'Terremoto M' + mag + ' \u2014 ' + place,
+            link: quake.properties.url || '#',
+            source: 'USGS', time: diffH < 24 ? diffH + 'h atrás' : eqTime.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}),
+            category: 'MUNDIAL', priority: 2
+          });
+        }
+      }
+    } catch(e) {}
+  }
+  
+  if (allNews.length === 0) {
+    container.innerHTML =
+      '<div class="news-item">' +
+        '<span class="news-source-tag tag-world">🌍 GLOBAL</span>' +
+        '<div class="news-content">' +
+          '<div class="news-title">Não foi possível carregar notícias. Verifique sua conexão.</div>' +
+          '<div class="news-meta">PREPPERS BR MONITOR • Clique em ↻ ATUALIZAR</div>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  // Renderizar
+  var html = '';
+  for (var n = 0; n < allNews.length; n++) {
+    var item = allNews[n];
+    var tagCls = catClass[item.category] || 'tag-world';
+    var tagLbl = catLabel[item.category] || '🌍 GLOBAL';
+    var safeTitle = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    var safeSource = (item.source || 'Fonte').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var safeLink = '#';
+    try { safeLink = new URL(item.link).href; } catch(e) { safeLink = item.link || '#'; }
+
+    html +=
+      '<div class="news-item" onclick="window.open(\'' + safeLink.replace(/'/g,"\\'") + '\',\'_blank\')" title="Abrir em ' + safeSource + '">' +
+        '<span class="news-source-tag ' + tagCls + '">' + tagLbl + '</span>' +
+        '<div class="news-content">' +
+          '<div class="news-title">' + safeTitle + '</div>' +
+          '<div class="news-meta">' + safeSource + ' • ' + (item.time || 'Recente') + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+loadNews();
+setInterval(loadNews, 300000);
+</script>
+</body>
+</html>
