@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
 body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
 body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
@@ -35,24 +35,30 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
 .badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
 .badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
-#setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.97);z-index:200;display:flex;align-items:center;justify-content:center}
-.setup-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:40px;max-width:520px;width:90%;text-align:center}
-.setup-box h2{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:4px;color:var(--green);margin-bottom:8px}
-.setup-box p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;letter-spacing:1px}
-.setup-box label{display:block;text-align:left;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin:14px 0 6px}
-.setup-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:10px 14px;border-radius:3px;outline:none}
-.setup-box input:focus{border-color:var(--green3)}
-.hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px;text-align:left;letter-spacing:1px}
+/* LOGIN */
+#login-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.97);z-index:200;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:40px;max-width:420px;width:90%;text-align:center}
+.login-box h2{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:4px;color:var(--green);margin-bottom:6px}
+.login-box p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:20px;line-height:1.7;letter-spacing:1px}
+.login-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green);font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:14px;border-radius:3px;outline:none;text-align:center;transition:border 0.2s}
+.login-box input:focus{border-color:var(--green3)}
+.login-box input::placeholder{color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:none;font-weight:400;font-family:'Share Tech Mono',monospace}
+.login-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:1px}
+.login-err{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);margin-top:8px;display:none;letter-spacing:1px}
+/* USER BAR */
 .user-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:4px;flex-wrap:wrap;gap:8px}
 .user-info{display:flex;align-items:center;gap:10px}
 .user-avatar{width:32px;height:32px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green)}
 .user-name{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--green)}
 .user-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+/* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat-box{text-align:center;padding:16px 10px;background:var(--card);border:1px solid var(--border);border-radius:4px}
 .stat-num{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--green);text-shadow:0 0 15px rgba(0,255,136,0.3)}
 .stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
-.forum-layout{display:grid;grid-template-columns:1fr 300px;gap:16px}
+/* LAYOUT */
+.forum-layout{display:grid;grid-template-columns:1fr 280px;gap:16px}
+/* TOPICS */
 .topic-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s}
 .topic-item:hover{background:rgba(0,255,136,0.04)}
 .topic-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
@@ -67,6 +73,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .topic-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.4}
 .topic-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;display:flex;gap:12px;flex-wrap:wrap}
 .topic-stats{display:flex;gap:12px;margin-left:auto}
+/* POST */
 .post-item{padding:16px;border-bottom:1px solid var(--border)}
 .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .post-avatar{width:28px;height:28px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green);flex-shrink:0}
@@ -76,14 +83,18 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .post-actions{padding-left:38px;margin-top:8px}
 .post-action-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
 .post-action-btn:hover,.post-action-btn.liked{border-color:var(--green3);color:var(--green);background:rgba(0,255,136,0.06)}
+/* REPLY */
 .reply-box{padding:16px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
 .reply-box textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:12px;border-radius:3px;outline:none;resize:vertical;min-height:80px}
 .reply-box textarea:focus{border-color:var(--green3)}
 .reply-box textarea::placeholder{color:var(--muted)}
+/* BTNS */
 .btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;border:none}
 .btn-primary{background:var(--green);color:#000;font-weight:bold}.btn-primary:hover{background:var(--green2)}
 .btn-secondary{background:transparent;border:1px solid var(--green3);color:var(--green2)}.btn-secondary:hover{background:rgba(0,255,136,0.1)}
 .btn-back{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-back:hover{color:var(--green2);border-color:var(--green3)}
+.btn-logout{background:transparent;border:1px solid rgba(255,51,51,0.3);color:var(--red);font-size:10px;padding:5px 12px}.btn-logout:hover{background:rgba(255,51,51,0.1)}
+/* SIDEBAR */
 .cat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .cat-list-item:hover{background:rgba(0,255,136,0.04)}
 .cat-list-item.active{background:rgba(0,255,136,0.06);color:var(--green)}
@@ -92,6 +103,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .rule-item{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
 .rule-num{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;color:var(--green);width:24px;flex-shrink:0}
 .rule-text{font-size:12px;color:var(--muted);line-height:1.5}
+/* MODAL */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.9);z-index:150;display:none;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:24px;max-width:600px;width:90%}
@@ -108,40 +120,35 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 </style>
 </head>
 <body>
-<div id="setup-screen" style="display:none">
-  <div class="setup-box">
-    <h2>🛡️ CONFIGURAR FÓRUM</h2>
-    <p>Para o fórum funcionar, você precisa criar um projeto Firebase gratuito.</p>
-    <div style="text-align:left;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text);line-height:2;letter-spacing:0.5px">
-      1. Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:var(--green)">console.firebase.google.com</a><br>
-      2. Clique <strong style="color:var(--green)">"Adicionar Projeto"</strong> → nomeie → criar<br>
-      3. Vá em <strong style="color:var(--green)">Realtime Database</strong> → Criar banco → modo de teste<br>
-      4. <strong style="color:var(--green)">Configurações</strong> (engrenagem) → Seus apps → ícone <strong style="color:var(--green)">&lt;/&gt;</strong> Web<br>
-      5. Copie o valor de <strong style="color:var(--amber)">databaseURL</strong>
-    </div>
-    <label>DATABASE URL</label>
-    <input type="text" id="firebase-url-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
-    <div class="hint">Formato: https://NOME-default-rtdb.firebaseio.com</div>
-    <label>SEU NICKNAME</label>
-    <input type="text" id="setup-nickname" placeholder="Ex: SHADOW_OPS" maxlength="20">
-    <div class="hint">Máximo 20 caracteres, visível para todos</div>
-    <div style="margin-top:20px"><button class="btn btn-primary" onclick="saveSetup()">INICIAR FÓRUM →</button></div>
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen" style="display:none">
+  <div class="login-box">
+    <div style="font-size:48px;margin-bottom:16px">🛡️</div>
+    <h2>PREPPERS BR</h2>
+    <p>COMUNIDADE DE PREPARAÇÃO E SOBREVIVÊNCIA<br>Escolha um nickname para entrar no fórum</p>
+    <input type="text" id="login-nick" placeholder="Seu nickname (ex: SHADOW_OPS)" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-hint">3-20 caracteres • Letras, números e _ • Será visível para todos</div>
+    <div class="login-err" id="login-err"></div>
+    <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" onclick="doLogin()">ENTRAR NO FÓRUM →</button></div>
+    <p style="margin-top:16px;font-size:9px;opacity:0.4">Seu nickname fica salvo neste navegador</p>
   </div>
 </div>
+<!-- ══ HEADER ══ -->
 <header>
   <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
-  <nav>
-    <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
-    <a href="comunidade.html" class="active">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a>
-  </nav>
+  <nav><a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a><a href="comunidade.html" class="active">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a></nav>
   <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
 </header>
+<!-- ══ MAIN ══ -->
 <main id="main-content" style="display:none">
   <div class="page-title">👥 COMUNIDADE</div>
   <div class="page-subtitle">FÓRUM EM TEMPO REAL — DEBATE ENTRE PREPPERS BRASILEIROS</div>
   <div class="user-bar">
     <div class="user-info"><div class="user-avatar" id="user-avatar">?</div><div><div class="user-name" id="user-display-name">—</div><div class="user-sub">MEMBRO ATIVO</div></div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="showNewTopicModal()">＋ NOVO TÓPICO</button><button class="btn btn-secondary" onclick="showSetup()">⚙ CONFIG</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="showNewTopicModal()">＋ NOVO TÓPICO</button>
+      <button class="btn btn-logout" onclick="doLogout()">SAIR</button>
+    </div>
   </div>
   <div class="stats-row">
     <div class="stat-box"><div class="stat-num" id="stat-members">—</div><div class="stat-label">MEMBROS</div></div>
@@ -177,8 +184,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <div id="cat-sidebar">
           <div class="cat-list-item active" onclick="filterCat('all',this)"><span class="cat-icon">📋</span>Todos<span class="cat-count" id="count-all">—</span></div>
           <div class="cat-list-item" onclick="filterCat('equipamentos',this)"><span class="cat-icon">🎒</span>Equipamentos<span class="cat-count" id="count-equipamentos">—</span></div>
-          <div class="cat-list-item" onclick="filterCat('agua',this)"><span class="cat-icon">💧</span>Água & Alimentação<span class="cat-count" id="count-agua">—</span></div>
-          <div class="cat-list-item" onclick="filterCat('abrigo',this)"><span class="cat-icon">🏠</span>Abrigo & Bunker<span class="cat-count" id="count-abrigo">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('agua',this)"><span class="cat-icon">💧</span>Água<span class="cat-count" id="count-agua">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('abrigo',this)"><span class="cat-icon">🏠</span>Abrigo<span class="cat-count" id="count-abrigo">—</span></div>
           <div class="cat-list-item" onclick="filterCat('comunicacao',this)"><span class="cat-icon">📡</span>Comunicação<span class="cat-count" id="count-comunicacao">—</span></div>
           <div class="cat-list-item" onclick="filterCat('saude',this)"><span class="cat-icon">🏥</span>Saúde<span class="cat-count" id="count-saude">—</span></div>
           <div class="cat-list-item" onclick="filterCat('ameacas',this)"><span class="cat-icon">📊</span>Ameaças<span class="cat-count" id="count-ameacas">—</span></div>
@@ -195,6 +202,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
     </div>
   </div>
 </main>
+<!-- ══ NEW TOPIC MODAL ══ -->
 <div class="modal-overlay" id="new-topic-modal">
   <div class="modal-box">
     <h3>＋ NOVO TÓPICO</h3>
@@ -206,22 +214,32 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <option value="geral">💬 Geral</option>
     </select>
     <label>TÍTULO</label>
-    <input type="text" id="new-topic-title" placeholder="Ex: Melhor filtro de água portátil para BOB" maxlength="120">
+    <input type="text" id="new-topic-title" placeholder="Ex: Melhor filtro portátil para BOB" maxlength="120">
     <label>CONTEÚDO</label>
     <textarea id="new-topic-body" placeholder="Descreva em detalhes..." rows="5"></textarea>
     <div class="modal-actions"><button class="btn btn-back" onclick="closeModal()">CANCELAR</button><button class="btn btn-primary" onclick="submitNewTopic()">PUBLICAR</button></div>
   </div>
 </div>
-<footer><p>PREPPERS BR MONITOR — COMUNIDADE v2.0</p><p style="margin-top:6px;opacity:0.5">FÓRUM EM TEMPO REAL • FIREBASE BACKEND</p></footer>
+<footer><p>PREPPERS BR MONITOR — COMUNIDADE v2.0</p></footer>
 <script>
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
 
-var DB_URL=localStorage.getItem('preppers_db_url')||'';
-var USERNAME=localStorage.getItem('preppers_username')||'';
-var currentFilter='all',currentTopicId=null,allTopics={};
-var CAT_LABELS={equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'🏠 ABRIGO',comunicacao:'📡 COMUNICAÇÃO',saude:'🏥 SAÚDE',ameacas:'📊 AMEAÇAS',geral:'💬 GERAL'};
+// ══════════════════════════════════════════════════════
+// ██  ADMIN: COLE SUA URL DO FIREBASE AQUI  ██
+// Crie um projeto em console.firebase.google.com
+// Ative Realtime Database em modo de teste
+// Cole a URL abaixo e publique o site
+// ══════════════════════════════════════════════════════
+var DB_URL = 'https://comunidade-preppers-br-default-rtdb.firebaseio.com/';
+// Exemplo: var DB_URL = 'https://meu-projeto-default-rtdb.firebaseio.com';
+// ══════════════════════════════════════════════════════
 
+var USERNAME = localStorage.getItem('preppers_username') || '';
+var currentFilter = 'all', currentTopicId = null, allTopics = {};
+var CAT_LABELS = {equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'🏠 ABRIGO',comunicacao:'📡 COMUNICAÇÃO',saude:'🏥 SAÚDE',ameacas:'📊 AMEAÇAS',geral:'💬 GERAL'};
+
+// Firebase REST
 async function fbGet(p){var r=await fetch(DB_URL+'/'+p+'.json');return await r.json()}
 async function fbSet(p,d){await fetch(DB_URL+'/'+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
 async function fbPush(p,d){var r=await fetch(DB_URL+'/'+p+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return await r.json()}
@@ -229,57 +247,90 @@ async function fbPush(p,d){var r=await fetch(DB_URL+'/'+p+'.json',{method:'POST'
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
 function timeAgo(ts){if(!ts)return '';var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'Agora';if(m<60)return m+'min';var h=Math.floor(m/60);if(h<24)return h+'h atrás';var dd=Math.floor(h/24);return dd===1?'Ontem':dd+'d atrás'}
 
-function checkSetup(){
-  if(!DB_URL||!USERNAME){document.getElementById('setup-screen').style.display='flex';document.getElementById('main-content').style.display='none';return}
-  document.getElementById('setup-screen').style.display='none';
-  document.getElementById('main-content').style.display='block';
-  document.getElementById('user-display-name').textContent=USERNAME.toUpperCase();
-  document.getElementById('user-avatar').textContent=USERNAME.charAt(0).toUpperCase();
-  fbSet('users/'+USERNAME.toLowerCase().replace(/[^a-z0-9]/g,'_'),{name:USERNAME,lastSeen:Date.now()}).catch(function(){});
-  loadTopics();loadStats();
-  setInterval(loadTopics,15000);setInterval(loadStats,30000);
-  setInterval(function(){fbSet('users/'+USERNAME.toLowerCase().replace(/[^a-z0-9]/g,'_')+'/lastSeen',Date.now()).catch(function(){})},60000);
-}
-function showSetup(){document.getElementById('firebase-url-input').value=DB_URL;document.getElementById('setup-nickname').value=USERNAME;document.getElementById('setup-screen').style.display='flex'}
-function saveSetup(){
-  var url=document.getElementById('firebase-url-input').value.trim().replace(/\/$/,'');
-  var name=document.getElementById('setup-nickname').value.trim();
-  if(!url||!url.includes('firebaseio.com')){alert('URL Firebase inválida!');return}
-  if(!name||name.length<2){alert('Nickname precisa ter 2+ caracteres!');return}
-  DB_URL=url;USERNAME=name;localStorage.setItem('preppers_db_url',DB_URL);localStorage.setItem('preppers_username',USERNAME);checkSetup();
+// ── LOGIN / LOGOUT ──
+function checkLogin(){
+  if(DB_URL.indexOf('firebaseio.com') === -1){
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('main-content').style.display='none';
+    var lb = document.querySelector('.login-box');
+    lb.innerHTML = '<div style="font-size:48px;margin-bottom:16px">⚠️</div><h2 style="color:var(--amber)">FÓRUM NÃO CONFIGURADO</h2><p>O administrador precisa configurar o Firebase.<br>Edite o arquivo comunidade.html e cole a URL do Firebase na variável DB_URL.</p>';
+    return;
+  }
+  if(!USERNAME){
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('main-content').style.display='none';
+  } else {
+    enterForum();
+  }
 }
 
+function doLogin(){
+  var nick = document.getElementById('login-nick').value.trim();
+  var err = document.getElementById('login-err');
+  if(nick.length < 3){err.textContent='Mínimo 3 caracteres';err.style.display='block';return}
+  if(nick.length > 20){err.textContent='Máximo 20 caracteres';err.style.display='block';return}
+  if(!/^[a-zA-Z0-9_]+$/.test(nick)){err.textContent='Apenas letras, números e _ permitidos';err.style.display='block';return}
+  USERNAME = nick;
+  localStorage.setItem('preppers_username', USERNAME);
+  enterForum();
+}
+
+function doLogout(){
+  USERNAME = '';
+  localStorage.removeItem('preppers_username');
+  document.getElementById('main-content').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  // Reset login form
+  var lb = document.querySelector('.login-box');
+  if(lb && !document.getElementById('login-nick')){location.reload();}
+}
+
+function enterForum(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-content').style.display='block';
+  document.getElementById('user-display-name').textContent = USERNAME.toUpperCase();
+  document.getElementById('user-avatar').textContent = USERNAME.charAt(0).toUpperCase();
+  // Register user
+  var uid = USERNAME.toLowerCase().replace(/[^a-z0-9_]/g,'_');
+  fbSet('users/'+uid,{name:USERNAME,lastSeen:Date.now()}).catch(function(){});
+  // Load data
+  loadTopics(); loadStats();
+  setInterval(loadTopics, 15000);
+  setInterval(loadStats, 30000);
+  // Heartbeat
+  setInterval(function(){fbSet('users/'+uid+'/lastSeen',Date.now()).catch(function(){})},60000);
+}
+
+// ── STATS ──
 async function loadStats(){
   try{var u=await fbGet('users');var mc=u?Object.keys(u).length:0;var now=Date.now();var on=u?Object.values(u).filter(function(x){return now-x.lastSeen<300000}).length:0;
   document.getElementById('stat-members').textContent=mc;document.getElementById('stat-online').textContent=on;
   var tc=0,pc=0;if(allTopics){tc=Object.keys(allTopics).length;for(var k in allTopics)pc+=1+(allTopics[k].replyCount||0)}
-  document.getElementById('stat-topics').textContent=tc;document.getElementById('stat-posts').textContent=pc}catch(e){}
-}
+  document.getElementById('stat-topics').textContent=tc;document.getElementById('stat-posts').textContent=pc}catch(e){}}
 
+// ── TOPICS ──
 async function loadTopics(){
   try{var d=await fbGet('topics');allTopics=d||{};renderTopics();updateCatCounts();if(currentTopicId)loadPosts(currentTopicId)}
-  catch(e){document.getElementById('topics-list').innerHTML='<div class="loading" style="color:var(--red)">ERRO: Verifique URL do Firebase</div>'}
-}
+  catch(e){document.getElementById('topics-list').innerHTML='<div class="loading" style="color:var(--red)">ERRO DE CONEXÃO</div>'}}
 
 function renderTopics(){
   var c=document.getElementById('topics-list');var entries=Object.entries(allTopics);
-  if(!entries.length){c.innerHTML='<div style="padding:30px;text-align:center;font-family:monospace;font-size:12px;color:var(--muted)">Nenhum tópico ainda. Seja o primeiro!</div>';document.getElementById('topics-count-badge').textContent='0';return}
+  if(!entries.length){c.innerHTML='<div style="padding:30px;text-align:center;font-family:monospace;font-size:12px;color:var(--muted)">Nenhum tópico ainda. Seja o primeiro a criar!</div>';document.getElementById('topics-count-badge').textContent='0';return}
   var filtered=currentFilter==='all'?entries:entries.filter(function(e){return e[1].category===currentFilter});
   filtered.sort(function(a,b){if(a[1].pinned&&!b[1].pinned)return -1;if(!a[1].pinned&&b[1].pinned)return 1;return(b[1].createdAt||0)-(a[1].createdAt||0)});
   document.getElementById('topics-count-badge').textContent=filtered.length+' TÓPICO'+(filtered.length!==1?'S':'');
   var h='';for(var i=0;i<filtered.length;i++){var id=filtered[i][0],t=filtered[i][1];var cat=t.category||'geral';
     h+='<div class="topic-item" onclick="openTopic(\''+id+'\')"><div class="topic-top"><span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>'+(t.pinned?'<span style="font-family:monospace;font-size:9px;color:var(--amber)">📌 FIXADO</span>':'')+'</div><div class="topic-title">'+esc(t.title)+'</div><div class="topic-meta"><span>por <strong style="color:var(--green2)">'+esc(t.author)+'</strong></span><span>'+timeAgo(t.createdAt)+'</span><div class="topic-stats"><span>💬 '+(t.replyCount||0)+'</span><span>▲ '+(t.likes||0)+'</span></div></div></div>'}
-  c.innerHTML=h;
-}
+  c.innerHTML=h}
 
-function filterCat(cat,el){currentFilter=cat;var label=cat==='all'?'TODOS':(CAT_LABELS[cat]||cat).replace(/^[^\s]+\s/,'');
+function filterCat(cat,el){currentFilter=cat;var label=cat==='all'?'TODOS':cat.toUpperCase();
   document.getElementById('filter-label').textContent='— '+label;
   document.querySelectorAll('.cat-list-item').forEach(function(x){x.classList.remove('active')});if(el)el.classList.add('active');renderTopics()}
 
 function updateCatCounts(){var v=Object.values(allTopics);document.getElementById('count-all').textContent=v.length;
-  var cats=['equipamentos','agua','abrigo','comunicacao','saude','ameacas','geral'];
-  for(var i=0;i<cats.length;i++){var el=document.getElementById('count-'+cats[i]);if(el)el.textContent=v.filter(function(t){return t.category===cats[i]}).length}}
+  ['equipamentos','agua','abrigo','comunicacao','saude','ameacas','geral'].forEach(function(c){var el=document.getElementById('count-'+c);if(el)el.textContent=v.filter(function(t){return t.category===c}).length})}
 
+// ── TOPIC VIEW ──
 async function openTopic(id){currentTopicId=id;var t=allTopics[id];if(!t)return;
   document.getElementById('topics-view').style.display='none';document.getElementById('topic-view').style.display='block';
   var cat=t.category||'geral';document.getElementById('topic-cat-display').innerHTML='<span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>';
@@ -298,25 +349,28 @@ function mkPost(author,body,time,tid,pid,likes){var ini=author?author.charAt(0).
 
 function backToTopics(){currentTopicId=null;document.getElementById('topics-view').style.display='block';document.getElementById('topic-view').style.display='none'}
 
+// ── REPLY ──
 async function submitReply(){var body=document.getElementById('reply-input').value.trim();if(!body||!currentTopicId)return;
   try{await fbPush('replies/'+currentTopicId,{author:USERNAME,body:body,createdAt:Date.now(),likes:0});
   var nc=(allTopics[currentTopicId].replyCount||0)+1;await fbSet('topics/'+currentTopicId+'/replyCount',nc);allTopics[currentTopicId].replyCount=nc;
   document.getElementById('reply-input').value='';loadPosts(currentTopicId);loadStats()}catch(e){alert('Erro ao enviar.')}}
 
+// ── NEW TOPIC ──
 function showNewTopicModal(){document.getElementById('new-topic-modal').classList.add('show')}
 function closeModal(){document.getElementById('new-topic-modal').classList.remove('show')}
-
 async function submitNewTopic(){var cat=document.getElementById('new-topic-cat').value;var title=document.getElementById('new-topic-title').value.trim();var body=document.getElementById('new-topic-body').value.trim();
   if(!title){alert('Preencha o título!');return}if(!body){alert('Preencha o conteúdo!');return}
   try{var res=await fbPush('topics',{category:cat,title:title,body:body,author:USERNAME,createdAt:Date.now(),replyCount:0,likes:0,pinned:false});
   closeModal();document.getElementById('new-topic-title').value='';document.getElementById('new-topic-body').value='';
   loadTopics();setTimeout(function(){if(res.name)openTopic(res.name)},500)}catch(e){alert('Erro ao criar tópico.')}}
 
+// ── LIKE ──
 async function likePost(tid,pid,btn){try{if(pid==='main'){var c=(allTopics[tid].likes||0)+1;await fbSet('topics/'+tid+'/likes',c);allTopics[tid].likes=c}
   else{var r=await fbGet('replies/'+tid+'/'+pid+'/likes');await fbSet('replies/'+tid+'/'+pid+'/likes',(r||0)+1)}
   btn.classList.add('liked');loadPosts(tid)}catch(e){}}
 
-checkSetup();
+// ── INIT ──
+checkLogin();
 </script>
 </body>
 </html>
