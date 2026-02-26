@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+main{position:relative;z-index:1;padding:20px 24px;max-width:1100px;margin:0 auto}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+
+
+.course-hero{padding:30px;border-bottom:4px solid;margin-bottom:0}
+.course-hero-tag{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;display:inline-block;margin-bottom:12px}
+.course-hero h1{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:3px;color:var(--green);margin-bottom:8px;line-height:1.4}
+.course-hero p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;letter-spacing:0.5px;max-width:700px}
+.course-stats{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap}
+.course-stat{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green2);letter-spacing:1px;display:flex;align-items:center;gap:4px}
+.course-layout{display:grid;grid-template-columns:280px 1fr;gap:0}
+.sidebar{border-right:1px solid var(--border);background:rgba(0,0,0,0.2)}
+.sidebar-title{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:var(--green);padding:14px 16px;border-bottom:1px solid var(--border)}
+.lesson-item{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:10px}
+.lesson-item:hover{background:rgba(0,255,136,0.04)}
+.lesson-item.active{background:rgba(0,255,136,0.08);border-left:3px solid var(--green)}
+.lesson-num{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;color:var(--green3);width:24px;flex-shrink:0;text-align:center}
+.lesson-item.active .lesson-num{color:var(--green)}
+.lesson-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.lesson-item.active .lesson-name{color:var(--green)}
+.lesson-dur{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:auto;flex-shrink:0}
+.lesson-check{font-size:14px;flex-shrink:0;cursor:pointer}
+.content-area{padding:28px 32px;min-height:500px}
+.content-area h2{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:2px;color:var(--green);margin-bottom:16px}
+.content-area h3{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green2);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.content-area p{font-size:14px;line-height:1.8;color:var(--text);margin-bottom:12px}
+.content-area ul{margin:10px 0 16px 20px;list-style:none}
+.content-area ul li{position:relative;padding:4px 0 4px 18px;font-size:13px;color:var(--text);line-height:1.7}
+.content-area ul li::before{content:'▸';position:absolute;left:0;color:var(--green2);font-size:14px}
+.tip-box{background:rgba(0,255,136,0.04);border:1px solid var(--green3);border-radius:4px;padding:14px 16px;margin:16px 0;font-size:12px;line-height:1.7}
+.tip-box strong{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
+.warn-box{background:rgba(255,179,0,0.04);border:1px solid rgba(255,179,0,0.2);border-radius:4px;padding:14px 16px;margin:16px 0;font-size:12px;line-height:1.7}
+.warn-box strong{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
+.nav-btns{display:flex;justify-content:space-between;margin-top:30px;padding-top:16px;border-top:1px solid var(--border)}
+.nav-btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;text-decoration:none;border:1px solid var(--green3);color:var(--green2);background:transparent}
+.nav-btn:hover{background:rgba(0,255,136,0.1);color:var(--green)}
+.progress-bar{height:3px;background:var(--border);margin-top:0}
+.progress-fill{height:100%;background:var(--green);transition:width 0.3s}
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:10px}.course-layout{grid-template-columns:1fr!important}.sidebar{border-right:none;border-bottom:1px solid var(--border)}.content-area{padding:20px 16px}}
+
+</style>
+<title>Purificação de Água em Campo — PREPPERS BR</title>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
+  <nav><a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a><a href="comunidade.html">COMUNIDADE</a><a href="cursos.html" class="active">CURSOS</a><a href="membros.html">MEMBROS</a></nav>
+  <div style="display:flex;align-items:center;gap:20px"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+<main style="padding:0;max-width:100%">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="card" style="margin:20px 24px">
+      <div class="course-hero" style="border-color:var(--blue)">
+        <span class="course-hero-tag" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">INTERMEDIÁRIO</span>
+        <h1>💧 PURIFICAÇÃO DE ÁGUA EM CAMPO</h1>
+        <p>Métodos de purificação: filtros cerâmicos, UV, químico, destilação solar.</p>
+        <div class="course-stats">
+          <span class="course-stat">📚 8 AULAS</span>
+          <span class="course-stat">⏱ 4H</span>
+          <span class="course-stat" id="progress-text">📊 PROGRESSO: 0%</span>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:12%"></div></div>
+      <div class="course-layout">
+        <div class="sidebar">
+          <div class="sidebar-title">CONTEÚDO DO CURSO</div>
+          <div class="lesson-item active" onclick="showLesson(0)" id="sidebar-0"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">01</span><span class="lesson-name">Por que purificar água?</span><span class="lesson-dur">15min</span></div>
+<div class="lesson-item" onclick="showLesson(1)" id="sidebar-1"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">02</span><span class="lesson-name">Fervura — O Método Universal</span><span class="lesson-dur">15min</span></div>
+<div class="lesson-item" onclick="showLesson(2)" id="sidebar-2"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">03</span><span class="lesson-name">Filtros Mecânicos</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(3)" id="sidebar-3"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">04</span><span class="lesson-name">Purificação Química</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(4)" id="sidebar-4"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">05</span><span class="lesson-name">Destilação Solar</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(5)" id="sidebar-5"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">06</span><span class="lesson-name">UV Portátil (SteriPEN)</span><span class="lesson-dur">15min</span></div>
+<div class="lesson-item" onclick="showLesson(6)" id="sidebar-6"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">07</span><span class="lesson-name">Sistemas para Grupo/Base</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(7)" id="sidebar-7"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">08</span><span class="lesson-name">Plano de Água & Revisão</span><span class="lesson-dur">15min</span></div>
+
+          <div style="padding:12px 16px"><a href="cursos.html" class="nav-btn" style="display:block;text-align:center;font-size:10px">← TODOS OS CURSOS</a></div>
+        </div>
+        <div class="content-area">
+          <div class="lesson-content" id="lesson-0" style="display:block"><h2>AULA 01 — POR QUE PURIFICAR ÁGUA?</h2><p>A água é a prioridade #1 em qualquer cenário de sobrevivência. Um adulto pode sobreviver até 3 semanas sem comida, mas apenas 3 dias sem água.</p><h3>CONTAMINANTES COMUNS</h3><ul><li>Bactérias: E. coli, Salmonella, Vibrio cholerae (cólera)</li><li>Protozoários: Giardia, Cryptosporidium — causam diarreia severa</li><li>Vírus: Hepatite A, Rotavírus, Norovírus</li><li>Químicos: metais pesados, agrotóxicos, esgoto industrial</li></ul><p>Água aparentemente limpa pode conter milhões de microrganismos patogênicos. NUNCA beba água de fonte desconhecida sem tratamento.</p><div class='tip-box'><strong>💡 REGRA DE OURO</strong><br>Na dúvida, trate. O custo de purificar é infinitamente menor que o custo de uma diarreia severa em cenário de crise (desidratação = morte).</div><div class="nav-btns"><span></span><a class="nav-btn" onclick="showLesson(1)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-1" style="display:none"><h2>AULA 02 — FERVURA</h2><p>Fervura é o método mais antigo e confiável de purificação. Mata 99.9% de bactérias, vírus e protozoários.</p><h3>PROCEDIMENTO</h3><ul><li>Filtre a água primeiro (camiseta, pano limpo) para remover partículas</li><li>Leve a água a fervura forte (bolhas vigorosas)</li><li>Mantenha fervendo por 1 minuto (3 minutos acima de 2000m de altitude)</li><li>Deixe esfriar naturalmente em recipiente limpo</li></ul><div class='warn-box'><strong>⚠️ LIMITAÇÕES</strong><br>Fervura não remove químicos, metais pesados ou sabor ruim. Requer combustível (gás, lenha). Em cenário prolongado, o combustível pode acabar.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(0)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(2)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-2" style="display:none"><h2>AULA 03 — FILTROS MECÂNICOS</h2><p>Filtros portáteis são a solução mais prática para campo. Removem bactérias e protozoários por filtragem física.</p><h3>TIPOS RECOMENDADOS</h3><ul><li><strong>Sawyer Mini/Squeeze:</strong> Filtra até 100.000 galões. Compacto, leve (~60g). Remove 99.99% de bactérias</li><li><strong>LifeStraw:</strong> Pessoal, bebe direto da fonte. ~4000 litros de vida útil</li><li><strong>Katadyn:</strong> Cerâmico, mais robusto, ideal para grupos</li><li><strong>Grayl GeoPress:</strong> Remove vírus, bactérias E químicos. Melhor opção all-in-one</li></ul><div class='tip-box'><strong>💡 MELHOR CUSTO-BENEFÍCIO</strong><br>Sawyer Squeeze (~R$180) é considerado o melhor filtro portátil. Fluxo rápido, retrolavável, dura anos.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(1)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(3)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-3" style="display:none"><h2>AULA 04 — PURIFICAÇÃO QUÍMICA</h2><p>Métodos químicos são leves, baratos e perfeitos como backup. Ideais para o kit 72h.</p><h3>OPÇÕES</h3><ul><li><strong>Pastilhas de cloro (Aquatabs):</strong> 1 pastilha para 1L. Esperar 30min. Eficaz contra bactérias e vírus</li><li><strong>Hipoclorito de sódio (água sanitária):</strong> 2 gotas por litro de água sem alvejante, sem perfume. Esperar 30min</li><li><strong>Dióxido de cloro (Aquamira):</strong> Mata Cryptosporidium, que resiste ao cloro</li><li><strong>Iodo:</strong> 5 gotas de tintura de iodo 2% por litro. Esperar 30min</li></ul><div class='warn-box'><strong>⚠️ CUIDADO</strong><br>Não use água sanitária com alvejante ou perfume. Apenas hipoclorito de sódio puro 2-2.5%.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(2)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(4)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-4" style="display:none"><h2>AULA 05 — DESTILAÇÃO SOLAR</h2><p>Método que funciona sem combustível e sem equipamento especializado. Perfeito para cenários de longo prazo.</p><h3>DESTILADOR SOLAR IMPROVISADO</h3><ul><li>Cave um buraco de ~60cm de diâmetro e ~40cm de profundidade</li><li>Coloque um recipiente limpo no centro</li><li>Cubra com plástico transparente, vedando as bordas com terra</li><li>Coloque uma pedra pequena no centro do plástico (sobre o recipiente)</li><li>A água evapora do solo, condensa no plástico e goteja no recipiente</li></ul><p>Produção: ~500ml a 1L por dia dependendo do sol e umidade do solo.</p><h3>MÉTODO SODIS</h3><p>Encha garrafas PET transparentes com água pré-filtrada. Deixe ao sol por 6h (ou 2 dias se nublado). O UV-A do sol inativa patógenos.</p><div class='tip-box'><strong>💡 DICA</strong><br>SODIS funciona melhor com garrafas de até 2L deitadas sobre superfície reflexiva (metal, alumínio).</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(3)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(5)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-5" style="display:none"><h2>AULA 06 — PURIFICAÇÃO POR UV</h2><p>Dispositivos UV portáteis como SteriPEN destroem o DNA de patógenos em segundos.</p><h3>COMO FUNCIONA</h3><ul><li>Mergulhe a lâmpada UV na água pré-filtrada</li><li>Agite por 90 segundos (0.5L) ou 180 segundos (1L)</li><li>A luz UV-C destrói o DNA de bactérias, vírus e protozoários</li></ul><h3>VANTAGENS E LIMITAÇÕES</h3><ul><li>✅ Rápido, sem químicos, sem alteração de sabor</li><li>✅ Eficaz contra vírus (diferente de filtros mecânicos)</li><li>❌ Requer baterias ou carregamento USB</li><li>❌ Não funciona em água turva (filtre antes)</li><li>❌ Não remove químicos</li></ul><div class='tip-box'><strong>💡 COMBO IDEAL</strong><br>Filtro Sawyer (remove partículas e bactérias) + SteriPEN (mata vírus) = água segura de qualquer fonte.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(4)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(6)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-6" style="display:none"><h2>AULA 07 — SISTEMAS PARA GRUPO / BASE</h2><p>Para abrigos fixos ou grupos maiores, filtros individuais não bastam. Você precisa de sistemas de maior capacidade.</p><h3>OPÇÕES DE VOLUME</h3><ul><li><strong>Berkey:</strong> Filtros gravitacionais. Filtra 26L/hora. Remove tudo incluindo vírus e químicos</li><li><strong>Filtro de barro brasileiro:</strong> O clássico Stefani/São João. Vela cerâmica troca a cada 6 meses</li><li><strong>DIY com baldes:</strong> 2 baldes empilhados + vela cerâmica = filtro gravitacional caseiro por R$50</li><li><strong>Osmose reversa:</strong> Remove absolutamente tudo, mas requer pressão e manutenção</li></ul><div class='tip-box'><strong>💡 PARA O BRASIL</strong><br>O filtro de barro com vela tripla é uma das melhores opções. Barato, durável, sem necessidade de eletricidade, e a cultura brasileira já conhece.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(5)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(7)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-7" style="display:none"><h2>AULA 08 — SEU PLANO DE ÁGUA</h2><p>Agora que conhece todos os métodos, monte sua estratégia pessoal de segurança hídrica.</p><h3>ESTRATÉGIA EM 3 CAMADAS</h3><ul><li><strong>Camada 1 — Estoque:</strong> 6L por pessoa x 14 dias = 84L por pessoa armazenados</li><li><strong>Camada 2 — Filtragem:</strong> Filtro portátil (Sawyer) + filtro de base (barro)</li><li><strong>Camada 3 — Químico:</strong> Pastilhas Aquatabs + hipoclorito como backup</li></ul><h3>CHECKLIST</h3><ul><li>☐ Estoque mínimo de água calculado para toda a família</li><li>☐ Filtro portátil adquirido e testado</li><li>☐ Pastilhas de purificação no kit 72h</li><li>☐ Fontes de água mapeadas num raio de 5km da sua casa</li><li>☐ Pelo menos 2 métodos diferentes dominados</li></ul><div class='tip-box'><strong>💡 PRINCÍPIO</strong><br>Dois é um, um é nenhum. Sempre tenha backup do backup para água. É o recurso mais crítico.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(6)">← ANTERIOR</a><a class="nav-btn" href="cursos.html">VOLTAR AOS CURSOS →</a></div></div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><p>PREPPERS BR MONITOR — CURSOS v2.0</p></footer>
+<script>
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}setInterval(updateClock,1000);updateClock();
+var totalLessons = 8;
+var currentLesson = 0;
+function showLesson(n) {
+  for(var i=0;i<totalLessons;i++) {
+    document.getElementById('lesson-'+i).style.display = i===n?'block':'none';
+    var sb = document.getElementById('sidebar-'+i);
+    if(sb) sb.className = i===n?'lesson-item active':'lesson-item';
+  }
+  currentLesson = n;
+  var pct = Math.round(((n+1)/totalLessons)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = '📊 PROGRESSO: '+pct+'%';
+  window.scrollTo(0,0);
+}
+function toggleCheck(el) {
+  el.textContent = el.textContent === '☐' ? '☑' : '☐';
+  el.style.color = el.textContent === '☑' ? 'var(--green)' : '';
+}
+</script>
+</body>
+</html>

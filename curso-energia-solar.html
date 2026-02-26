@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+main{position:relative;z-index:1;padding:20px 24px;max-width:1100px;margin:0 auto}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+
+
+.course-hero{padding:30px;border-bottom:4px solid;margin-bottom:0}
+.course-hero-tag{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;display:inline-block;margin-bottom:12px}
+.course-hero h1{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:3px;color:var(--green);margin-bottom:8px;line-height:1.4}
+.course-hero p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;letter-spacing:0.5px;max-width:700px}
+.course-stats{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap}
+.course-stat{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green2);letter-spacing:1px;display:flex;align-items:center;gap:4px}
+.course-layout{display:grid;grid-template-columns:280px 1fr;gap:0}
+.sidebar{border-right:1px solid var(--border);background:rgba(0,0,0,0.2)}
+.sidebar-title{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:var(--green);padding:14px 16px;border-bottom:1px solid var(--border)}
+.lesson-item{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:10px}
+.lesson-item:hover{background:rgba(0,255,136,0.04)}
+.lesson-item.active{background:rgba(0,255,136,0.08);border-left:3px solid var(--green)}
+.lesson-num{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;color:var(--green3);width:24px;flex-shrink:0;text-align:center}
+.lesson-item.active .lesson-num{color:var(--green)}
+.lesson-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.lesson-item.active .lesson-name{color:var(--green)}
+.lesson-dur{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:auto;flex-shrink:0}
+.lesson-check{font-size:14px;flex-shrink:0;cursor:pointer}
+.content-area{padding:28px 32px;min-height:500px}
+.content-area h2{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:2px;color:var(--green);margin-bottom:16px}
+.content-area h3{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green2);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.content-area p{font-size:14px;line-height:1.8;color:var(--text);margin-bottom:12px}
+.content-area ul{margin:10px 0 16px 20px;list-style:none}
+.content-area ul li{position:relative;padding:4px 0 4px 18px;font-size:13px;color:var(--text);line-height:1.7}
+.content-area ul li::before{content:'▸';position:absolute;left:0;color:var(--green2);font-size:14px}
+.tip-box{background:rgba(0,255,136,0.04);border:1px solid var(--green3);border-radius:4px;padding:14px 16px;margin:16px 0;font-size:12px;line-height:1.7}
+.tip-box strong{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
+.warn-box{background:rgba(255,179,0,0.04);border:1px solid rgba(255,179,0,0.2);border-radius:4px;padding:14px 16px;margin:16px 0;font-size:12px;line-height:1.7}
+.warn-box strong{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
+.nav-btns{display:flex;justify-content:space-between;margin-top:30px;padding-top:16px;border-top:1px solid var(--border)}
+.nav-btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;text-decoration:none;border:1px solid var(--green3);color:var(--green2);background:transparent}
+.nav-btn:hover{background:rgba(0,255,136,0.1);color:var(--green)}
+.progress-bar{height:3px;background:var(--border);margin-top:0}
+.progress-fill{height:100%;background:var(--green);transition:width 0.3s}
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:10px}.course-layout{grid-template-columns:1fr!important}.sidebar{border-right:none;border-bottom:1px solid var(--border)}.content-area{padding:20px 16px}}
+
+</style>
+<title>Energia Solar Off-Grid — PREPPERS BR</title>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
+  <nav><a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a><a href="comunidade.html">COMUNIDADE</a><a href="cursos.html" class="active">CURSOS</a><a href="membros.html">MEMBROS</a></nav>
+  <div style="display:flex;align-items:center;gap:20px"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+<main style="padding:0;max-width:100%">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="card" style="margin:20px 24px">
+      <div class="course-hero" style="border-color:var(--amber)">
+        <span class="course-hero-tag" style="background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)">PREMIUM</span>
+        <h1>⚡ ENERGIA SOLAR OFF-GRID</h1>
+        <p>Dimensionamento, baterias, inversores, montagem.</p>
+        <div class="course-stats">
+          <span class="course-stat">📚 6 AULAS</span>
+          <span class="course-stat">⏱ 5H</span>
+          <span class="course-stat" id="progress-text">📊 PROGRESSO: 0%</span>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:17%"></div></div>
+      <div class="course-layout">
+        <div class="sidebar">
+          <div class="sidebar-title">CONTEÚDO DO CURSO</div>
+          <div class="lesson-item active" onclick="showLesson(0)" id="sidebar-0"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">01</span><span class="lesson-name">Fundamentos de Energia Solar</span><span class="lesson-dur">25min</span></div>
+<div class="lesson-item" onclick="showLesson(1)" id="sidebar-1"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">02</span><span class="lesson-name">Dimensionamento do Sistema</span><span class="lesson-dur">30min</span></div>
+<div class="lesson-item" onclick="showLesson(2)" id="sidebar-2"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">03</span><span class="lesson-name">Tipos de Painéis e Baterias</span><span class="lesson-dur">25min</span></div>
+<div class="lesson-item" onclick="showLesson(3)" id="sidebar-3"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">04</span><span class="lesson-name">Controladores e Inversores</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(4)" id="sidebar-4"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">05</span><span class="lesson-name">Montagem Passo a Passo</span><span class="lesson-dur">30min</span></div>
+<div class="lesson-item" onclick="showLesson(5)" id="sidebar-5"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">06</span><span class="lesson-name">Manutenção & Backup</span><span class="lesson-dur">20min</span></div>
+
+          <div style="padding:12px 16px"><a href="cursos.html" class="nav-btn" style="display:block;text-align:center;font-size:10px">← TODOS OS CURSOS</a></div>
+        </div>
+        <div class="content-area">
+          <div class="lesson-content" id="lesson-0" style="display:block"><h2>AULA 01 — FUNDAMENTOS</h2><p>Energia solar é a fonte renovável mais acessível para preppers. Um sistema básico pode manter carregados: celulares, rádios, lanternas, filtro UV e até uma mini geladeira.</p><h3>COMPONENTES DO SISTEMA</h3><ul><li><strong>Painel solar:</strong> Converte luz em eletricidade (DC)</li><li><strong>Controlador de carga:</strong> Regula a tensão para não danificar a bateria</li><li><strong>Bateria:</strong> Armazena energia para uso noturno/nublado</li><li><strong>Inversor:</strong> Converte DC (12V) em AC (110/220V) para aparelhos comuns</li></ul><div class='tip-box'><strong>💡 PARA COMEÇAR</strong><br>Um painel de 100W + bateria 100Ah + controlador PWM custa ~R$1200 e carrega todos seus dispositivos essenciais.</div><div class="nav-btns"><span></span><a class="nav-btn" onclick="showLesson(1)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-1" style="display:none"><h2>AULA 02 — DIMENSIONAMENTO</h2><h3>PASSO 1: CALCULE SEU CONSUMO</h3><ul><li>Liste todos os aparelhos que quer alimentar</li><li>Multiplique a potência (W) pelas horas de uso diário = Wh/dia</li><li>Exemplo: Celular 10W × 2h = 20Wh; Lanterna 5W × 4h = 20Wh; Rádio 5W × 3h = 15Wh</li><li>Total exemplo: 55Wh/dia</li></ul><h3>PASSO 2: DIMENSIONE O PAINEL</h3><p>No Brasil, temos em média 4-5 horas de sol pico/dia. Painel necessário = Consumo ÷ Horas de sol × 1.3 (perdas)</p><h3>PASSO 3: DIMENSIONE A BATERIA</h3><p>Bateria = Consumo diário × Dias de autonomia ÷ Profundidade de descarga</p><div class="nav-btns"><a class="nav-btn" onclick="showLesson(0)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(2)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-2" style="display:none"><h2>AULA 03 — PAINÉIS E BATERIAS</h2><h3>PAINÉIS</h3><ul><li><strong>Monocristalino:</strong> Mais eficiente (20-22%), mais caro. Melhor em pouco espaço</li><li><strong>Policristalino:</strong> Eficiência boa (15-18%), mais barato</li><li><strong>Flexível:</strong> Leve, portátil, mas menos durável. Bom para BOB</li></ul><h3>BATERIAS</h3><ul><li><strong>Chumbo-ácido:</strong> Barata, pesada, vida útil 3-5 anos. Não descarregue abaixo de 50%</li><li><strong>LiFePO4:</strong> Leve, 2000+ ciclos, descarrega até 80%. 3x mais cara mas dura 10+ anos</li><li><strong>Power stations:</strong> Jackery, EcoFlow — all-in-one portátil. Caro mas plug-and-play</li></ul><div class='tip-box'><strong>💡 RECOMENDAÇÃO</strong><br>Para base fixa: LiFePO4 100Ah. Para portabilidade: power station 500Wh. Para budget: chumbo-ácido estacionária.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(1)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(3)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-3" style="display:none"><h2>AULA 04 — CONTROLADORES E INVERSORES</h2><h3>CONTROLADORES DE CARGA</h3><ul><li><strong>PWM:</strong> Simples, barato (~R$50). Eficiência ~75%. OK para sistemas pequenos</li><li><strong>MPPT:</strong> Inteligente, eficiência ~95%. Necessário para sistemas maiores</li></ul><h3>INVERSORES</h3><ul><li><strong>Onda senoidal pura:</strong> Alimenta qualquer aparelho. Necessário para eletrônicos sensíveis</li><li><strong>Onda modificada:</strong> Mais barato, mas pode danificar alguns aparelhos</li></ul><div class='warn-box'><strong>⚠️ DIMENSIONAMENTO DO INVERSOR</strong><br>O inversor deve suportar a potência máxima simultânea. Se vai ligar uma geladeira (150W pico 600W), o inversor precisa aguentar o pico.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(2)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(4)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-4" style="display:none"><h2>AULA 05 — MONTAGEM PRÁTICA</h2><h3>SISTEMA BÁSICO OFF-GRID</h3><ul><li>1. Instale o painel solar em local com máxima incidência solar (Norte, inclinação = latitude)</li><li>2. Conecte o painel ao controlador de carga (+ e - do painel)</li><li>3. Conecte a bateria ao controlador (SEMPRE conecte a bateria antes do painel)</li><li>4. Conecte o inversor aos terminais da bateria</li><li>5. Teste com um aparelho pequeno primeiro</li></ul><h3>SEGURANÇA</h3><ul><li>Use fusíveis em TODAS as conexões</li><li>Cabos dimensionados corretamente (AWG adequado)</li><li>Bateria em local ventilado (gases)</li><li>Desconecte o painel antes de fazer manutenção</li></ul><div class="nav-btns"><a class="nav-btn" onclick="showLesson(3)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(5)">PRÓXIMA →</a></div></div>
+<div class="lesson-content" id="lesson-5" style="display:none"><h2>AULA 06 — MANUTENÇÃO E EXPANSÃO</h2><h3>MANUTENÇÃO</h3><ul><li>Limpe os painéis mensalmente (poeira reduz eficiência em até 25%)</li><li>Verifique conexões e terminais a cada 3 meses</li><li>Monitore a tensão da bateria (nunca abaixo de 12.0V para chumbo-ácido)</li><li>Baterias chumbo-ácido: verifique nível de água destilada</li></ul><h3>CHECKLIST FINAL</h3><ul><li>☐ Sistema dimensionado para seu consumo</li><li>☐ Painel + controlador + bateria + inversor montados</li><li>☐ Fusíveis instalados</li><li>☐ Testado com carga real por 48h</li><li>☐ Plano de manutenção programado</li></ul><div class='tip-box'><strong>💡 EXPANSÃO</strong><br>Comece pequeno (100W) e expanda conforme necessidade. Painéis em paralelo = mais corrente. Baterias em paralelo = mais capacidade.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(4)">← ANTERIOR</a><a class="nav-btn" href="cursos.html">VOLTAR AOS CURSOS →</a></div></div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><p>PREPPERS BR MONITOR — CURSOS v2.0</p></footer>
+<script>
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}setInterval(updateClock,1000);updateClock();
+var totalLessons = 6;
+var currentLesson = 0;
+function showLesson(n) {
+  for(var i=0;i<totalLessons;i++) {
+    document.getElementById('lesson-'+i).style.display = i===n?'block':'none';
+    var sb = document.getElementById('sidebar-'+i);
+    if(sb) sb.className = i===n?'lesson-item active':'lesson-item';
+  }
+  currentLesson = n;
+  var pct = Math.round(((n+1)/totalLessons)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = '📊 PROGRESSO: '+pct+'%';
+  window.scrollTo(0,0);
+}
+function toggleCheck(el) {
+  el.textContent = el.textContent === '☐' ? '☑' : '☐';
+  el.style.color = el.textContent === '☑' ? 'var(--green)' : '';
+}
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunidade — PREPPERS BR</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
@@ -22,110 +23,300 @@ nav{display:flex;align-items:center;gap:4px}
 nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
 nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
 .clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
-.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03)}
-.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'▮';color:var(--green2);font-size:8px}
-.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
-.badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
-.badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
-.badge-warn{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
 main{position:relative;z-index:1;padding:20px 24px;max-width:1600px;margin:0 auto}
 .page-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
 .page-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
 footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
 footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03);flex-wrap:wrap;gap:8px}
+.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'▮';color:var(--green2);font-size:8px}
+.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+#setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.97);z-index:200;display:flex;align-items:center;justify-content:center}
+.setup-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:40px;max-width:520px;width:90%;text-align:center}
+.setup-box h2{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:4px;color:var(--green);margin-bottom:8px}
+.setup-box p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;letter-spacing:1px}
+.setup-box label{display:block;text-align:left;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin:14px 0 6px}
+.setup-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:10px 14px;border-radius:3px;outline:none}
+.setup-box input:focus{border-color:var(--green3)}
+.hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px;text-align:left;letter-spacing:1px}
+.user-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:4px;flex-wrap:wrap;gap:8px}
+.user-info{display:flex;align-items:center;gap:10px}
+.user-avatar{width:32px;height:32px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green)}
+.user-name{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--green)}
+.user-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-box{text-align:center;padding:16px 10px;background:var(--card);border:1px solid var(--border);border-radius:4px}
+.stat-num{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--green);text-shadow:0 0 15px rgba(0,255,136,0.3)}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.forum-layout{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.topic-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s}
+.topic-item:hover{background:rgba(0,255,136,0.04)}
+.topic-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.topic-cat{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px;flex-shrink:0}
+.cat-equipamentos{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)}
+.cat-agua{background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)}
+.cat-abrigo{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.cat-comunicacao{background:rgba(170,0,255,0.1);color:#bb66ff;border:1px solid rgba(170,0,255,0.2)}
+.cat-saude{background:rgba(255,51,51,0.1);color:var(--red);border:1px solid rgba(255,51,51,0.2)}
+.cat-ameacas{background:rgba(255,136,0,0.1);color:#ff8800;border:1px solid rgba(255,136,0,0.2)}
+.cat-geral{background:rgba(0,255,136,0.06);color:var(--muted);border:1px solid var(--border)}
+.topic-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.4}
+.topic-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;display:flex;gap:12px;flex-wrap:wrap}
+.topic-stats{display:flex;gap:12px;margin-left:auto}
+.post-item{padding:16px;border-bottom:1px solid var(--border)}
+.post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.post-avatar{width:28px;height:28px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green);flex-shrink:0}
+.post-author{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--green)}
+.post-time{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.post-body{font-size:14px;line-height:1.7;color:var(--text);padding-left:38px;white-space:pre-wrap;word-wrap:break-word}
+.post-actions{padding-left:38px;margin-top:8px}
+.post-action-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
+.post-action-btn:hover,.post-action-btn.liked{border-color:var(--green3);color:var(--green);background:rgba(0,255,136,0.06)}
+.reply-box{padding:16px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
+.reply-box textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:12px;border-radius:3px;outline:none;resize:vertical;min-height:80px}
+.reply-box textarea:focus{border-color:var(--green3)}
+.reply-box textarea::placeholder{color:var(--muted)}
+.btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;border:none}
+.btn-primary{background:var(--green);color:#000;font-weight:bold}.btn-primary:hover{background:var(--green2)}
+.btn-secondary{background:transparent;border:1px solid var(--green3);color:var(--green2)}.btn-secondary:hover{background:rgba(0,255,136,0.1)}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-back:hover{color:var(--green2);border-color:var(--green3)}
+.cat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.cat-list-item:hover{background:rgba(0,255,136,0.04)}
+.cat-list-item.active{background:rgba(0,255,136,0.06);color:var(--green)}
+.cat-icon{font-size:16px;width:24px;text-align:center}
+.cat-count{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)}
+.rule-item{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.rule-num{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;color:var(--green);width:24px;flex-shrink:0}
+.rule-text{font-size:12px;color:var(--muted);line-height:1.5}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.9);z-index:150;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:24px;max-width:600px;width:90%}
+.modal-box h3{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:3px;color:var(--green);margin-bottom:16px}
+.modal-box label{display:block;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin:14px 0 6px}
+.modal-box input,.modal-box textarea,.modal-box select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:10px 14px;border-radius:3px;outline:none}
+.modal-box select{appearance:none;cursor:pointer}
+.modal-box input:focus,.modal-box textarea:focus,.modal-box select:focus{border-color:var(--green3)}
+.modal-box textarea{resize:vertical;min-height:120px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
 .loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.grid-2,.grid-3{grid-template-columns:1fr!important}}
-
-
-.forum-item{padding:16px;border-bottom:1px solid var(--border);transition:background 0.2s;cursor:pointer}
-.forum-item:hover{background:rgba(0,255,136,0.04)}
-.forum-tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px;margin-right:6px}
-.forum-title{font-size:15px;font-weight:700;margin:8px 0 4px;color:var(--text)}
-.forum-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
-.stat-box{text-align:center;padding:20px;background:rgba(0,255,136,0.03);border:1px solid var(--border);border-radius:4px}
-.stat-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.3)}
-.stat-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:6px}
-.rule-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
-.rule-num{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--green);width:30px;flex-shrink:0}
-.rule-text{font-size:13px;color:var(--text);line-height:1.6}
-
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.forum-layout{grid-template-columns:1fr!important}.stats-row{grid-template-columns:repeat(2,1fr)}}
 </style>
-<title>Comunidade — PREPPERS BR</title>
 </head>
 <body>
+<div id="setup-screen" style="display:none">
+  <div class="setup-box">
+    <h2>🛡️ CONFIGURAR FÓRUM</h2>
+    <p>Para o fórum funcionar, você precisa criar um projeto Firebase gratuito.</p>
+    <div style="text-align:left;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text);line-height:2;letter-spacing:0.5px">
+      1. Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:var(--green)">console.firebase.google.com</a><br>
+      2. Clique <strong style="color:var(--green)">"Adicionar Projeto"</strong> → nomeie → criar<br>
+      3. Vá em <strong style="color:var(--green)">Realtime Database</strong> → Criar banco → modo de teste<br>
+      4. <strong style="color:var(--green)">Configurações</strong> (engrenagem) → Seus apps → ícone <strong style="color:var(--green)">&lt;/&gt;</strong> Web<br>
+      5. Copie o valor de <strong style="color:var(--amber)">databaseURL</strong>
+    </div>
+    <label>DATABASE URL</label>
+    <input type="text" id="firebase-url-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
+    <div class="hint">Formato: https://NOME-default-rtdb.firebaseio.com</div>
+    <label>SEU NICKNAME</label>
+    <input type="text" id="setup-nickname" placeholder="Ex: SHADOW_OPS" maxlength="20">
+    <div class="hint">Máximo 20 caracteres, visível para todos</div>
+    <div style="margin-top:20px"><button class="btn btn-primary" onclick="saveSetup()">INICIAR FÓRUM →</button></div>
+  </div>
+</div>
 <header>
   <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
   <nav>
-    <a href="index.html">MONITOR</a>
-    <a href="defesa-civil.html">DEFESA CIVIL</a>
-    <a href="solar.html">SOLAR</a>
-    <a href="comunidade.html" class="active">COMUNIDADE</a>
-    <a href="cursos.html">CURSOS</a>
-    <a href="membros.html">MEMBROS</a>
+    <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
+    <a href="comunidade.html" class="active">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a>
   </nav>
   <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
 </header>
-<main>
-
-<div class="page-title">👥 COMUNIDADE</div>
-<div class="page-subtitle">FÓRUM DE DISCUSSÃO E TROCA DE CONHECIMENTO ENTRE PREPPERS BRASILEIROS</div>
-<div class="grid-4" style="margin-bottom:16px">
-  <div class="stat-box"><div class="stat-num">2,847</div><div class="stat-label">MEMBROS</div></div>
-  <div class="stat-box"><div class="stat-num">156</div><div class="stat-label">TÓPICOS ATIVOS</div></div>
-  <div class="stat-box"><div class="stat-num">3,412</div><div class="stat-label">POSTS ESTE MÊS</div></div>
-  <div class="stat-box"><div class="stat-num">48</div><div class="stat-label">ONLINE AGORA</div></div>
-</div>
-<div class="grid-2">
-  <div class="card">
-    <div class="card-header"><span class="card-title">TÓPICOS RECENTES</span><span class="card-badge badge-live">● ATIVO</span></div>
+<main id="main-content" style="display:none">
+  <div class="page-title">👥 COMUNIDADE</div>
+  <div class="page-subtitle">FÓRUM EM TEMPO REAL — DEBATE ENTRE PREPPERS BRASILEIROS</div>
+  <div class="user-bar">
+    <div class="user-info"><div class="user-avatar" id="user-avatar">?</div><div><div class="user-name" id="user-display-name">—</div><div class="user-sub">MEMBRO ATIVO</div></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="showNewTopicModal()">＋ NOVO TÓPICO</button><button class="btn btn-secondary" onclick="showSetup()">⚙ CONFIG</button></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-num" id="stat-members">—</div><div class="stat-label">MEMBROS</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-topics">—</div><div class="stat-label">TÓPICOS</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-posts">—</div><div class="stat-label">POSTS</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-online">—</div><div class="stat-label">ONLINE</div></div>
+  </div>
+  <div class="forum-layout">
+    <div id="topics-view">
+      <div class="card">
+        <div class="card-header"><span class="card-title">TÓPICOS <span id="filter-label" style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-left:8px">— TODOS</span></span><span class="card-badge badge-ok" id="topics-count-badge">—</span></div>
+        <div id="topics-list"><div class="loading">▋ CARREGANDO TÓPICOS...</div></div>
+      </div>
+    </div>
+    <div id="topic-view" style="display:none">
+      <div class="card">
+        <div class="card-header"><button class="btn btn-back" onclick="backToTopics()">← VOLTAR</button><span class="card-badge badge-ok" id="topic-reply-count">—</span></div>
+        <div id="topic-header-area" style="padding:16px;border-bottom:1px solid var(--border)">
+          <div id="topic-cat-display"></div>
+          <div id="topic-title-display" style="font-size:18px;font-weight:700;color:var(--text);line-height:1.4;margin:8px 0 6px"></div>
+          <div id="topic-meta-display" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px"></div>
+        </div>
+        <div id="posts-list"></div>
+        <div class="reply-box">
+          <textarea id="reply-input" placeholder="Escreva sua resposta..." rows="3"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn btn-primary" onclick="submitReply()">RESPONDER</button></div>
+        </div>
+      </div>
+    </div>
     <div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(255,51,51,0.1);color:var(--red);border:1px solid rgba(255,51,51,0.2)">🔥 URGENTE</span><div class="forum-title">Kit de emergência 72h — Lista atualizada 2026</div><div class="forum-meta">por SHADOW_OPS • 45 respostas • 2h atrás</div></div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)">💡 GUIA</span><div class="forum-title">Purificação de água: métodos comparados (filtro, UV, químico)</div><div class="forum-meta">por AGUA_PURA • 32 respostas • 5h atrás</div></div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">📡 RADIO</span><div class="forum-title">Melhor rádio HF para comunicação off-grid no Brasil</div><div class="forum-meta">por COMMS_BR • 28 respostas • 8h atrás</div></div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)">🌱 CULTIVO</span><div class="forum-title">Horta de sobrevivência: o que plantar para autossuficiência</div><div class="forum-meta">por TERRA_FÉRTIL • 67 respostas • 12h atrás</div></div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)">⚡ ENERGIA</span><div class="forum-title">Painel solar portátil: vale a pena para BOB?</div><div class="forum-meta">por VOLT_PREP • 19 respostas • 1d atrás</div></div>
-      <div class="forum-item"><span class="forum-tag" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">🗺️ ROTA</span><div class="forum-title">Rotas de evacuação SP — mapeamento colaborativo</div><div class="forum-meta">por MAPA_ESCAPE • 41 respostas • 1d atrás</div></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">CATEGORIAS</span></div>
+        <div id="cat-sidebar">
+          <div class="cat-list-item active" onclick="filterCat('all',this)"><span class="cat-icon">📋</span>Todos<span class="cat-count" id="count-all">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('equipamentos',this)"><span class="cat-icon">🎒</span>Equipamentos<span class="cat-count" id="count-equipamentos">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('agua',this)"><span class="cat-icon">💧</span>Água & Alimentação<span class="cat-count" id="count-agua">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('abrigo',this)"><span class="cat-icon">🏠</span>Abrigo & Bunker<span class="cat-count" id="count-abrigo">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('comunicacao',this)"><span class="cat-icon">📡</span>Comunicação<span class="cat-count" id="count-comunicacao">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('saude',this)"><span class="cat-icon">🏥</span>Saúde<span class="cat-count" id="count-saude">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('ameacas',this)"><span class="cat-icon">📊</span>Ameaças<span class="cat-count" id="count-ameacas">—</span></div>
+          <div class="cat-list-item" onclick="filterCat('geral',this)"><span class="cat-icon">💬</span>Geral<span class="cat-count" id="count-geral">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">REGRAS</span></div>
+        <div class="rule-item"><div class="rule-num">01</div><div class="rule-text">Respeito mútuo entre membros.</div></div>
+        <div class="rule-item"><div class="rule-num">02</div><div class="rule-text">Cite fontes ao compartilhar dados.</div></div>
+        <div class="rule-item"><div class="rule-num">03</div><div class="rule-text">OPSEC: Não revele localização do abrigo.</div></div>
+        <div class="rule-item"><div class="rule-num">04</div><div class="rule-text">Sem conteúdo ilegal.</div></div>
+      </div>
     </div>
   </div>
-  <div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><span class="card-title">CATEGORIAS</span></div>
-      <div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">🎒</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Equipamentos & Kits</div><div class="forum-meta">324 tópicos • BOB, EDC, kits médicos</div></div></div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">🏠</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Abrigo & Bunker</div><div class="forum-meta">89 tópicos • Construção, localização</div></div></div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">💧</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Água & Alimentação</div><div class="forum-meta">267 tópicos • Purificação, estoque, cultivo</div></div></div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">📡</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Comunicação & Tech</div><div class="forum-meta">145 tópicos • Rádio, mesh, off-grid</div></div></div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">🏥</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Primeiros Socorros</div><div class="forum-meta">198 tópicos • Medicina de emergência</div></div></div>
-        <div class="forum-item"><span style="font-size:18px;margin-right:8px">📊</span><div style="flex:1"><div style="font-size:14px;font-weight:700">Análise de Ameaças</div><div class="forum-meta">176 tópicos • Geopolítica, cenários</div></div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">REGRAS DA COMUNIDADE</span></div>
-      <div>
-        <div class="rule-item"><div class="rule-num">01</div><div class="rule-text">Respeito mútuo. Sem ataques pessoais ou discriminação.</div></div>
-        <div class="rule-item"><div class="rule-num">02</div><div class="rule-text">Informações verificadas. Cite fontes ao compartilhar dados.</div></div>
-        <div class="rule-item"><div class="rule-num">03</div><div class="rule-text">OPSEC: Nunca compartilhe localização exata do seu abrigo.</div></div>
-        <div class="rule-item"><div class="rule-num">04</div><div class="rule-text">Sem conteúdo ilegal. Foco em preparação legal e ética.</div></div>
-      </div>
-    </div>
+</main>
+<div class="modal-overlay" id="new-topic-modal">
+  <div class="modal-box">
+    <h3>＋ NOVO TÓPICO</h3>
+    <label>CATEGORIA</label>
+    <select id="new-topic-cat">
+      <option value="equipamentos">🎒 Equipamentos & Kits</option><option value="agua">💧 Água & Alimentação</option>
+      <option value="abrigo">🏠 Abrigo & Bunker</option><option value="comunicacao">📡 Comunicação & Tech</option>
+      <option value="saude">🏥 Saúde & Primeiros Socorros</option><option value="ameacas">📊 Análise de Ameaças</option>
+      <option value="geral">💬 Geral</option>
+    </select>
+    <label>TÍTULO</label>
+    <input type="text" id="new-topic-title" placeholder="Ex: Melhor filtro de água portátil para BOB" maxlength="120">
+    <label>CONTEÚDO</label>
+    <textarea id="new-topic-body" placeholder="Descreva em detalhes..." rows="5"></textarea>
+    <div class="modal-actions"><button class="btn btn-back" onclick="closeModal()">CANCELAR</button><button class="btn btn-primary" onclick="submitNewTopic()">PUBLICAR</button></div>
   </div>
 </div>
-
-</main>
-<footer>
-  <p>PREPPERS BR MONITOR v2.0 — SISTEMA DE MONITORAMENTO E PREPARAÇÃO</p>
-  <p style="margin-top:6px;opacity:0.5">DADOS EM TEMPO REAL • ATUALIZAÇÃO CONTÍNUA</p>
-</footer>
+<footer><p>PREPPERS BR MONITOR — COMUNIDADE v2.0</p><p style="margin-top:6px;opacity:0.5">FÓRUM EM TEMPO REAL • FIREBASE BACKEND</p></footer>
 <script>
-function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR')+' BRT'}
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
 
+var DB_URL=localStorage.getItem('preppers_db_url')||'';
+var USERNAME=localStorage.getItem('preppers_username')||'';
+var currentFilter='all',currentTopicId=null,allTopics={};
+var CAT_LABELS={equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'🏠 ABRIGO',comunicacao:'📡 COMUNICAÇÃO',saude:'🏥 SAÚDE',ameacas:'📊 AMEAÇAS',geral:'💬 GERAL'};
+
+async function fbGet(p){var r=await fetch(DB_URL+'/'+p+'.json');return await r.json()}
+async function fbSet(p,d){await fetch(DB_URL+'/'+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
+async function fbPush(p,d){var r=await fetch(DB_URL+'/'+p+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return await r.json()}
+
+function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+function timeAgo(ts){if(!ts)return '';var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'Agora';if(m<60)return m+'min';var h=Math.floor(m/60);if(h<24)return h+'h atrás';var dd=Math.floor(h/24);return dd===1?'Ontem':dd+'d atrás'}
+
+function checkSetup(){
+  if(!DB_URL||!USERNAME){document.getElementById('setup-screen').style.display='flex';document.getElementById('main-content').style.display='none';return}
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('main-content').style.display='block';
+  document.getElementById('user-display-name').textContent=USERNAME.toUpperCase();
+  document.getElementById('user-avatar').textContent=USERNAME.charAt(0).toUpperCase();
+  fbSet('users/'+USERNAME.toLowerCase().replace(/[^a-z0-9]/g,'_'),{name:USERNAME,lastSeen:Date.now()}).catch(function(){});
+  loadTopics();loadStats();
+  setInterval(loadTopics,15000);setInterval(loadStats,30000);
+  setInterval(function(){fbSet('users/'+USERNAME.toLowerCase().replace(/[^a-z0-9]/g,'_')+'/lastSeen',Date.now()).catch(function(){})},60000);
+}
+function showSetup(){document.getElementById('firebase-url-input').value=DB_URL;document.getElementById('setup-nickname').value=USERNAME;document.getElementById('setup-screen').style.display='flex'}
+function saveSetup(){
+  var url=document.getElementById('firebase-url-input').value.trim().replace(/\/$/,'');
+  var name=document.getElementById('setup-nickname').value.trim();
+  if(!url||!url.includes('firebaseio.com')){alert('URL Firebase inválida!');return}
+  if(!name||name.length<2){alert('Nickname precisa ter 2+ caracteres!');return}
+  DB_URL=url;USERNAME=name;localStorage.setItem('preppers_db_url',DB_URL);localStorage.setItem('preppers_username',USERNAME);checkSetup();
+}
+
+async function loadStats(){
+  try{var u=await fbGet('users');var mc=u?Object.keys(u).length:0;var now=Date.now();var on=u?Object.values(u).filter(function(x){return now-x.lastSeen<300000}).length:0;
+  document.getElementById('stat-members').textContent=mc;document.getElementById('stat-online').textContent=on;
+  var tc=0,pc=0;if(allTopics){tc=Object.keys(allTopics).length;for(var k in allTopics)pc+=1+(allTopics[k].replyCount||0)}
+  document.getElementById('stat-topics').textContent=tc;document.getElementById('stat-posts').textContent=pc}catch(e){}
+}
+
+async function loadTopics(){
+  try{var d=await fbGet('topics');allTopics=d||{};renderTopics();updateCatCounts();if(currentTopicId)loadPosts(currentTopicId)}
+  catch(e){document.getElementById('topics-list').innerHTML='<div class="loading" style="color:var(--red)">ERRO: Verifique URL do Firebase</div>'}
+}
+
+function renderTopics(){
+  var c=document.getElementById('topics-list');var entries=Object.entries(allTopics);
+  if(!entries.length){c.innerHTML='<div style="padding:30px;text-align:center;font-family:monospace;font-size:12px;color:var(--muted)">Nenhum tópico ainda. Seja o primeiro!</div>';document.getElementById('topics-count-badge').textContent='0';return}
+  var filtered=currentFilter==='all'?entries:entries.filter(function(e){return e[1].category===currentFilter});
+  filtered.sort(function(a,b){if(a[1].pinned&&!b[1].pinned)return -1;if(!a[1].pinned&&b[1].pinned)return 1;return(b[1].createdAt||0)-(a[1].createdAt||0)});
+  document.getElementById('topics-count-badge').textContent=filtered.length+' TÓPICO'+(filtered.length!==1?'S':'');
+  var h='';for(var i=0;i<filtered.length;i++){var id=filtered[i][0],t=filtered[i][1];var cat=t.category||'geral';
+    h+='<div class="topic-item" onclick="openTopic(\''+id+'\')"><div class="topic-top"><span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>'+(t.pinned?'<span style="font-family:monospace;font-size:9px;color:var(--amber)">📌 FIXADO</span>':'')+'</div><div class="topic-title">'+esc(t.title)+'</div><div class="topic-meta"><span>por <strong style="color:var(--green2)">'+esc(t.author)+'</strong></span><span>'+timeAgo(t.createdAt)+'</span><div class="topic-stats"><span>💬 '+(t.replyCount||0)+'</span><span>▲ '+(t.likes||0)+'</span></div></div></div>'}
+  c.innerHTML=h;
+}
+
+function filterCat(cat,el){currentFilter=cat;var label=cat==='all'?'TODOS':(CAT_LABELS[cat]||cat).replace(/^[^\s]+\s/,'');
+  document.getElementById('filter-label').textContent='— '+label;
+  document.querySelectorAll('.cat-list-item').forEach(function(x){x.classList.remove('active')});if(el)el.classList.add('active');renderTopics()}
+
+function updateCatCounts(){var v=Object.values(allTopics);document.getElementById('count-all').textContent=v.length;
+  var cats=['equipamentos','agua','abrigo','comunicacao','saude','ameacas','geral'];
+  for(var i=0;i<cats.length;i++){var el=document.getElementById('count-'+cats[i]);if(el)el.textContent=v.filter(function(t){return t.category===cats[i]}).length}}
+
+async function openTopic(id){currentTopicId=id;var t=allTopics[id];if(!t)return;
+  document.getElementById('topics-view').style.display='none';document.getElementById('topic-view').style.display='block';
+  var cat=t.category||'geral';document.getElementById('topic-cat-display').innerHTML='<span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>';
+  document.getElementById('topic-title-display').textContent=t.title;
+  document.getElementById('topic-meta-display').innerHTML='por <strong style="color:var(--green2)">'+esc(t.author)+'</strong> • '+timeAgo(t.createdAt);
+  loadPosts(id)}
+
+async function loadPosts(tid){var t=allTopics[tid];if(!t)return;var c=document.getElementById('posts-list');
+  var h=mkPost(t.author,t.body,t.createdAt,tid,'main',t.likes||0);
+  try{var reps=await fbGet('replies/'+tid);var count=0;if(reps){var sorted=Object.entries(reps).sort(function(a,b){return(a[1].createdAt||0)-(b[1].createdAt||0)});
+    for(var i=0;i<sorted.length;i++){h+=mkPost(sorted[i][1].author,sorted[i][1].body,sorted[i][1].createdAt,tid,sorted[i][0],sorted[i][1].likes||0);count++}}
+    document.getElementById('topic-reply-count').textContent=count+' RESPOSTA'+(count!==1?'S':'')}catch(e){}c.innerHTML=h}
+
+function mkPost(author,body,time,tid,pid,likes){var ini=author?author.charAt(0).toUpperCase():'?';
+  return '<div class="post-item"><div class="post-header"><div class="post-avatar">'+ini+'</div><div><div class="post-author">'+esc(author)+'</div><div class="post-time">'+timeAgo(time)+'</div></div></div><div class="post-body">'+esc(body)+'</div><div class="post-actions"><button class="post-action-btn" onclick="likePost(\''+tid+'\',\''+pid+'\',this)">▲ '+likes+'</button></div></div>'}
+
+function backToTopics(){currentTopicId=null;document.getElementById('topics-view').style.display='block';document.getElementById('topic-view').style.display='none'}
+
+async function submitReply(){var body=document.getElementById('reply-input').value.trim();if(!body||!currentTopicId)return;
+  try{await fbPush('replies/'+currentTopicId,{author:USERNAME,body:body,createdAt:Date.now(),likes:0});
+  var nc=(allTopics[currentTopicId].replyCount||0)+1;await fbSet('topics/'+currentTopicId+'/replyCount',nc);allTopics[currentTopicId].replyCount=nc;
+  document.getElementById('reply-input').value='';loadPosts(currentTopicId);loadStats()}catch(e){alert('Erro ao enviar.')}}
+
+function showNewTopicModal(){document.getElementById('new-topic-modal').classList.add('show')}
+function closeModal(){document.getElementById('new-topic-modal').classList.remove('show')}
+
+async function submitNewTopic(){var cat=document.getElementById('new-topic-cat').value;var title=document.getElementById('new-topic-title').value.trim();var body=document.getElementById('new-topic-body').value.trim();
+  if(!title){alert('Preencha o título!');return}if(!body){alert('Preencha o conteúdo!');return}
+  try{var res=await fbPush('topics',{category:cat,title:title,body:body,author:USERNAME,createdAt:Date.now(),replyCount:0,likes:0,pinned:false});
+  closeModal();document.getElementById('new-topic-title').value='';document.getElementById('new-topic-body').value='';
+  loadTopics();setTimeout(function(){if(res.name)openTopic(res.name)},500)}catch(e){alert('Erro ao criar tópico.')}}
+
+async function likePost(tid,pid,btn){try{if(pid==='main'){var c=(allTopics[tid].likes||0)+1;await fbSet('topics/'+tid+'/likes',c);allTopics[tid].likes=c}
+  else{var r=await fbGet('replies/'+tid+'/'+pid+'/likes');await fbSet('replies/'+tid+'/'+pid+'/likes',(r||0)+1)}
+  btn.classList.add('liked');loadPosts(tid)}catch(e){}}
+
+checkSetup();
 </script>
 </body>
 </html>
