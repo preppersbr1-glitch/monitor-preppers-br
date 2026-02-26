@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+.header-status{display:flex;align-items:center;gap:20px}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03)}
+.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'▮';color:var(--green2);font-size:8px}
+.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.badge-warn{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
+main{position:relative;z-index:1;padding:20px 24px;max-width:1600px;margin:0 auto}
+.page-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
+.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.grid-2,.grid-3{grid-template-columns:1fr!important}}
+
+
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative}
+.plan-card.featured{border-color:var(--green3)}
+.plan-card.featured::before{content:'★ RECOMENDADO';position:absolute;top:0;left:0;right:0;background:var(--green);color:#000;text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:4px;font-weight:bold}
+.plan-header{padding:24px 20px 16px;text-align:center;border-bottom:1px solid var(--border)}
+.plan-card.featured .plan-header{padding-top:36px}
+.plan-name{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);margin-bottom:6px}
+.plan-price{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--text)}
+.plan-price span{font-size:14px;color:var(--muted);font-weight:400}
+.plan-period{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:4px}
+.plan-features{padding:16px 20px}
+.plan-feature{padding:8px 0;border-bottom:1px solid rgba(26,61,42,0.5);font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px}
+.plan-feature::before{content:'✓';color:var(--green);font-weight:bold;font-size:14px}
+.plan-feature.disabled{color:var(--muted);opacity:0.5}
+.plan-feature.disabled::before{content:'✗';color:var(--muted)}
+.plan-btn{display:block;margin:16px 20px 20px;text-align:center;padding:12px;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;border-radius:3px;cursor:pointer;transition:all 0.2s;text-decoration:none;border:none}
+.plan-btn.free{background:transparent;border:1px solid var(--green3);color:var(--green2)}
+.plan-btn.free:hover{background:rgba(0,255,136,0.1)}
+.plan-btn.primary{background:var(--green);color:#000}
+.plan-btn.primary:hover{background:var(--green2)}
+.plan-btn.premium{background:transparent;border:1px solid rgba(255,179,0,0.3);color:var(--amber)}
+.plan-btn.premium:hover{background:rgba(255,179,0,0.1)}
+.benefit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:16px}
+.benefit-item{padding:16px;background:rgba(0,255,136,0.03);border:1px solid var(--border);border-radius:4px}
+.benefit-icon{font-size:24px;margin-bottom:8px}
+.benefit-title{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--green);margin-bottom:6px}
+.benefit-desc{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;letter-spacing:0.5px}
+
+</style>
+<title>Membros — PREPPERS BR</title>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
+  <nav>
+    <a href="index.html">MONITOR</a>
+    <a href="defesa-civil.html">DEFESA CIVIL</a>
+    <a href="solar.html">SOLAR</a>
+    <a href="comunidade.html">COMUNIDADE</a>
+    <a href="cursos.html">CURSOS</a>
+    <a href="membros.html" class="active">MEMBROS</a>
+  </nav>
+  <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+<main>
+
+<div class="page-title">🏅 ÁREA DE MEMBROS</div>
+<div class="page-subtitle">PLANOS DE ACESSO AO CONTEÚDO PREMIUM E COMUNIDADE EXCLUSIVA</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+  <div class="plan-card">
+    <div class="plan-header"><div class="plan-name">SENTINELA</div><div class="plan-price">GRÁTIS</div><div class="plan-period">PARA SEMPRE</div></div>
+    <div class="plan-features">
+      <div class="plan-feature">Monitor em tempo real</div>
+      <div class="plan-feature">Alertas básicos</div>
+      <div class="plan-feature">Fórum da comunidade</div>
+      <div class="plan-feature">3 cursos gratuitos</div>
+      <div class="plan-feature disabled">Alertas push personalizados</div>
+      <div class="plan-feature disabled">Cursos premium</div>
+      <div class="plan-feature disabled">Grupo VIP Telegram</div>
+      <div class="plan-feature disabled">Consultoria individual</div>
+    </div>
+    <button class="plan-btn free">CRIAR CONTA</button>
+  </div>
+  <div class="plan-card featured">
+    <div class="plan-header"><div class="plan-name">OPERADOR</div><div class="plan-price">R$29<span>/mês</span></div><div class="plan-period">OU R$290/ANO (17% OFF)</div></div>
+    <div class="plan-features">
+      <div class="plan-feature">Tudo do plano Sentinela</div>
+      <div class="plan-feature">Alertas push personalizados</div>
+      <div class="plan-feature">Todos os cursos premium</div>
+      <div class="plan-feature">Grupo VIP Telegram</div>
+      <div class="plan-feature">Análises semanais de cenários</div>
+      <div class="plan-feature">Downloads de checklists</div>
+      <div class="plan-feature disabled">Consultoria individual</div>
+      <div class="plan-feature disabled">Encontros presenciais</div>
+    </div>
+    <button class="plan-btn primary">ASSINAR AGORA</button>
+  </div>
+  <div class="plan-card">
+    <div class="plan-header"><div class="plan-name">COMANDO</div><div class="plan-price">R$79<span>/mês</span></div><div class="plan-period">OU R$790/ANO (17% OFF)</div></div>
+    <div class="plan-features">
+      <div class="plan-feature">Tudo do plano Operador</div>
+      <div class="plan-feature">Consultoria individual mensal</div>
+      <div class="plan-feature">Encontros presenciais trimestrais</div>
+      <div class="plan-feature">Acesso antecipado a conteúdo</div>
+      <div class="plan-feature">Kit de emergência físico (anual)</div>
+      <div class="plan-feature">Mentoria com instrutores</div>
+      <div class="plan-feature">Badge exclusivo na comunidade</div>
+      <div class="plan-feature">Suporte prioritário 24/7</div>
+    </div>
+    <button class="plan-btn premium">QUERO SER COMANDO</button>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="card-title">BENEFÍCIOS DE SER MEMBRO</span></div>
+  <div class="benefit-grid">
+    <div class="benefit-item"><div class="benefit-icon">🔔</div><div class="benefit-title">ALERTAS PRIORITÁRIOS</div><div class="benefit-desc">Receba notificações push de sismos, tempestades solares e crises antes de todo mundo.</div></div>
+    <div class="benefit-item"><div class="benefit-icon">📚</div><div class="benefit-title">CURSOS COMPLETOS</div><div class="benefit-desc">Acesso a todos os treinamentos de sobrevivência, primeiros socorros e off-grid.</div></div>
+    <div class="benefit-item"><div class="benefit-icon">👥</div><div class="benefit-title">COMUNIDADE VIP</div><div class="benefit-desc">Grupo exclusivo no Telegram com preppers experientes e instrutores.</div></div>
+    <div class="benefit-item"><div class="benefit-icon">📋</div><div class="benefit-title">CHECKLISTS & GUIAS</div><div class="benefit-desc">Downloads de checklists profissionais, planos de evacuação e inventários.</div></div>
+    <div class="benefit-item"><div class="benefit-icon">📊</div><div class="benefit-title">RELATÓRIOS SEMANAIS</div><div class="benefit-desc">Análise de cenários geopolíticos e econômicos com foco em preparação.</div></div>
+    <div class="benefit-item"><div class="benefit-icon">🎯</div><div class="benefit-title">CONSULTORIA</div><div class="benefit-desc">Sessões individuais para montar seu plano de preparação personalizado.</div></div>
+  </div>
+</div>
+
+</main>
+<footer>
+  <p>PREPPERS BR MONITOR v2.0 — SISTEMA DE MONITORAMENTO E PREPARAÇÃO</p>
+  <p style="margin-top:6px;opacity:0.5">DADOS EM TEMPO REAL • ATUALIZAÇÃO CONTÍNUA</p>
+</footer>
+<script>
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR')+' BRT'}
+setInterval(updateClock,1000);updateClock();
+
+</script>
+</body>
+</html>

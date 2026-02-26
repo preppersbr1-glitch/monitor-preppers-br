@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+.header-status{display:flex;align-items:center;gap:20px}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03)}
+.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'▮';color:var(--green2);font-size:8px}
+.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.badge-warn{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
+main{position:relative;z-index:1;padding:20px 24px;max-width:1600px;margin:0 auto}
+.page-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
+.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.grid-2,.grid-3{grid-template-columns:1fr!important}}
+
+
+.quake-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;transition:background 0.2s;cursor:pointer}
+.quake-item:hover{background:rgba(0,255,136,0.04)}
+.quake-mag{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;border:1px solid}
+.quake-mag.low{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.06)}
+.quake-mag.mid{color:var(--amber);border-color:rgba(255,179,0,0.3);background:rgba(255,179,0,0.06)}
+.quake-mag.high{color:var(--red);border-color:rgba(255,51,51,0.3);background:rgba(255,51,51,0.08)}
+.quake-place{font-size:14px;font-weight:600}.quake-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px}
+.defesa-item{border:1px solid var(--border);border-radius:4px;padding:14px;position:relative;overflow:hidden;background:rgba(0,0,0,0.3)}
+.defesa-item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.defesa-item.level-1::before{background:var(--green2)}.defesa-item.level-2::before{background:var(--amber)}.defesa-item.level-3::before{background:var(--red)}
+.defesa-type{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:6px}
+.defesa-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.defesa-region{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)}
+.defesa-level{position:absolute;top:12px;right:12px;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 7px;border-radius:2px}
+.level-1 .defesa-level{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.level-2 .defesa-level{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
+.level-3 .defesa-level{background:rgba(255,51,51,0.1);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:14px}
+.res-item{background:rgba(0,255,136,0.03);border:1px solid var(--border);border-radius:4px;padding:16px;text-align:center;transition:all 0.2s}
+.res-item:hover{border-color:var(--green3);background:rgba(0,255,136,0.06)}
+.res-icon{font-size:28px;margin-bottom:6px}
+.res-name{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:4px}
+.res-desc{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;line-height:1.5}
+.res-link{display:inline-block;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:4px 12px;border-radius:2px;letter-spacing:1px;transition:all 0.2s}
+.res-link:hover{background:rgba(0,255,136,0.1)}
+
+</style>
+<title>Defesa Civil — PREPPERS BR</title>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
+  <nav>
+    <a href="index.html">MONITOR</a>
+    <a href="defesa-civil.html" class="active">DEFESA CIVIL</a>
+    <a href="solar.html">SOLAR</a>
+    <a href="comunidade.html">COMUNIDADE</a>
+    <a href="cursos.html">CURSOS</a>
+    <a href="membros.html">MEMBROS</a>
+  </nav>
+  <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+<main>
+
+<div class="page-title">🛡️ DEFESA CIVIL</div>
+<div class="page-subtitle">MONITORAMENTO DE ALERTAS METEOROLÓGICOS, SÍSMICOS E EMERGÊNCIAS — BRASIL</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header"><span class="card-title">ALERTAS METEOROLÓGICOS — INMET / OPEN-METEO</span><span class="card-badge badge-warn" id="inmet-badge">CARREGANDO</span></div>
+  <div class="grid-3" id="inmet-alerts" style="padding:12px"><div class="loading">▋ BUSCANDO ALERTAS...</div></div>
+</div>
+<div class="grid-2">
+  <div class="card"><div class="card-header"><span class="card-title">SISMOS GLOBAIS (M4.5+) — 24H</span><span class="card-badge badge-live">● USGS</span></div>
+    <div id="quake-list" style="max-height:500px;overflow-y:auto"><div class="loading">▋ CARREGANDO...</div></div></div>
+  <div class="card"><div class="card-header"><span class="card-title">ATIVIDADE SÍSMICA — BRASIL / AM. SUL</span><span class="card-badge badge-ok">USGS</span></div>
+    <div id="quake-br" style="max-height:500px;overflow-y:auto"><div class="loading">▋ CARREGANDO...</div></div></div>
+</div>
+<div class="card" style="margin-top:16px">
+  <div class="card-header"><span class="card-title">RECURSOS DE EMERGÊNCIA</span><span class="card-badge badge-ok">REFERÊNCIA</span></div>
+  <div class="res-grid">
+    <div class="res-item"><div class="res-icon">📞</div><div class="res-name">DEFESA CIVIL</div><div class="res-desc">Emergências e desastres</div><a href="tel:199" class="res-link">LIGAR 199</a></div>
+    <div class="res-item"><div class="res-icon">🚒</div><div class="res-name">BOMBEIROS</div><div class="res-desc">Incêndios e resgates</div><a href="tel:193" class="res-link">LIGAR 193</a></div>
+    <div class="res-item"><div class="res-icon">🚑</div><div class="res-name">SAMU</div><div class="res-desc">Emergências médicas</div><a href="tel:192" class="res-link">LIGAR 192</a></div>
+    <div class="res-item"><div class="res-icon">🚔</div><div class="res-name">POLÍCIA</div><div class="res-desc">Emergências policiais</div><a href="tel:190" class="res-link">LIGAR 190</a></div>
+    <div class="res-item"><div class="res-icon">🌊</div><div class="res-name">CEMADEN</div><div class="res-desc">Monitoramento de desastres</div><a href="https://www.cemaden.gov.br" target="_blank" class="res-link">ACESSAR</a></div>
+    <div class="res-item"><div class="res-icon">🛰️</div><div class="res-name">INMET ALERTAS</div><div class="res-desc">Alertas meteorológicos</div><a href="https://alertas2.inmet.gov.br" target="_blank" class="res-link">VER ALERTAS</a></div>
+    <div class="res-item"><div class="res-icon">📡</div><div class="res-name">USGS</div><div class="res-desc">Sismos em tempo real</div><a href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" class="res-link">MAPA AO VIVO</a></div>
+    <div class="res-item"><div class="res-icon">⚠️</div><div class="res-name">GDACS</div><div class="res-desc">Alertas globais de desastres</div><a href="https://www.gdacs.org" target="_blank" class="res-link">ACESSAR</a></div>
+  </div>
+</div>
+
+</main>
+<footer>
+  <p>PREPPERS BR MONITOR v2.0 — SISTEMA DE MONITORAMENTO E PREPARAÇÃO</p>
+  <p style="margin-top:6px;opacity:0.5">DADOS EM TEMPO REAL • ATUALIZAÇÃO CONTÍNUA</p>
+</footer>
+<script>
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR')+' BRT'}
+setInterval(updateClock,1000);updateClock();
+
+async function loadQuakes(){try{const r=await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson");const d=await r.json();const c=document.getElementById("quake-list");if(!d.features||!d.features.length){c.innerHTML='<div style="padding:20px;text-align:center;font-family:monospace;font-size:11px;color:var(--green2)">Nenhum sismo M4.5+ nas últimas 24h</div>';return}const s=d.features.sort((a,b)=>b.properties.mag-a.properties.mag);let h="";for(const eq of s.slice(0,15)){const m=eq.properties.mag.toFixed(1);const p=eq.properties.place||"Desconhecido";const dp=(eq.geometry.coordinates[2]||0).toFixed(0);const t=new Date(eq.properties.time);const dh=Math.floor((Date.now()-t)/3600000);const ts=dh<1?"AGORA":dh+"H ATRÁS";const mc=m>=6?"high":m>=5?"mid":"low";h+='<div class="quake-item" onclick="window.open(\''+eq.properties.url+'\',\'_blank\')"><div class="quake-mag '+mc+'">'+m+'</div><div style="flex:1"><div class="quake-place">'+p+'</div><div class="quake-meta">PROF: '+dp+'KM • '+ts+'</div></div></div>'}c.innerHTML=h}catch(e){document.getElementById("quake-list").innerHTML='<div class="loading">ERRO</div>'}}
+async function loadQuakesBR(){try{const r=await fetch("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=-34&maxlatitude=6&minlongitude=-74&maxlongitude=-34&minmagnitude=2&orderby=time&limit=12");const d=await r.json();const c=document.getElementById("quake-br");if(!d.features||!d.features.length){c.innerHTML='<div style="padding:20px;text-align:center;font-family:monospace;font-size:11px;color:var(--green2)">✅ Sem atividade sísmica significativa</div>';return}let h="";for(const eq of d.features){const m=eq.properties.mag.toFixed(1);const p=eq.properties.place||"Brasil";const dp=(eq.geometry.coordinates[2]||0).toFixed(0);const t=new Date(eq.properties.time);const dh=Math.floor((Date.now()-t)/3600000);const ts=dh<1?"AGORA":dh<24?dh+"H ATRÁS":Math.floor(dh/24)+"D ATRÁS";const mc=m>=4?"high":m>=3?"mid":"low";h+='<div class="quake-item" onclick="window.open(\''+eq.properties.url+'\',\'_blank\')"><div class="quake-mag '+mc+'">'+m+'</div><div style="flex:1"><div class="quake-place">'+p+'</div><div class="quake-meta">PROF: '+dp+'KM • '+ts+'</div></div></div>'}c.innerHTML=h}catch(e){document.getElementById("quake-br").innerHTML='<div class="loading">ERRO</div>'}}
+async function loadINMET(){const c=document.getElementById("inmet-alerts");const b=document.getElementById("inmet-badge");let items=[];const cities=[{n:"São Paulo, SP",la:-23.55,lo:-46.63},{n:"Rio de Janeiro, RJ",la:-22.91,lo:-43.17},{n:"Porto Alegre, RS",la:-30.03,lo:-51.23},{n:"Curitiba, PR",la:-25.43,lo:-49.27},{n:"Belo Horizonte, MG",la:-19.92,lo:-43.94},{n:"Salvador, BA",la:-12.97,lo:-38.51},{n:"Manaus, AM",la:-3.12,lo:-60.02},{n:"Recife, PE",la:-8.05,lo:-34.87}];for(const ct of cities){try{const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+ct.la+"&longitude="+ct.lo+"&current=weather_code,wind_speed_10m,precipitation&wind_speed_unit=kmh");const d=await r.json();if(d.current){const wc=d.current.weather_code,w=d.current.wind_speed_10m,p=d.current.precipitation;if(wc>=95)items.push({l:3,t:"⛈️ TEMPESTADE SEVERA",d:"Ventos "+Math.round(w)+" km/h",r:"📍 "+ct.n});else if(wc>=80||p>10)items.push({l:2,t:"🌧️ CHUVA INTENSA",d:"Precip. "+p+"mm",r:"📍 "+ct.n});else if(w>60)items.push({l:2,t:"💨 VENDAVAL",d:"Ventos "+Math.round(w)+" km/h",r:"📍 "+ct.n})}}catch(e){}}if(!items.length)items.push({l:1,t:"✅ SEM ALERTAS ATIVOS",d:"Condições dentro da normalidade",r:"📍 Brasil — Monitoramento contínuo"});const mx=Math.max(...items.map(i=>i.l));if(b){if(mx>=3){b.textContent=items.length+" ALERTAS";b.className="card-badge badge-live"}else if(mx>=2){b.textContent=items.length+" ALERTAS";b.className="card-badge badge-warn"}else{b.textContent="NORMAL";b.className="card-badge badge-ok"}}c.innerHTML=items.map(a=>'<div class="defesa-item level-'+a.l+'"><span class="defesa-level">NÍVEL '+a.l+'</span><div class="defesa-type">'+a.t+'</div><div class="defesa-title">'+a.d+'</div><div class="defesa-region">'+a.r+'</div></div>').join("")}
+loadQuakes();loadQuakesBR();loadINMET();setInterval(loadQuakes,300000);setInterval(loadQuakesBR,300000);setInterval(loadINMET,600000);
+
+</script>
+</body>
+</html>

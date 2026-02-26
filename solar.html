@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+.header-status{display:flex;align-items:center;gap:20px}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03)}
+.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'▮';color:var(--green2);font-size:8px}
+.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.badge-warn{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
+main{position:relative;z-index:1;padding:20px 24px;max-width:1600px;margin:0 auto}
+.page-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
+.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+@media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.grid-2,.grid-3{grid-template-columns:1fr!important}}
+
+
+.solar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px}
+.solar-stat{text-align:center;background:rgba(255,179,0,0.04);border:1px solid rgba(255,179,0,0.1);border-radius:4px;padding:18px 12px}
+.solar-stat-icon{font-size:28px;margin-bottom:8px}
+.solar-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:8px}
+.solar-stat-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700}
+.solar-stat-sub{font-family:'Share Tech Mono',monospace;font-size:10px;margin-top:6px;letter-spacing:1px}
+.info-block{padding:16px;font-size:13px;line-height:1.8;color:var(--text);letter-spacing:0.3px}
+.info-block h3{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:8px}
+.info-block p{margin-bottom:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7}
+.scale-bar{display:flex;gap:4px;margin:12px 0}
+.scale-item{flex:1;padding:8px 4px;text-align:center;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px}
+.iframe-wrap{width:100%;height:400px;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:16px}
+.iframe-wrap iframe{width:100%;height:100%;border:none;filter:hue-rotate(80deg) saturate(0.7)}
+@media(max-width:900px){.solar-grid{grid-template-columns:repeat(2,1fr)!important}}
+
+</style>
+<title>Monitoramento Solar — PREPPERS BR</title>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SISTEMA DE MONITORAMENTO GLOBAL</div></div></div>
+  <nav>
+    <a href="index.html">MONITOR</a>
+    <a href="defesa-civil.html">DEFESA CIVIL</a>
+    <a href="solar.html" class="active">SOLAR</a>
+    <a href="comunidade.html">COMUNIDADE</a>
+    <a href="cursos.html">CURSOS</a>
+    <a href="membros.html">MEMBROS</a>
+  </nav>
+  <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+<main>
+
+<div class="page-title">☀️ MONITORAMENTO SOLAR</div>
+<div class="page-subtitle">DADOS EM TEMPO REAL DO NOAA SWPC — FLARES, VENTO SOLAR, TEMPESTADES GEOMAGNÉTICAS</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header"><span class="card-title">STATUS SOLAR EM TEMPO REAL</span><span class="card-badge badge-warn" id="solar-badge">CARREGANDO</span></div>
+  <div class="solar-grid" id="solar-data"><div class="loading" style="grid-column:1/-1">▋ BUSCANDO DADOS DO NOAA...</div></div>
+</div>
+<div class="grid-2">
+  <div class="card"><div class="card-header"><span class="card-title">ESCALA DE TEMPESTADES GEOMAGNÉTICAS</span></div>
+    <div style="padding:16px">
+      <div class="scale-bar">
+        <div class="scale-item" style="background:rgba(0,255,136,0.15);color:var(--green)">G0<br>QUIETO</div>
+        <div class="scale-item" style="background:rgba(0,255,136,0.1);color:var(--green2)">G1<br>MENOR</div>
+        <div class="scale-item" style="background:rgba(255,179,0,0.1);color:var(--amber)">G2<br>MODERADO</div>
+        <div class="scale-item" style="background:rgba(255,179,0,0.15);color:var(--amber)">G3<br>FORTE</div>
+        <div class="scale-item" style="background:rgba(255,51,51,0.1);color:var(--red)">G4<br>SEVERO</div>
+        <div class="scale-item" style="background:rgba(255,51,51,0.2);color:var(--red)">G5<br>EXTREMO</div>
+      </div>
+      <div class="info-block">
+        <h3>IMPACTO PARA PREPPERS</h3>
+        <p>G1-G2: Possíveis flutuações na rede elétrica. GPS pode ter imprecisões. Aurora visível em latitudes altas.</p>
+        <p>G3-G4: Possíveis apagões temporários. Comunicação por rádio HF prejudicada. Satélites podem ter anomalias.</p>
+        <p>G5: Risco de colapso de redes elétricas. Danos a transformadores. Comunicações severamente impactadas. Evento raro mas catastrófico.</p>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="card-header"><span class="card-title">ESCALA DE FLARES SOLARES</span></div>
+    <div style="padding:16px">
+      <div class="scale-bar">
+        <div class="scale-item" style="background:rgba(0,255,136,0.1);color:var(--green2)">A<br>MÍNIMO</div>
+        <div class="scale-item" style="background:rgba(0,255,136,0.15);color:var(--green)">B<br>BAIXO</div>
+        <div class="scale-item" style="background:rgba(255,179,0,0.08);color:var(--amber)">C<br>FRACO</div>
+        <div class="scale-item" style="background:rgba(255,179,0,0.15);color:var(--amber)">M<br>MODERADO</div>
+        <div class="scale-item" style="background:rgba(255,51,51,0.15);color:var(--red)">X<br>EXTREMO</div>
+      </div>
+      <div class="info-block">
+        <h3>O QUE SÃO FLARES?</h3>
+        <p>Flares solares são explosões de radiação eletromagnética no Sol. Classe C é comum e inofensiva. Classe M pode causar apagões de rádio HF.</p>
+        <p>Classe X é a mais potente — pode causar apagões de comunicação, danos a satélites e, quando acompanhada de CME (Ejeção de Massa Coronal), tempestades geomagnéticas severas.</p>
+        <p>O índice Bz (componente magnético) indica geoefetividade: valores negativos intensos (abaixo de -10 nT) potencializam o impacto na Terra.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px">
+  <div class="card-header"><span class="card-title">LINKS ÚTEIS — MONITORAMENTO SOLAR</span></div>
+  <div class="grid-4" style="padding:14px">
+    <div style="background:rgba(255,179,0,0.04);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">🛰️</div><div style="font-family:Orbitron;font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px">NOAA SWPC</div><a href="https://www.swpc.noaa.gov" target="_blank" style="font-family:monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:3px 10px;border-radius:2px;display:inline-block;margin-top:6px">ACESSAR</a></div>
+    <div style="background:rgba(255,179,0,0.04);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">🌍</div><div style="font-family:Orbitron;font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px">AURORA FORECAST</div><a href="https://www.swpc.noaa.gov/products/aurora-30-minute-forecast" target="_blank" style="font-family:monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:3px 10px;border-radius:2px;display:inline-block;margin-top:6px">ACESSAR</a></div>
+    <div style="background:rgba(255,179,0,0.04);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">☀️</div><div style="font-family:Orbitron;font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px">SOLAR MONITOR</div><a href="https://www.solarmonitor.org" target="_blank" style="font-family:monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:3px 10px;border-radius:2px;display:inline-block;margin-top:6px">ACESSAR</a></div>
+    <div style="background:rgba(255,179,0,0.04);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">📊</div><div style="font-family:Orbitron;font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:4px">SPACEWEATHER</div><a href="https://spaceweather.com" target="_blank" style="font-family:monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:3px 10px;border-radius:2px;display:inline-block;margin-top:6px">ACESSAR</a></div>
+  </div>
+</div>
+
+</main>
+<footer>
+  <p>PREPPERS BR MONITOR v2.0 — SISTEMA DE MONITORAMENTO E PREPARAÇÃO</p>
+  <p style="margin-top:6px;opacity:0.5">DADOS EM TEMPO REAL • ATUALIZAÇÃO CONTÍNUA</p>
+</footer>
+<script>
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR')+' BRT'}
+setInterval(updateClock,1000);updateClock();
+
+async function loadSolar(){const c=document.getElementById("solar-data");const b=document.getElementById("solar-badge");let fc="—",fl="QUIETO",fco="var(--green)",kv="—",kl="QUIETO",kco="var(--green)",ws="—",wco="var(--green)",bz="—",bzco="var(--green)";
+try{const r=await fetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json");const d=await r.json();if(d&&d.length){const l=d[d.length-1];fc=l.max_class||"B1.0";const ch=fc.charAt(0).toUpperCase();if(ch==="X"){fl="EXTREMO";fco="var(--red)"}else if(ch==="M"){fl="MODERADO";fco="var(--amber)"}else if(ch==="C"){fl="FRACO";fco="var(--amber)"}else{fl="QUIETO";fco="var(--green)"}}}catch(e){}
+try{const r=await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");const d=await r.json();if(d&&d.length>1){const l=d[d.length-1];const k=parseFloat(l[1]);if(!isNaN(k)){kv=k.toFixed(1);if(k>=8){kl="G4+ SEVERO";kco="var(--red)"}else if(k>=7){kl="G3 FORTE";kco="var(--red)"}else if(k>=6){kl="G2 MODERADO";kco="var(--amber)"}else if(k>=5){kl="G1 MENOR";kco="var(--amber)"}else if(k>=4){kl="ATIVO";kco="var(--amber)"}else{kl="QUIETO";kco="var(--green)"}}}}catch(e){}
+try{const r=await fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json");const d=await r.json();if(d&&d.WindSpeed){ws=Math.round(parseFloat(d.WindSpeed));if(ws>=700)wco="var(--red)";else if(ws>=500)wco="var(--amber)";else wco="var(--green)"}}catch(e){}
+try{const r=await fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json");const d=await r.json();if(d&&d.Bz){const v=parseFloat(d.Bz);bz=v.toFixed(1);if(v<=-10)bzco="var(--red)";else if(v<=-5)bzco="var(--amber)";else bzco="var(--green)"}}catch(e){}
+const kn=parseFloat(kv);let bt="QUIETO",bc="card-badge badge-ok";if(fc.charAt(0)==="X"||kn>=7){bt="CLASSE X";bc="card-badge badge-live"}else if(fc.charAt(0)==="M"||kn>=5){bt="CLASSE M";bc="card-badge badge-warn"}else if(fc.charAt(0)==="C"||kn>=4){bt="CLASSE C";bc="card-badge badge-warn"}
+if(b){b.textContent=bt;b.className=bc}
+c.innerHTML='<div class="solar-stat"><div class="solar-stat-icon">☀️</div><div class="solar-stat-label">FLARE</div><div class="solar-stat-val" style="color:'+fco+'">'+fc+'</div><div class="solar-stat-sub" style="color:'+fco+'">'+fl+'</div></div><div class="solar-stat"><div class="solar-stat-icon">🌐</div><div class="solar-stat-label">Kp INDEX</div><div class="solar-stat-val" style="color:'+kco+'">'+kv+'</div><div class="solar-stat-sub" style="color:'+kco+'">'+kl+'</div></div><div class="solar-stat"><div class="solar-stat-icon">💨</div><div class="solar-stat-label">VENTO SOLAR</div><div class="solar-stat-val" style="color:'+wco+'">'+ws+'</div><div class="solar-stat-sub" style="color:var(--muted)">KM/S</div></div><div class="solar-stat"><div class="solar-stat-icon">🧲</div><div class="solar-stat-label">Bz (nT)</div><div class="solar-stat-val" style="color:'+bzco+'">'+bz+'</div><div class="solar-stat-sub" style="color:'+bzco+'">'+(parseFloat(bz)<=-5?"GEOEFETIVO":"NORMAL")+'</div></div>'}
+loadSolar();setInterval(loadSolar,300000);
+
+</script>
+</body>
+</html>
