@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor Global — PREPPERS BR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+nav{display:flex;align-items:center;gap:4px}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+
+/* ══ DEFCON BAR ══ */
+.defcon-bar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;border-bottom:1px solid var(--border);background:rgba(5,10,8,0.9);gap:12px;flex-wrap:wrap}
+.defcon-level{display:flex;align-items:center;gap:12px}
+.defcon-badge{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;padding:4px 16px;border-radius:3px;border:2px solid}
+.defcon-5{color:#00ff88;border-color:#00ff88;background:rgba(0,255,136,0.1);text-shadow:0 0 10px rgba(0,255,136,0.5)}
+.defcon-4{color:#88ff00;border-color:#88ff00;background:rgba(136,255,0,0.1);text-shadow:0 0 10px rgba(136,255,0,0.5)}
+.defcon-3{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,0.1);text-shadow:0 0 10px rgba(255,179,0,0.5)}
+.defcon-2{color:#ff6600;border-color:#ff6600;background:rgba(255,102,0,0.1);text-shadow:0 0 10px rgba(255,102,0,0.5)}
+.defcon-1{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.15);text-shadow:0 0 10px rgba(255,51,51,0.5);animation:defcon-flash 1s infinite}
+@keyframes defcon-flash{0%,100%{opacity:1}50%{opacity:0.7}}
+.defcon-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted)}
+.defcon-desc{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--text)}
+.threat-indicators{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.threat-ind{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
+.threat-dot{width:8px;height:8px;border-radius:50%}
+
+/* ══ MAIN LAYOUT ══ */
+.mgrid{display:grid;grid-template-columns:1fr 380px;gap:0;position:relative;z-index:1;min-height:calc(100vh - 170px)}
+.map-col{position:relative;border-right:1px solid var(--border)}
+#map{width:100%;height:100%;min-height:600px;background:#030806}
+.panel-col{overflow-y:auto;max-height:calc(100vh - 170px);background:var(--bg2)}
+
+/* Map controls */
+.map-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:6px;flex-wrap:wrap}
+.map-btn{font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 10px;border-radius:2px;border:1px solid var(--border);background:rgba(5,10,8,0.9);color:var(--muted);cursor:pointer;letter-spacing:1px;transition:all 0.2s;backdrop-filter:blur(5px)}
+.map-btn:hover,.map-btn.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.1)}
+.map-legend{position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:8px 12px;backdrop-filter:blur(5px)}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin:3px 0;letter-spacing:1px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ══ PANELS ══ */
+.panel{border-bottom:1px solid var(--border)}
+.panel-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.02);cursor:pointer}
+.panel-title{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;color:var(--green);display:flex;align-items:center;gap:6px}
+.panel-badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:1px}
+
+/* News items */
+.news-threat{padding:10px 14px;border-bottom:1px solid rgba(26,61,42,0.5);transition:background 0.2s;cursor:pointer}
+.news-threat:hover{background:rgba(0,255,136,0.03)}
+.news-threat-bar{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.threat-level{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:1px}
+.tl-critical{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
+.tl-high{background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)}
+.tl-medium{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)}
+.tl-low{background:rgba(0,255,136,0.08);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
+.tl-info{background:rgba(0,170,255,0.08);color:var(--blue);border:1px solid rgba(0,170,255,0.2)}
+.news-threat-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.news-threat-meta{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:1px}
+
+/* Solar detail */
+.solar-detail{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px}
+.solar-box{text-align:center;padding:10px 6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px}
+.solar-val{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700}
+.solar-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-top:4px}
+
+/* Webcams */
+.webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px}
+.webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;cursor:pointer;aspect-ratio:16/9;background:#000}
+.webcam-item iframe,.webcam-item img{width:100%;height:100%;object-fit:cover;border:none}
+.webcam-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--green2);letter-spacing:1px;text-align:center}
+
+.loading-sm{padding:14px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+/* Leaflet overrides */
+.leaflet-container{background:#030806!important;font-family:'Rajdhani',sans-serif}
+.leaflet-control-zoom a{background:rgba(5,10,8,0.9)!important;color:var(--green)!important;border-color:var(--border)!important}
+.leaflet-popup-content-wrapper{background:var(--card)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:4px!important;box-shadow:0 4px 20px rgba(0,0,0,0.5)!important}
+.leaflet-popup-tip{background:var(--card)!important}
+.leaflet-popup-content{font-family:'Rajdhani',sans-serif;font-size:13px;margin:10px 14px}
+.leaflet-popup-content strong{color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:1px}
+
+@media(max-width:900px){
+  header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px}
+  nav{flex-wrap:wrap;gap:2px;order:3;width:100%;justify-content:center;padding-top:4px;border-top:1px solid var(--border)}
+  nav a{font-size:10px;padding:4px 8px}
+  .defcon-bar{height:auto;padding:8px 16px;flex-direction:column;gap:6px}
+  .mgrid{grid-template-columns:1fr!important}
+  .map-col{min-height:400px}
+  .panel-col{max-height:none}
+  .webcam-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">INTELIGÊNCIA GLOBAL EM TEMPO REAL</div></div></div>
+  <nav>
+    <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
+    <a href="monitor-global.html" class="active">GLOBAL</a>
+    <a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a>
+  </nav>
+  <div style="display:flex;align-items:center;gap:20px"><div class="status-pill"><span class="dot"></span> LIVE</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+
+<!-- DEFCON BAR -->
+<div class="defcon-bar">
+  <div class="defcon-level">
+    <div class="defcon-badge defcon-5" id="defcon-badge">DEFCON 5</div>
+    <div>
+      <div class="defcon-label">NÍVEL DE AMEAÇA GLOBAL</div>
+      <div class="defcon-desc" id="defcon-desc">SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS</div>
+    </div>
+  </div>
+  <div class="threat-indicators">
+    <div class="threat-ind"><div class="threat-dot" id="dot-sismo" style="background:var(--green)"></div>SÍSMICO</div>
+    <div class="threat-ind"><div class="threat-dot" id="dot-solar" style="background:var(--green)"></div>SOLAR</div>
+    <div class="threat-ind"><div class="threat-dot" id="dot-clima" style="background:var(--green)"></div>CLIMA</div>
+    <div class="threat-ind"><div class="threat-dot" id="dot-geo" style="background:var(--green)"></div>GEOPOLÍTICO</div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="mgrid">
+  <!-- MAP -->
+  <div class="map-col">
+    <div id="map"></div>
+    <div class="map-controls">
+      <button class="map-btn active" onclick="toggleLayer('quakes',this)">🔴 SISMOS</button>
+      <button class="map-btn active" onclick="toggleLayer('volcanoes',this)">🌋 VULCÕES</button>
+      <button class="map-btn active" onclick="toggleLayer('disasters',this)">⚠️ DESASTRES</button>
+      <button class="map-btn" onclick="toggleLayer('fires',this)">🔥 INCÊNDIOS</button>
+    </div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>SISMO M5+</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>SISMO M4-5</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green2)"></div>SISMO M2.5-4</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div>VULCÃO ATIVO</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>DESASTRE/ALERTA</div>
+    </div>
+  </div>
+
+  <!-- PANELS -->
+  <div class="panel-col">
+    <!-- THREAT NEWS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📡 NOTÍCIAS — CLASSIFICAÇÃO DE AMEAÇA</span>
+        <span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="news-count">—</span>
+      </div>
+      <div id="news-list"><div class="loading-sm">▋ CARREGANDO FEEDS...</div></div>
+    </div>
+
+    <!-- SOLAR DETAIL -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">☀️ CLIMA ESPACIAL DETALHADO</span>
+        <span class="panel-badge" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)" id="solar-status">—</span>
+      </div>
+      <div class="solar-detail">
+        <div class="solar-box"><div class="solar-val" id="s-kp" style="color:var(--green)">—</div><div class="solar-lbl">KP INDEX</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-xray" style="color:var(--green)">—</div><div class="solar-lbl">X-RAY FLARE</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-wind" style="color:var(--green)">—</div><div class="solar-lbl">VENTO SOLAR KM/S</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-bz" style="color:var(--green)">—</div><div class="solar-lbl">BZ FIELD nT</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-proton" style="color:var(--green)">—</div><div class="solar-lbl">PRÓTONS ≥10MeV</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-storm" style="color:var(--green)">—</div><div class="solar-lbl">TEMPESTADE GEO</div></div>
+      </div>
+      <!-- SCALE BAR -->
+      <div style="padding:8px 14px;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;margin-bottom:4px"><span style="color:var(--green)">G0</span><span style="color:var(--green)">G1</span><span style="color:var(--amber)">G2</span><span style="color:#ff6600">G3</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div>
+        <div style="height:4px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-4px;width:3px;height:12px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div>
+      </div>
+    </div>
+
+    <!-- SEISMIC SUMMARY -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">🔴 ATIVIDADE SÍSMICA 24H</span>
+        <span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span>
+      </div>
+      <div id="quake-list"><div class="loading-sm">▋ CARREGANDO USGS...</div></div>
+    </div>
+
+    <!-- WEBCAMS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📹 WEBCAMS ESTRATÉGICAS</span>
+        <span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span>
+      </div>
+      <div class="webcam-grid" id="webcam-grid"></div>
+    </div>
+  </div>
+</div>
+
+<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v1.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • GDACS • NASA EONET • RSS FEEDS</p></footer>
+<script>
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
+setInterval(updateClock,1000);updateClock();
+
+// ── CORS PROXY ──
+var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
+var pi=0;
+async function pFetch(url,timeout){
+  timeout=timeout||10000;
+  // Try direct first
+  try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;} catch(e){}
+  // Try proxies
+  for(var i=0;i<proxies.length;i++){
+    try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}
+  }
+  return null;
+}
+
+// ══════════════════════════════════
+// ██  MAP (Leaflet)  ██
+// ══════════════════════════════════
+var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
+
+var layers={quakes:L.layerGroup().addTo(map),volcanoes:L.layerGroup().addTo(map),disasters:L.layerGroup().addTo(map),fires:L.layerGroup()};
+
+function toggleLayer(name,btn){
+  if(map.hasLayer(layers[name])){map.removeLayer(layers[name]);btn.classList.remove('active')}
+  else{map.addLayer(layers[name]);btn.classList.add('active')}
+}
+
+function quakeColor(m){return m>=5?'#ff3333':m>=4?'#ffb300':'#00cc6a'}
+function quakeRadius(m){return m>=6?14:m>=5?10:m>=4?7:4}
+
+// ── LOAD EARTHQUAKES ──
+var allQuakes=[];
+async function loadQuakes(){
+  try{
+    var r=await pFetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
+    if(!r)return;var data=await r.json();
+    layers.quakes.clearLayers();allQuakes=[];
+    var maxMag=0;
+    data.features.forEach(function(f){
+      var c=f.geometry.coordinates,p=f.properties;
+      var mag=p.mag,place=p.place,time=new Date(p.time);
+      if(mag>maxMag)maxMag=mag;
+      allQuakes.push({mag:mag,place:place,time:time,lat:c[1],lng:c[0],depth:c[2]});
+      L.circleMarker([c[1],c[0]],{radius:quakeRadius(mag),fillColor:quakeColor(mag),fillOpacity:0.7,color:quakeColor(mag),weight:1,opacity:0.9}).bindPopup('<strong>SISMO M'+mag.toFixed(1)+'</strong><br>'+place+'<br><span style="color:var(--muted);font-size:11px">'+time.toLocaleString('pt-BR')+'<br>Profundidade: '+c[2].toFixed(0)+'km</span>').addTo(layers.quakes);
+    });
+    // Update panel
+    document.getElementById('quake-count').textContent=data.features.length+' EVENTOS';
+    renderQuakeList();
+    // DEFCON sismo
+    if(maxMag>=7){setThreat('sismo','#ff3333')}
+    else if(maxMag>=6){setThreat('sismo','#ff6600')}
+    else if(maxMag>=5){setThreat('sismo','var(--amber)')}
+    else{setThreat('sismo','var(--green)')}
+    updateDefcon();
+  }catch(e){console.log('Quake error',e)}
+}
+
+function renderQuakeList(){
+  var el=document.getElementById('quake-list');
+  var sorted=allQuakes.slice().sort(function(a,b){return b.mag-a.mag}).slice(0,12);
+  if(!sorted.length){el.innerHTML='<div class="loading-sm">Sem dados</div>';return}
+  var h='';sorted.forEach(function(q){
+    var cls=q.mag>=5?'tl-critical':q.mag>=4?'tl-high':'tl-medium';
+    h+='<div class="news-threat" onclick="map.setView(['+q.lat+','+q.lng+'],6)"><div class="news-threat-bar"><span class="threat-level '+cls+'">M'+q.mag.toFixed(1)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--muted)">PROF: '+q.depth.toFixed(0)+'KM</span></div><div class="news-threat-title">'+q.place+'</div><div class="news-threat-meta">'+q.time.toLocaleString('pt-BR')+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── LOAD VOLCANOES ──
+async function loadVolcanoes(){
+  try{
+    var r=await pFetch('https://volcano.si.edu/news/WeeklyVolcanoRSS.xml');
+    if(!r)return;var txt=await r.text();
+    var parser=new DOMParser(),doc=parser.parseFromString(txt,'text/xml');
+    var items=doc.querySelectorAll('item');
+    // Also try EONET for volcanoes
+    var r2=await pFetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&days=7&limit=20');
+    if(r2){var eodata=await r2.json();
+      if(eodata.events){eodata.events.forEach(function(ev){
+        var geo=ev.geometry;if(geo&&geo.length>0){var g=geo[geo.length-1];
+          L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:8,fillColor:'#ff6600',fillOpacity:0.8,color:'#ff6600',weight:2}).bindPopup('<strong>🌋 '+ev.title+'</strong><br><span style="color:var(--muted);font-size:11px">'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(layers.volcanoes)}
+      })}
+    }
+  }catch(e){console.log('Volcano error',e)}
+}
+
+// ── LOAD DISASTERS (EONET) ──
+async function loadDisasters(){
+  try{
+    var r=await pFetch('https://eonet.gsfc.nasa.gov/api/v3/events?days=7&limit=30');
+    if(!r)return;var data=await r.json();
+    if(!data.events)return;
+    data.events.forEach(function(ev){
+      if(ev.categories[0].id==='volcanoes')return;// handled above
+      var geo=ev.geometry;if(geo&&geo.length>0){var g=geo[geo.length-1];
+        var color=ev.categories[0].id==='wildfires'?'#ff4400':ev.categories[0].id==='severeStorms'?'#aa00ff':'#00aaff';
+        var layerTarget=ev.categories[0].id==='wildfires'?layers.fires:layers.disasters;
+        L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:6,fillColor:color,fillOpacity:0.7,color:color,weight:1}).bindPopup('<strong>'+ev.title+'</strong><br><span style="color:var(--muted);font-size:11px">'+ev.categories[0].title+'<br>'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(layerTarget);
+      }
+    });
+  }catch(e){console.log('EONET error',e)}
+}
+
+// ══════════════════════════════════
+// ██  SOLAR DATA (NOAA SWPC)  ██
+// ══════════════════════════════════
+var solarThreat=0;
+async function loadSolar(){
+  try{
+    // Kp Index
+    var r=await pFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+    if(r){var d=await r.json();if(d.length>1){var kp=parseFloat(d[d.length-1][1]);
+      document.getElementById('s-kp').textContent=kp.toFixed(1);
+      document.getElementById('s-kp').style.color=kp>=7?'var(--red)':kp>=5?'var(--amber)':kp>=4?'#ff6600':'var(--green)';
+      var pct=Math.min(kp/9*100,100);document.getElementById('kp-marker').style.left=pct+'%';
+      solarThreat=Math.max(solarThreat,kp>=7?4:kp>=5?3:kp>=4?2:0);
+      var stormLvl=kp>=9?'G5 EXTREMA':kp>=8?'G4 SEVERA':kp>=7?'G3 FORTE':kp>=5?'G2 MODERADA':kp>=4?'G1 MENOR':'NENHUMA';
+      document.getElementById('s-storm').textContent=stormLvl;
+      document.getElementById('s-storm').style.color=kp>=7?'var(--red)':kp>=5?'var(--amber)':kp>=4?'#ff6600':'var(--green)';
+    }}
+
+    // X-ray flares
+    var r2=await pFetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json');
+    if(r2){var d2=await r2.json();if(d2.length>0){var last=d2[d2.length-1];var cls=last.max_class||'—';
+      document.getElementById('s-xray').textContent=cls;
+      document.getElementById('s-xray').style.color=cls.startsWith('X')?'var(--red)':cls.startsWith('M')?'var(--amber)':'var(--green)';
+      if(cls.startsWith('X'))solarThreat=Math.max(solarThreat,4);
+      else if(cls.startsWith('M'))solarThreat=Math.max(solarThreat,2);
+    }}
+
+    // Solar wind
+    var r3=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json');
+    if(r3){var d3=await r3.json();if(d3.WindSpeed){
+      var ws=parseFloat(d3.WindSpeed);
+      document.getElementById('s-wind').textContent=ws.toFixed(0);
+      document.getElementById('s-wind').style.color=ws>700?'var(--red)':ws>500?'var(--amber)':'var(--green)';
+      if(ws>700)solarThreat=Math.max(solarThreat,3);
+    }}
+
+    // Bz field
+    var r4=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json');
+    if(r4){var d4=await r4.json();if(d4.Bz){
+      var bz=parseFloat(d4.Bz);
+      document.getElementById('s-bz').textContent=bz.toFixed(1);
+      document.getElementById('s-bz').style.color=bz<-10?'var(--red)':bz<-5?'var(--amber)':'var(--green)';
+    }}
+
+    // Proton flux
+    var r5=await pFetch('https://services.swpc.noaa.gov/products/summary/10mev-protons-24hr.json');
+    if(r5){var d5=await r5.json();if(d5.Flux){
+      document.getElementById('s-proton').textContent=parseFloat(d5.Flux).toFixed(1);
+      document.getElementById('s-proton').style.color=parseFloat(d5.Flux)>100?'var(--red)':parseFloat(d5.Flux)>10?'var(--amber)':'var(--green)';
+    }}
+
+    // Update solar indicator
+    var sc=solarThreat>=4?'#ff3333':solarThreat>=3?'#ff6600':solarThreat>=2?'var(--amber)':'var(--green)';
+    setThreat('solar',sc);
+    document.getElementById('solar-status').textContent=solarThreat>=3?'ALERTA':solarThreat>=2?'ELEVADO':'NORMAL';
+    document.getElementById('solar-status').style.color=solarThreat>=3?'var(--red)':solarThreat>=2?'var(--amber)':'var(--green2)';
+    updateDefcon();
+  }catch(e){console.log('Solar error',e)}
+}
+
+// ══════════════════════════════════
+// ██  NEWS WITH THREAT LEVEL  ██
+// ══════════════════════════════════
+var threatKeywords={
+  critical:['guerra','nuclear','invasão','ataque','míssil','bomba','explosão','massacre','colapso','emergência nacional'],
+  high:['conflito','terremoto','tsunami','furacão','enchente','apagão','crise','alerta máximo','evacuação','pandemia'],
+  medium:['tensão','sanção','protesto','seca','tempestade','vulcão','inundação','militar','fronteira','embargo'],
+  low:['exercício militar','diplomacia','negociação','monitoramento','previsão','risco','ameaça','segurança']
+};
+
+function classifyThreat(title){
+  var t=title.toLowerCase();
+  for(var k in threatKeywords){for(var i=0;i<threatKeywords[k].length;i++){if(t.indexOf(threatKeywords[k][i])!==-1)return k}}
+  return 'info';
+}
+
+var threatLabels={critical:'CRÍTICO',high:'ALTO',medium:'MÉDIO',low:'BAIXO',info:'INFO'};
+
+async function loadNews(){
+  var feeds=[
+    'https://news.google.com/rss/search?q=desastre+OR+terremoto+OR+guerra+OR+crise+OR+emergencia&hl=pt-BR&gl=BR',
+    'https://news.google.com/rss/search?q=earthquake+OR+tsunami+OR+war+OR+nuclear+OR+disaster&hl=en',
+  ];
+  var allNews=[];
+  for(var i=0;i<feeds.length;i++){
+    try{
+      var r=await pFetch(feeds[i],8000);if(!r)continue;
+      var txt=await r.text();var parser=new DOMParser(),doc=parser.parseFromString(txt,'text/xml');
+      var items=doc.querySelectorAll('item');
+      items.forEach(function(item){
+        var title=item.querySelector('title')?.textContent||'';
+        var link=item.querySelector('link')?.textContent||'';
+        var pubDate=item.querySelector('pubDate')?.textContent||'';
+        var source=item.querySelector('source')?.textContent||'';
+        if(title){allNews.push({title:title,link:link,date:new Date(pubDate),source:source,threat:classifyThreat(title)})}
+      });
+    }catch(e){}
+  }
+  // Sort by threat then date
+  var order={critical:0,high:1,medium:2,low:3,info:4};
+  allNews.sort(function(a,b){var d=order[a.threat]-order[b.threat];return d!==0?d:b.date-a.date});
+  allNews=allNews.slice(0,25);
+
+  var el=document.getElementById('news-list');
+  if(!allNews.length){el.innerHTML='<div class="loading-sm">Sem dados</div>';return}
+  var critCount=allNews.filter(function(n){return n.threat==='critical'||n.threat==='high'}).length;
+  document.getElementById('news-count').textContent=critCount>0?critCount+' ALERTAS':'MONITORANDO';
+
+  var h='';allNews.forEach(function(n){
+    var ago=Math.round((Date.now()-n.date.getTime())/60000);
+    var agoStr=ago<60?ago+'MIN':Math.round(ago/60)+'H';
+    h+='<a href="'+n.link+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level tl-'+n.threat+'">'+threatLabels[n.threat]+'</span></div><div class="news-threat-title">'+n.title+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS'+(n.source?' • '+n.source:'')+'</div></div></a>';
+  });
+  el.innerHTML=h;
+
+  // Geo threat indicator
+  if(allNews.filter(function(n){return n.threat==='critical'}).length>=3)setThreat('geo','#ff3333');
+  else if(critCount>=2)setThreat('geo','var(--amber)');
+  else setThreat('geo','var(--green)');
+  updateDefcon();
+}
+
+// ══════════════════════════════════
+// ██  WEBCAMS  ██
+// ══════════════════════════════════
+function loadWebcams(){
+  var cams=[
+    {name:'ISS — TERRA AO VIVO',url:'https://ustream.tv/embed/17074538',type:'iframe'},
+    {name:'TIMES SQUARE, NYC',url:'https://www.youtube.com/embed/AdUw5RdyZxI?autoplay=1&mute=1',type:'iframe'},
+    {name:'TÓQUIO, SHIBUYA',url:'https://www.youtube.com/embed/DjdUEyjx8GM?autoplay=1&mute=1',type:'iframe'},
+    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1',type:'iframe'},
+  ];
+  var el=document.getElementById('webcam-grid');
+  var h='';cams.forEach(function(c){
+    h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ══════════════════════════════════
+// ██  DEFCON CALCULATOR  ██
+// ══════════════════════════════════
+var threats={sismo:'var(--green)',solar:'var(--green)',clima:'var(--green)',geo:'var(--green)'};
+
+function setThreat(key,color){
+  threats[key]=color;
+  var dot=document.getElementById('dot-'+key);
+  if(dot){dot.style.background=color;if(color==='#ff3333'||color==='var(--red)'){dot.style.boxShadow='0 0 8px '+color;dot.style.animation='pulse 1s infinite'}else{dot.style.animation='pulse 2s infinite'}}
+}
+
+function updateDefcon(){
+  var score=0;
+  for(var k in threats){
+    var c=threats[k];
+    if(c==='#ff3333'||c==='var(--red)')score+=4;
+    else if(c==='#ff6600')score+=3;
+    else if(c==='var(--amber)')score+=2;
+    else score+=0;
+  }
+  var level,cls,desc;
+  if(score>=12){level=1;cls='defcon-1';desc='AMEAÇA MÁXIMA — MÚLTIPLOS EVENTOS CRÍTICOS EM CURSO'}
+  else if(score>=8){level=2;cls='defcon-2';desc='ALERTA ELEVADO — EVENTOS SEVEROS DETECTADOS'}
+  else if(score>=5){level=3;cls='defcon-3';desc='ATENÇÃO AUMENTADA — AMEAÇAS MODERADAS ATIVAS'}
+  else if(score>=2){level=4;cls='defcon-4';desc='VIGILÂNCIA — EVENTOS MENORES EM MONITORAMENTO'}
+  else{level=5;cls='defcon-5';desc='SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS'}
+
+  var badge=document.getElementById('defcon-badge');
+  badge.textContent='DEFCON '+level;
+  badge.className='defcon-badge '+cls;
+  document.getElementById('defcon-desc').textContent=desc;
+}
+
+// ══════════════════════════════════
+// ██  INIT  ██
+// ══════════════════════════════════
+loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();
+// Auto refresh
+setInterval(loadQuakes,300000);// 5min
+setInterval(loadSolar,300000);
+setInterval(loadNews,600000);// 10min
+</script>
+</body>
+</html>
