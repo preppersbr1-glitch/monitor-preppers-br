@@ -105,6 +105,44 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   </div>
 </header>
 
+<!-- POPUP iOS -->
+<div id="ios-popup" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.92);z-index:500;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card);border:1px solid rgba(255,179,0,0.4);border-radius:8px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 0 40px rgba(255,179,0,0.15)">
+    <div style="background:rgba(255,179,0,0.1);border-bottom:1px solid rgba(255,179,0,0.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:3px;color:var(--amber)">🍎 USUÁRIO IPHONE</div>
+      <button onclick="document.getElementById('ios-popup').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="padding:24px 20px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:2;margin-bottom:20px">
+        O iOS usa o <span style="color:var(--amber)">WiFi Assist</span> — quando detecta que o WiFi não tem internet, redireciona tudo pelo 5G. Por isso a placa não é encontrada automaticamente aqui.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div style="background:rgba(0,255,136,0.05);border:1px solid var(--border);border-radius:4px;padding:12px 14px">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--green);margin-bottom:6px">✅ OPÇÃO 1 — MAIS FÁCIL</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.8">
+            Conecte ao WiFi <span style="color:var(--text)">PreppersBR-XXXXXX</span>.<br>
+            O iPhone mostra um popup <span style="color:var(--text)">"Entrar na rede"</span> automaticamente.<br>
+            Toque nele → o app abre direto.
+          </div>
+        </div>
+        <div style="background:rgba(0,170,255,0.05);border:1px solid var(--border);border-radius:4px;padding:12px 14px">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--blue);margin-bottom:6px">✅ OPÇÃO 2 — DESATIVAR WIFI ASSIST</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.8">
+            <span style="color:var(--text)">Ajustes → Celular → WiFi Assist → desligar</span><br>
+            Depois conecte ao WiFi da placa e use os botões abaixo.
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="http://192.168.4.1" target="_blank" style="display:block;text-align:center;padding:12px;background:var(--green);color:#000;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;border-radius:3px;text-decoration:none">📡 ABRIR APP (192.168.4.1)</a>
+        <button onclick="document.getElementById('ios-popup').style.display='none'" style="padding:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;border-radius:3px;cursor:pointer">FECHAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <main>
   <div class="page-title">📻 DISPOSITIVO MESH</div>
   <div class="page-subtitle">// RADIO PREPPERS BR — T-BEAM / HELTEC</div>
@@ -188,8 +226,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
               <div class="step-desc">Com o WiFi da placa ativo, abra no browser:</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
                 <a href="http://192.168.4.1" target="_blank" class="step-code" style="text-decoration:none;color:var(--amber)">192.168.4.1</a>
-                <a href="http://tbeam.local" target="_blank" class="step-code" style="text-decoration:none;color:var(--amber)">tbeam.local</a>
-                <a href="http://heltec.local" target="_blank" class="step-code" style="text-decoration:none;color:var(--amber)">heltec.local</a>
+                <a href="http://preppersbr.local" target="_blank" class="step-code" style="text-decoration:none;color:var(--amber)">preppersbr.local</a>
               </div>
             </div>
           </div>
@@ -201,7 +238,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
           <div class="card-header"><div class="card-title">ACESSO RÁPIDO</div></div>
           <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
             <a href="http://192.168.4.1" target="_blank" class="btn btn-green" style="text-decoration:none;justify-content:center">📡 ABRIR HELTEC (192.168.4.1)</a>
-            <a href="http://heltec.local" target="_blank" class="btn btn-outline" style="text-decoration:none;justify-content:center">🌐 ABRIR VIA heltec.local</a>
+            <a href="http://preppersbr.local" target="_blank" class="btn btn-outline" style="text-decoration:none;justify-content:center">🌐 ABRIR VIA preppersbr.local</a>
             <div style="border-top:1px solid var(--border);padding-top:10px">
               <div class="ip-label" style="margin-bottom:6px">IP PERSONALIZADO:</div>
               <div style="display:flex;gap:8px">
@@ -217,7 +254,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
           <div class="device-grid">
             <div class="device-card" onclick="connectTo('192.168.4.1')">
               <div class="device-name">HELTEC V4</div>
-              <div class="device-ip">192.168.4.1 / heltec.local</div>
+              <div class="device-ip">192.168.4.1 / preppersbr.local</div>
               <div class="device-type">SX1262 · LoRa 915MHz · GPS · OLED</div>
             </div>
           </div>
@@ -274,8 +311,7 @@ function hideApp(){
 function checkDevice(){
   setStatus('🔍','VERIFICANDO...','Tentando conectar ao dispositivo.','var(--muted)','amber');
   var candidates=['http://192.168.4.1',
-                  'http://tbeam.local',
-                  'http://heltec.local'];
+                  'http://preppersbr.local'];
   var found=false;
   var checks=0;
   candidates.forEach(function(url){
@@ -317,8 +353,7 @@ function openCustom(){
 
 if(isIOS){
   document.getElementById('status-card').style.display='none';
-  var w=document.getElementById('ios-warn');
-  w.style.display='flex';
+  document.getElementById('ios-popup').style.display='flex';
   document.getElementById('hst').textContent='iOS DETECTADO';
   document.getElementById('hd').className='dot amber';
 } else {
