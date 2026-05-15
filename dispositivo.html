@@ -143,6 +143,18 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 
   <!-- INSTRUCOES (visível quando não conectado) -->
   <div id="instr-wrap">
+    <!-- Aviso iOS — exibido só no iPhone/iPad via JS -->
+    <div id="ios-warn" style="display:none;background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.3);border-radius:4px;padding:16px 18px;margin-bottom:16px;display:none;gap:12px;align-items:flex-start">
+      <div style="font-size:28px;line-height:1">🍎</div>
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--amber);margin-bottom:8px">USUÁRIO IPHONE / IPAD</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.9">
+          O iOS ativa o <span style="color:var(--amber)">WiFi Assist</span> e redireciona o tráfego pelo 5G quando o WiFi não tem internet — por isso a detecção automática não funciona.<br><br>
+          <span style="color:var(--green2)">✅ Solução mais fácil:</span> Ao conectar no WiFi da placa, o iPhone mostra automaticamente um popup <strong style="color:var(--text)">"Entrar na rede"</strong> — toque nele e o app abre direto.<br><br>
+          <span style="color:var(--green2)">✅ Alternativa:</span> Desative o WiFi Assist em <span style="color:var(--text)">Ajustes → Celular → WiFi Assist</span> e use os botões de acesso rápido abaixo.
+        </div>
+      </div>
+    </div>
     <div class="grid2">
       <div class="card">
         <div class="card-header"><div class="card-title">COMO CONECTAR</div></div>
@@ -188,8 +200,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><div class="card-title">ACESSO RÁPIDO</div></div>
           <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-            <a href="http://192.168.4.1" target="_blank" class="btn btn-green" style="text-decoration:none;justify-content:center">📡 ABRIR T-BEAM (192.168.4.1)</a>
-            <a href="http://tbeam.local" target="_blank" class="btn btn-outline" style="text-decoration:none;justify-content:center">🌐 ABRIR VIA tbeam.local</a>
+            <a href="http://192.168.4.1" target="_blank" class="btn btn-green" style="text-decoration:none;justify-content:center">📡 ABRIR HELTEC (192.168.4.1)</a>
             <a href="http://heltec.local" target="_blank" class="btn btn-outline" style="text-decoration:none;justify-content:center">🌐 ABRIR VIA heltec.local</a>
             <div style="border-top:1px solid var(--border);padding-top:10px">
               <div class="ip-label" style="margin-bottom:6px">IP PERSONALIZADO:</div>
@@ -204,11 +215,6 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <div class="card">
           <div class="card-header"><div class="card-title">DISPOSITIVOS COMPATÍVEIS</div></div>
           <div class="device-grid">
-            <div class="device-card" onclick="connectTo('192.168.4.1')">
-              <div class="device-name">T-BEAM V1.1</div>
-              <div class="device-ip">192.168.4.1 / tbeam.local</div>
-              <div class="device-type">SX1276 · LoRa 915MHz · GPS · TFT</div>
-            </div>
             <div class="device-card" onclick="connectTo('192.168.4.1')">
               <div class="device-name">HELTEC V4</div>
               <div class="device-ip">192.168.4.1 / heltec.local</div>
@@ -309,18 +315,13 @@ function openCustom(){
   connectTo(ip.indexOf('.')===-1?'192.168.4.1':ip);
 }
 
-// iOS: WiFi Assist impede fetch para 192.168.4.1 — mostra instruções específicas
 if(isIOS){
   document.getElementById('status-card').style.display='none';
-  // Injeta aviso iOS no topo das instruções
-  var warn=document.createElement('div');
-  warn.style.cssText='background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.3);border-radius:4px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start';
-  warn.innerHTML='<div style="font-size:24px">🍎</div><div><div style="font-family:\'Orbitron\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--amber);margin-bottom:6px">USUÁRIO IPHONE / IPAD</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);line-height:1.8">O iOS usa o <strong style="color:var(--amber)">WiFi Assist</strong> e redireciona o tráfego pelo 5G quando o WiFi não tem internet. Por isso o app não abre automaticamente aqui.<br><br>✅ <strong style="color:var(--green2)">Solução mais fácil:</strong> Ao conectar no WiFi da placa, o iPhone mostra automaticamente um popup "Entrar na rede" — toque nele e o app abre direto.<br>✅ <strong style="color:var(--green2)">Alternativa:</strong> Desative o WiFi Assist em <em>Ajustes → Celular → WiFi Assist</em> e use os links abaixo.</div></div>';
-  document.getElementById('instr-wrap').insertBefore(warn, document.getElementById('instr-wrap').firstChild);
+  var w=document.getElementById('ios-warn');
+  w.style.display='flex';
   document.getElementById('hst').textContent='iOS DETECTADO';
   document.getElementById('hd').className='dot amber';
 } else {
-  // Android / Desktop: detecta automaticamente
   checkDevice();
 }
 </script>
