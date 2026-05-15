@@ -229,6 +229,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 <script>
 var devUrl = 'http://192.168.4.1';
 var connected = false;
+var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function clk(){
   var n=new Date();
@@ -308,8 +309,20 @@ function openCustom(){
   connectTo(ip.indexOf('.')===-1?'192.168.4.1':ip);
 }
 
-// Verifica automaticamente ao carregar
-checkDevice();
+// iOS: WiFi Assist impede fetch para 192.168.4.1 — mostra instruções específicas
+if(isIOS){
+  document.getElementById('status-card').style.display='none';
+  // Injeta aviso iOS no topo das instruções
+  var warn=document.createElement('div');
+  warn.style.cssText='background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.3);border-radius:4px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start';
+  warn.innerHTML='<div style="font-size:24px">🍎</div><div><div style="font-family:\'Orbitron\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--amber);margin-bottom:6px">USUÁRIO IPHONE / IPAD</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);line-height:1.8">O iOS usa o <strong style="color:var(--amber)">WiFi Assist</strong> e redireciona o tráfego pelo 5G quando o WiFi não tem internet. Por isso o app não abre automaticamente aqui.<br><br>✅ <strong style="color:var(--green2)">Solução mais fácil:</strong> Ao conectar no WiFi da placa, o iPhone mostra automaticamente um popup "Entrar na rede" — toque nele e o app abre direto.<br>✅ <strong style="color:var(--green2)">Alternativa:</strong> Desative o WiFi Assist em <em>Ajustes → Celular → WiFi Assist</em> e use os links abaixo.</div></div>';
+  document.getElementById('instr-wrap').insertBefore(warn, document.getElementById('instr-wrap').firstChild);
+  document.getElementById('hst').textContent='iOS DETECTADO';
+  document.getElementById('hd').className='dot amber';
+} else {
+  // Android / Desktop: detecta automaticamente
+  checkDevice();
+}
 </script>
 </body>
 </html>
