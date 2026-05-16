@@ -125,12 +125,26 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   <div class="login-box">
     <div style="font-size:48px;margin-bottom:16px">🛡️</div>
     <h2>PREPPERS BR</h2>
-    <p>COMUNIDADE DE PREPARAÇÃO E SOBREVIVÊNCIA<br>Escolha um nickname para entrar no fórum</p>
-    <input type="text" id="login-nick" placeholder="Seu nickname (ex: SHADOW_OPS)" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
-    <div class="login-hint">3-20 caracteres • Letras, números e _ • Será visível para todos</div>
-    <div class="login-err" id="login-err"></div>
-    <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" onclick="doLogin()">ENTRAR NO FÓRUM →</button></div>
-    <p style="margin-top:16px;font-size:9px;opacity:0.4">Seu nickname fica salvo neste navegador</p>
+    <p id="login-subtitle">COMUNIDADE DE PREPARAÇÃO E SOBREVIVÊNCIA<br>Entre com sua conta para acessar o fórum</p>
+    <!-- login -->
+    <div id="form-login">
+      <input type="email" id="login-email" placeholder="seu@email.com" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" id="login-pass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-err" id="login-err"></div>
+      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" id="login-btn" onclick="doLogin()">ENTRAR →</button></div>
+      <div style="margin-top:14px;text-align:center"><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">Não tem conta? </span><button onclick="showRegister()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-decoration:underline;letter-spacing:1px">CADASTRAR</button></div>
+    </div>
+    <!-- cadastro -->
+    <div id="form-register" style="display:none">
+      <input type="text" id="reg-nick" placeholder="Nickname (ex: SHADOW_OPS)" maxlength="20" style="margin-bottom:6px">
+      <div class="login-hint" style="margin-bottom:10px">3-20 caracteres · letras, números e _ · visível a todos</div>
+      <input type="email" id="reg-email" placeholder="seu@email.com" style="margin-bottom:10px">
+      <input type="password" id="reg-pass" placeholder="Senha (mín. 6 caracteres)" style="margin-bottom:10px">
+      <input type="password" id="reg-pass2" placeholder="Confirmar senha" onkeydown="if(event.key==='Enter')doRegister()">
+      <div class="login-err" id="reg-err"></div>
+      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" id="reg-btn" onclick="doRegister()">CRIAR CONTA →</button></div>
+      <div style="margin-top:14px;text-align:center"><button onclick="showLogin()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-decoration:underline;letter-spacing:1px">← VOLTAR PARA LOGIN</button></div>
+    </div>
   </div>
 </div>
 <!-- ══ HEADER ══ -->
@@ -221,85 +235,114 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   </div>
 </div>
 <footer><p>PREPPERS BR MONITOR — COMUNIDADE v2.0</p></footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
 
-// ══════════════════════════════════════════════════════
-// ██  ADMIN: COLE SUA URL DO FIREBASE AQUI  ██
-// Crie um projeto em console.firebase.google.com
-// Ative Realtime Database em modo de teste
-// Cole a URL abaixo e publique o site
-// ══════════════════════════════════════════════════════
-var DB_URL = 'COLE_SUA_URL_FIREBASE_AQUI';
-// Exemplo: var DB_URL = 'https://meu-projeto-default-rtdb.firebaseio.com';
-// ══════════════════════════════════════════════════════
+// ── FIREBASE CONFIG ──
+var firebaseConfig = {
+  apiKey: "AIzaSyDFD02ywD0i_lTHwgJ8BRwwb6fwbh3VgC8",
+  authDomain: "comunidade-preppers-br-f5253.firebaseapp.com",
+  projectId: "comunidade-preppers-br-f5253"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
 
-var USERNAME = localStorage.getItem('preppers_username') || '';
+var DB_URL = 'https://comunidade-preppers-br-f5253-default-rtdb.firebaseio.com';
+var USERNAME = '';
 var currentFilter = 'all', currentTopicId = null, allTopics = {};
 var CAT_LABELS = {equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'🏠 ABRIGO',comunicacao:'📡 COMUNICAÇÃO',saude:'🏥 SAÚDE',ameacas:'📊 AMEAÇAS',geral:'💬 GERAL'};
 
-// Firebase REST
-async function fbGet(p){var r=await fetch(DB_URL+'/'+p+'.json');return await r.json()}
-async function fbSet(p,d){await fetch(DB_URL+'/'+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
-async function fbPush(p,d){var r=await fetch(DB_URL+'/'+p+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return await r.json()}
+// Firebase REST com token de autenticação
+async function getToken(){if(!auth.currentUser)return '';try{return await auth.currentUser.getIdToken()}catch(e){return ''}}
+async function fbGet(p){var tk=await getToken();var r=await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''));return await r.json()}
+async function fbSet(p,d){var tk=await getToken();await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
+async function fbPush(p,d){var tk=await getToken();var r=await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return await r.json()}
 
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
 function timeAgo(ts){if(!ts)return '';var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'Agora';if(m<60)return m+'min';var h=Math.floor(m/60);if(h<24)return h+'h atrás';var dd=Math.floor(h/24);return dd===1?'Ontem':dd+'d atrás'}
 
-// ── LOGIN / LOGOUT ──
-function checkLogin(){
-  if(DB_URL.indexOf('firebaseio.com') === -1){
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('main-content').style.display='none';
-    var lb = document.querySelector('.login-box');
-    lb.innerHTML = '<div style="font-size:48px;margin-bottom:16px">⚠️</div><h2 style="color:var(--amber)">FÓRUM NÃO CONFIGURADO</h2><p>O administrador precisa configurar o Firebase.<br>Edite o arquivo comunidade.html e cole a URL do Firebase na variável DB_URL.</p>';
-    return;
+// ── TELAS DE LOGIN/CADASTRO ──
+function showRegister(){
+  document.getElementById('form-login').style.display='none';
+  document.getElementById('form-register').style.display='block';
+  document.getElementById('login-subtitle').innerHTML='Crie sua conta para entrar na comunidade';
+}
+function showLogin(){
+  document.getElementById('form-register').style.display='none';
+  document.getElementById('form-login').style.display='block';
+  document.getElementById('login-subtitle').innerHTML='COMUNIDADE DE PREPARAÇÃO E SOBREVIVÊNCIA<br>Entre com sua conta para acessar o fórum';
+}
+function setBtnLoading(id,loading,label){var b=document.getElementById(id);b.disabled=loading;b.textContent=loading?'AGUARDE...':label}
+
+async function doLogin(){
+  var email=document.getElementById('login-email').value.trim();
+  var pass=document.getElementById('login-pass').value;
+  var err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!email||!pass){err.textContent='Preencha todos os campos';err.style.display='block';return}
+  setBtnLoading('login-btn',true,'ENTRAR →');
+  try{
+    await auth.signInWithEmailAndPassword(email,pass);
+  }catch(e){
+    setBtnLoading('login-btn',false,'ENTRAR →');
+    var msgs={'auth/user-not-found':'E-mail não encontrado','auth/wrong-password':'Senha incorreta','auth/invalid-email':'E-mail inválido','auth/invalid-credential':'E-mail ou senha incorretos','auth/too-many-requests':'Muitas tentativas. Tente mais tarde.'};
+    err.textContent=msgs[e.code]||'Erro: '+e.message;err.style.display='block';
   }
-  if(!USERNAME){
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('main-content').style.display='none';
-  } else {
-    enterForum();
+}
+
+async function doRegister(){
+  var nick=document.getElementById('reg-nick').value.trim();
+  var email=document.getElementById('reg-email').value.trim();
+  var pass=document.getElementById('reg-pass').value;
+  var pass2=document.getElementById('reg-pass2').value;
+  var err=document.getElementById('reg-err');
+  err.style.display='none';
+  if(nick.length<3){err.textContent='Nickname: mínimo 3 caracteres';err.style.display='block';return}
+  if(nick.length>20){err.textContent='Nickname: máximo 20 caracteres';err.style.display='block';return}
+  if(!/^[a-zA-Z0-9_]+$/.test(nick)){err.textContent='Nickname: apenas letras, números e _';err.style.display='block';return}
+  if(!email){err.textContent='Preencha o e-mail';err.style.display='block';return}
+  if(pass.length<6){err.textContent='Senha: mínimo 6 caracteres';err.style.display='block';return}
+  if(pass!==pass2){err.textContent='As senhas não coincidem';err.style.display='block';return}
+  setBtnLoading('reg-btn',true,'CRIAR CONTA →');
+  try{
+    var cred=await auth.createUserWithEmailAndPassword(email,pass);
+    await cred.user.updateProfile({displayName:nick.toUpperCase()});
+    // força reload do user para pegar displayName
+    await auth.currentUser.reload();
+  }catch(e){
+    setBtnLoading('reg-btn',false,'CRIAR CONTA →');
+    var msgs={'auth/email-already-in-use':'Este e-mail já está cadastrado','auth/invalid-email':'E-mail inválido','auth/weak-password':'Senha muito fraca'};
+    err.textContent=msgs[e.code]||'Erro: '+e.message;err.style.display='block';
   }
 }
 
-function doLogin(){
-  var nick = document.getElementById('login-nick').value.trim();
-  var err = document.getElementById('login-err');
-  if(nick.length < 3){err.textContent='Mínimo 3 caracteres';err.style.display='block';return}
-  if(nick.length > 20){err.textContent='Máximo 20 caracteres';err.style.display='block';return}
-  if(!/^[a-zA-Z0-9_]+$/.test(nick)){err.textContent='Apenas letras, números e _ permitidos';err.style.display='block';return}
-  USERNAME = nick;
-  localStorage.setItem('preppers_username', USERNAME);
-  enterForum();
-}
+function doLogout(){auth.signOut()}
 
-function doLogout(){
-  USERNAME = '';
-  localStorage.removeItem('preppers_username');
-  document.getElementById('main-content').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-  // Reset login form
-  var lb = document.querySelector('.login-box');
-  if(lb && !document.getElementById('login-nick')){location.reload();}
-}
-
-function enterForum(){
+function enterForum(user){
+  USERNAME=(user.displayName||user.email.split('@')[0]).toUpperCase();
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
-  document.getElementById('user-display-name').textContent = USERNAME.toUpperCase();
-  document.getElementById('user-avatar').textContent = USERNAME.charAt(0).toUpperCase();
-  // Register user
-  var uid = USERNAME.toLowerCase().replace(/[^a-z0-9_]/g,'_');
-  fbSet('users/'+uid,{name:USERNAME,lastSeen:Date.now()}).catch(function(){});
-  // Load data
-  loadTopics(); loadStats();
-  setInterval(loadTopics, 15000);
-  setInterval(loadStats, 30000);
-  // Heartbeat
-  setInterval(function(){fbSet('users/'+uid+'/lastSeen',Date.now()).catch(function(){})},60000);
+  document.getElementById('user-display-name').textContent=USERNAME;
+  document.getElementById('user-avatar').textContent=USERNAME.charAt(0);
+  fbSet('users/'+user.uid,{name:USERNAME,email:user.email,lastSeen:Date.now()}).catch(function(){});
+  loadTopics();loadStats();
+  setInterval(loadTopics,15000);setInterval(loadStats,30000);
+  setInterval(function(){fbSet('users/'+user.uid+'/lastSeen',Date.now()).catch(function(){})},60000);
 }
+
+// ── AUTH STATE — ponto central de entrada ──
+auth.onAuthStateChanged(function(user){
+  if(user){
+    enterForum(user);
+  } else {
+    document.getElementById('main-content').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    setBtnLoading('login-btn',false,'ENTRAR →');
+  }
+});
 
 // ── STATS ──
 async function loadStats(){
@@ -370,7 +413,6 @@ async function likePost(tid,pid,btn){try{if(pid==='main'){var c=(allTopics[tid].
   btn.classList.add('liked');loadPosts(tid)}catch(e){}}
 
 // ── INIT ──
-checkLogin();
 </script>
 </body>
 </html>
