@@ -149,6 +149,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <button class="map-btn" onclick="toggleLayer('flights',this)">✈️ VOOS</button>
       <button class="map-btn" onclick="toggleLayer('nuclear',this)">☢️ NUCLEAR</button>
       <button class="map-btn" onclick="toggleLayer('cables',this)">🌐 CABOS</button>
+      <button class="map-btn" onclick="toggleLayer('gdelt',this)">📡 CONFLITOS</button>
+      <button class="map-btn" onclick="toggleLayer('satellites',this)">🛰️ SATÉLITES</button>
       <button class="map-btn" onclick="toggleLayer('daynight',this)">🌙 DIA/NOITE</button>
     </div>
     <div class="map-stats" id="map-stats">
@@ -156,6 +158,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <div>INCÊNDIOS: <span id="stat-fires">—</span></div>
       <div>VOOS RASTREADOS: <span id="stat-flights">—</span></div>
       <div>USINAS NUCLEARES: <span id="stat-nukes">—</span></div>
+      <div>CONFLITOS GDELT: <span id="stat-gdelt">—</span></div>
+      <div>SATÉLITES: <span id="stat-sats">—</span></div>
     </div>
     <div class="map-legend">
       <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>SISMO M5+</div>
@@ -166,6 +170,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <div class="legend-item"><div class="legend-dot" style="background:#aa66ff"></div>AERONAVE</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ffff00"></div>USINA NUCLEAR</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>DESASTRE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff0066"></div>CONFLITO GDELT</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ff00"></div>SATÉLITE</div>
       <div class="legend-item"><div class="legend-dot" style="background:#00ffff;width:14px;height:3px;border-radius:1px"></div>CABO SUBM.</div>
     </div>
   </div>
@@ -206,13 +212,20 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   </div>
 </div>
 
-<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v2.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • NASA EONET • NASA FIRMS • OpenSky • GDELT • IODA</p></footer>
+<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v3.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • NASA EONET • NASA FIRMS • OpenSky • GDELT • N2YO • IODA</p></footer>
 <script>
 // ══════════════════════════════════════════════════════
 // ██  CONFIG  ██
 // ══════════════════════════════════════════════════════
 var CF_RADAR_TOKEN = ''; // Cloudflare Radar (gratuito, opcional)
-// var N2YO_KEY = ''; // n2yo.com para satélites (futuro)
+// ═══ N2YO API KEY (GRATUITO) ═══
+// 1. Crie conta em www.n2yo.com
+// 2. Vá em: www.n2yo.com/api/ → "Get API Key"
+// 3. Cole abaixo:
+var N2YO_KEY = '';
+// Exemplo: var N2YO_KEY = 'ABCDEF-123456-GHIJKL-7890';
+// Sem key: mostra posição calculada da ISS (aproximada)
+// Com key: rastreia ISS + satélites militares + GPS + ciência em tempo real
 
 // ── CLOCK & PROXY ──
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
@@ -239,6 +252,8 @@ var layers={
   flights:L.layerGroup(),
   nuclear:L.layerGroup(),
   cables:L.layerGroup(),
+  gdelt:L.layerGroup(),
+  satellites:L.layerGroup(),
   daynight:L.layerGroup()
 };
 
@@ -250,6 +265,8 @@ function toggleLayer(name,btn){
     if(name==='flights'&&!layers.flights._loaded){loadFlights();layers.flights._loaded=true}
     if(name==='nuclear'&&!layers.nuclear._loaded){loadNuclear();layers.nuclear._loaded=true}
     if(name==='cables'&&!layers.cables._loaded){loadCables();layers.cables._loaded=true}
+    if(name==='gdelt'&&!layers.gdelt._loaded){loadGdelt();layers.gdelt._loaded=true}
+    if(name==='satellites'){loadSatellites()}
     if(name==='daynight'){updateDayNight()}
   }
 }
@@ -360,38 +377,41 @@ async function loadFires(){
 }
 
 // ══════════════════════════════════
-// ██  5. FLIGHTS (OpenSky)  ██
+// ██  5. FLIGHTS (Multi-source)  ██
 // ══════════════════════════════════
 async function loadFlights(){
+  var states=null;
+  // Try OpenSky (free, may rate-limit)
   try{
-    // OpenSky anonymous API - all states
-    var r=await pFetch('https://opensky-network.org/api/states/all',15000);
-    if(!r)return;var data=await r.json();
-    if(!data.states)return;
+    var r=await pFetch('https://opensky-network.org/api/states/all?lamin=-60&lomin=-180&lamax=80&lomax=180',15000);
+    if(r){var d=await r.json();if(d&&d.states)states=d.states}
+  }catch(e){}
+  // If no data, show fallback message
+  if(!states||!states.length){
+    document.getElementById('stat-flights').textContent='INDISPONÍVEL';
     layers.flights.clearLayers();
-    var count=0;
-    // Limit to prevent browser lag - show every Nth flight
-    var step=Math.max(1,Math.floor(data.states.length/2000));
-    for(var i=0;i<data.states.length;i+=step){
-      var s=data.states[i];
-      var lng=s[5],lat=s[6];
-      if(lat===null||lng===null)continue;
-      var callsign=(s[1]||'').trim();
-      var country=s[2]||'';
-      var alt=s[7]?Math.round(s[7])+'m':'—';
-      var speed=s[9]?Math.round(s[9]*3.6)+'km/h':'—';
-      var heading=s[10]||0;
-      var onGround=s[8];
-      if(onGround)continue;// skip grounded
-      var isMil=callsign.match(/^(RCH|DUKE|EVAC|NAVY|AIR|RRR|CASA|NATO|GOLD|TOPCAT|VIPER|RAGD|JAKE|DEMON|HAZE|TITAN|STNG)/i)||country.match(/military/i);
-      var color=isMil?'#ff3333':'#aa66ff';
-      var marker=L.circleMarker([lat,lng],{radius:isMil?4:2.5,fillColor:color,fillOpacity:isMil?0.9:0.5,color:color,weight:0.5});
-      marker.bindPopup('<strong>✈️ '+(callsign||'DESCONHECIDO')+'</strong><br><span style="color:#4a7a60;font-size:11px">País: '+country+'<br>Altitude: '+alt+'<br>Velocidade: '+speed+'<br>Heading: '+Math.round(heading)+'°'+(isMil?'<br><span style="color:#ff3333">⚠ POSSÍVEL MILITAR</span>':'')+'</span>');
-      marker.addTo(layers.flights);
-      count++;
-    }
-    document.getElementById('stat-flights').textContent=count;
-  }catch(e){console.log('OpenSky err',e)}
+    L.popup({closeOnClick:true}).setLatLng([0,0]).setContent('<strong>✈️ RASTREAMENTO DE VOOS</strong><br><span style="color:#4a7a60;font-size:11px">API temporariamente indisponível.<br>Acesse diretamente:<br><a href="https://globe.adsbexchange.com" target="_blank" style="color:#00aaff">ADS-B Exchange</a> • <a href="https://www.flightradar24.com" target="_blank" style="color:#00aaff">FlightRadar24</a></span>').addTo(layers.flights);
+    return;
+  }
+  layers.flights.clearLayers();
+  var count=0;
+  var step=Math.max(1,Math.floor(states.length/2000));
+  for(var i=0;i<states.length;i+=step){
+    var s=states[i];
+    var lng=s[5],lat=s[6];
+    if(lat===null||lng===null)continue;
+    var callsign=(s[1]||'').trim();
+    var country=s[2]||'';
+    var alt=s[7]?Math.round(s[7])+'m':'—';
+    var speed=s[9]?Math.round(s[9]*3.6)+'km/h':'—';
+    var heading=s[10]||0;
+    if(s[8])continue;
+    var isMil=callsign.match(/^(RCH|DUKE|EVAC|NAVY|AIR|RRR|CASA|NATO|GOLD|TOPCAT|VIPER|RAGD|JAKE|DEMON|HAZE|TITAN|STNG|FORTE|NCHO|HOMER|ETHYL|PRTY|ORDER|BATON)/i);
+    var color=isMil?'#ff3333':'#aa66ff';
+    L.circleMarker([lat,lng],{radius:isMil?4:2.5,fillColor:color,fillOpacity:isMil?0.9:0.5,color:color,weight:0.5}).bindPopup('<strong>✈️ '+(callsign||'DESCONHECIDO')+'</strong><br><span style="color:#4a7a60;font-size:11px">País: '+country+'<br>Altitude: '+alt+'<br>Velocidade: '+speed+'<br>Heading: '+Math.round(heading)+'°'+(isMil?'<br><span style="color:#ff3333">⚠ POSSÍVEL MILITAR</span>':'')+'</span>').addTo(layers.flights);
+    count++;
+  }
+  document.getElementById('stat-flights').textContent=count;
 }
 
 // ══════════════════════════════════
@@ -440,26 +460,164 @@ function loadNuclear(){
 // ══════════════════════════════════
 // ██  7. SUBMARINE CABLES  ██
 // ══════════════════════════════════
-async function loadCables(){
-  try{
-    var r=await pFetch('https://raw.githubusercontent.com/telegeography/www.submarinecablemap.com/master/web/public/api/v3/cable/cable-geo.json');
-    if(!r)return;var data=await r.json();
-    if(!data.features)return;
-    var count=0;
-    data.features.forEach(function(f){
-      if(f.geometry.type==='MultiLineString'){
-        f.geometry.coordinates.forEach(function(line){
-          var latlngs=line.map(function(c){return[c[1],c[0]]});
-          L.polyline(latlngs,{color:'#00ffff',weight:1.2,opacity:0.25}).bindPopup('<strong>🌐 '+(f.properties.name||'Cabo')+'</strong><br><span style="color:#4a7a60;font-size:11px">'+(f.properties.owners||'')+'</span>').addTo(layers.cables);
-        });
-        count++;
-      }
-    });
-  }catch(e){console.log('Cables err',e)}
+function loadCables(){
+  // Major submarine cable routes (simplified coordinates)
+  var cables=[
+    {n:'SACS (South Atlantic Cable)',pts:[[-22.9,-43.2],[-23.5,-35],[-20,-20],[-15,-5],[-6,10],[-8.5,13.2]],c:'Brasil-Angola'},
+    {n:'EllaLink',pts:[[-23,-43],[  -15,-30],[-5,-18],[10,-18],[28,-15],[36,-8],[38.7,-9.1]],c:'Brasil-Portugal'},
+    {n:'BRUSA',pts:[[-22.9,-43.2],[-10,-40],[10,-50],[20,-60],[25,-65],[35,-73],[39,-74.0]],c:'Brasil-EUA'},
+    {n:'Monet',pts:[[-22.9,-43.2],[-10,-42],[5,-50],[15,-60],[25,-72],[26.1,-80.1]],c:'Brasil-EUA (Miami)'},
+    {n:'Seabras-1',pts:[[-22.9,-43.2],[-15,-40],[0,-48],[10,-55],[20,-65],[25,-73],[40.7,-74.0]],c:'Brasil-EUA (NYC)'},
+    {n:'Junior',pts:[[-3.7,-38.5],[-3,-35],[0,-30],[5,-22],[12,-17],[14.7,-17.5]],c:'Brasil-Senegal'},
+    {n:'SAm-1',pts:[[-34.6,-58.4],[-38,-56],[-42,-55],[-48,-60],[-50,-65],[-53,-70.9],[-33,-71.6],[-23.6,-70.4],[-18,-70.3],[-12,-77],[-6,-80],[0,-80],[5,-77],[9,-79.9]],c:'Argentina-Chile-Peru-Colômbia'},
+    {n:'Transatlantic TAT-14',pts:[[41,-72],[42,-55],[45,-35],[48,-20],[50,-8],[51,-1],[53,1]],c:'EUA-Europa'},
+    {n:'AEConnect-1',pts:[[41,-72],[44,-40],[49,-15],[52,-10],[53.3,-6.3]],c:'EUA-Irlanda'},
+    {n:'SEA-ME-WE 3',pts:[[1.3,103.8],[5,100],[10,80],[15,70],[20,64],[25,57],[28,48],[30,32],[32,30],[35,24],[36,15],[37,10],[38,5],[40,0],[42,-5],[43.3,5.4]],c:'Singapura-Oriente Médio-Europa'},
+    {n:'SEA-ME-WE 5',pts:[[1.3,103.8],[3,98],[8,78],[12,68],[16,58],[20,42],[25,36],[30,32],[35,28],[37,15],[39,9],[43.3,5.4]],c:'Singapura-Europa'},
+    {n:'FLAG Atlantic-1',pts:[[40.7,-74],[43,-50],[47,-25],[49,-8],[51,-3],[51,1]],c:'EUA-Reino Unido'},
+    {n:'PEACE',pts:[[31,32],[34,28],[37,20],[39,9],[43,5],[45,-1],[47,1],[48.9,2.3]],c:'Paquistão-Egito-França'},
+    {n:'AAE-1',pts:[[1.3,103.8],[5,100],[10,80],[12,68],[14,50],[15,45],[20,40],[25,37],[28,34],[31,32],[35,20],[37,15],[39,10],[43,5],[45,1]],c:'Ásia-África-Europa'},
+    {n:'Japan-US Cable',pts:[[35.5,139.7],[37,150],[40,170],[42,180],[43,-170],[44,-160],[45,-140],[44,-130],[40,-124]],c:'Japão-EUA'},
+    {n:'Pacific Crossing-1',pts:[[35.5,139.7],[36,145],[38,155],[40,170],[41,-180],[42,-165],[43,-150],[42,-135],[40,-124]],c:'Japão-EUA'},
+    {n:'FASTER',pts:[[35.5,139.7],[38,150],[40,165],[42,-180],[43,-165],[42,-140],[40,-124]],c:'Japão-EUA (Oregon)'},
+    {n:'Southern Cross',pts:[[-33.9,151.2],[-35,160],[-38,170],[-40,175],[-41,174.8],[-38,-180],[-35,-170],[-30,-160],[-20,-150],[-10,-140],[0,-130],[5,-120],[10,-110],[20,-105],[33.7,-118.3]],c:'Austrália-NZ-EUA'},
+    {n:'Marea',pts:[[39,-74.1],[40,-40],[42,-20],[43,-9],[43.3,-2.9]],c:'EUA-Espanha (Microsoft/Facebook)'},
+    {n:'Dunant',pts:[[40,-73.9],[42,-50],[44,-30],[46,-15],[47,-5],[47.5,-2]],c:'EUA-França (Google)'},
+    {n:'Grace Hopper',pts:[[40,-73.9],[42,-45],[45,-25],[48,-10],[50,-5],[51,1],[52,4]],c:'EUA-UK-Espanha (Google)'},
+    {n:'2Africa',pts:[[-33.9,18.4],[-25,15],[-15,12],[-5,10],[0,8],[5,2],[10,-14],[15,-17],[20,-17],[25,-15],[30,-10],[33,-8],[35,-6],[36,0],[37,10],[35,20],[32,30],[30,32],[28,34],[25,37],[20,40],[15,43],[12,44],[5,44],[0,42],[-5,40],[-10,40],[-15,40],[-20,36],[-25,33],[-33.9,25.7]],c:'Meta/África circumnavegação'}
+  ];
+  cables.forEach(function(c){
+    var latlngs=c.pts.map(function(p){return[p[0],p[1]]});
+    L.polyline(latlngs,{color:'#00ffff',weight:1.5,opacity:0.3,dashArray:'6 4'}).bindPopup('<strong>🌐 '+c.n+'</strong><br><span style="color:#4a7a60;font-size:11px">'+c.c+'</span>').addTo(layers.cables);
+  });
 }
 
 // ══════════════════════════════════
-// ██  8. DAY/NIGHT TERMINATOR  ██
+// ██  8. GDELT CONFLICTS  ██
+// ══════════════════════════════════
+async function loadGdelt(){
+  var queries=['conflict','war','attack','protest','military','explosion','terrorism'];
+  var allPoints=[];
+  for(var q=0;q<queries.length;q++){
+    try{
+      var url='https://api.gdeltproject.org/api/v2/geo/geo?query='+queries[q]+'&format=GeoJSON&TIMESPAN=1440&MAXROWS=100';
+      var r=await pFetch(url,12000);
+      if(!r)continue;
+      var data=await r.json();
+      if(!data.features)continue;
+      data.features.forEach(function(f){
+        if(!f.geometry||!f.geometry.coordinates)return;
+        var lng=f.geometry.coordinates[0],lat=f.geometry.coordinates[1];
+        if(isNaN(lat)||isNaN(lng))return;
+        var name=f.properties.name||'';
+        var url=f.properties.url||'';
+        var html=f.properties.html||'';
+        var count=f.properties.count||1;
+        // Deduplicate by location proximity
+        var isDup=allPoints.some(function(p){return Math.abs(p[0]-lat)<0.5&&Math.abs(p[1]-lng)<0.5});
+        if(!isDup){allPoints.push([lat,lng,name,url,html,count,queries[q]])}
+      });
+    }catch(e){console.log('GDELT err',e)}
+  }
+  // Render on map
+  var catColors={conflict:'#ff0066',war:'#ff0033',attack:'#ff3333',protest:'#ff9900',military:'#cc0066',explosion:'#ff4444',terrorism:'#cc0000'};
+  allPoints.forEach(function(p){
+    var radius=p[5]>=10?7:p[5]>=5?5:4;
+    var color=catColors[p[6]]||'#ff0066';
+    L.circleMarker([p[0],p[1]],{radius:radius,fillColor:color,fillOpacity:0.6,color:color,weight:1}).bindPopup('<strong>📡 '+p[6].toUpperCase()+'</strong><br><div style="font-size:12px;max-width:220px;line-height:1.4;margin-top:4px">'+p[2]+'</div>'+(p[3]?'<br><a href="'+p[3]+'" target="_blank" style="color:#00aaff;font-size:10px">Fonte →</a>':'')).addTo(layers.gdelt);
+  });
+  document.getElementById('stat-gdelt').textContent=allPoints.length;
+  // Fallback if no data
+  if(!allPoints.length){
+    L.popup({closeOnClick:true}).setLatLng([20,0]).setContent('<strong>📡 GDELT</strong><br><span style="color:#4a7a60;font-size:11px">Dados indisponíveis no momento.<br><a href="https://gdelt.github.io/" target="_blank" style="color:#00aaff">Acessar GDELT →</a></span>').addTo(layers.gdelt);
+    document.getElementById('stat-gdelt').textContent='INDISPONÍVEL';
+  }
+}
+
+// ══════════════════════════════════
+// ██  9. SATELLITES (N2YO + ISS)  ██
+// ══════════════════════════════════
+// Categorias NORAD para N2YO: 18=military, 25=GPS, 52=ISS
+var satCategories=[
+  {id:52,name:'ISS',color:'#00ff00',icon:'🛸'},
+  {id:18,name:'MILITAR',color:'#ff3333',icon:'🛰️'},
+  {id:22,name:'GPS',color:'#00aaff',icon:'📍'},
+  {id:26,name:'CIÊNCIA',color:'#ffaa00',icon:'🔬'},
+  {id:6,name:'COMUNICAÇÃO',color:'#aa66ff',icon:'📡'},
+];
+
+async function loadSatellites(){
+  layers.satellites.clearLayers();
+  var count=0;
+
+  if(N2YO_KEY){
+    // With API key: fetch multiple categories
+    for(var i=0;i<satCategories.length;i++){
+      var cat=satCategories[i];
+      try{
+        // above/lat/lng/alt/radius/catId
+        var url='https://api.n2yo.com/rest/v1/satellite/above/0/0/0/90/'+cat.id+'/&apiKey='+N2YO_KEY;
+        var r=await pFetch(url,10000);
+        if(!r)continue;
+        var data=await r.json();
+        if(!data.above)continue;
+        var step=Math.max(1,Math.floor(data.above.length/100));// Limit per category
+        for(var j=0;j<data.above.length;j+=step){
+          var s=data.above[j];
+          var isMil=cat.id===18;
+          L.circleMarker([s.satlat,s.satlng],{
+            radius:isMil?5:cat.id===52?6:3,
+            fillColor:cat.color,fillOpacity:isMil?0.9:0.6,
+            color:cat.color,weight:isMil?2:1
+          }).bindPopup('<strong>'+cat.icon+' '+s.satname+'</strong><br><span style="color:#4a7a60;font-size:11px">NORAD: '+s.satid+'<br>Categoria: '+cat.name+'<br>Alt: '+Math.round(s.satalt)+'km<br>Lat: '+s.satlat.toFixed(2)+' Lng: '+s.satlng.toFixed(2)+'</span>').addTo(layers.satellites);
+          count++;
+        }
+      }catch(e){console.log('N2YO cat '+cat.id+' err',e)}
+    }
+  } else {
+    // Without API key: calculate ISS position from TLE (approximate)
+    // Use Where The ISS At API (free, no key)
+    try{
+      var r=await pFetch('https://api.wheretheiss.at/v1/satellites/25544',8000);
+      if(r){var d=await r.json();
+        L.circleMarker([d.latitude,d.longitude],{
+          radius:8,fillColor:'#00ff00',fillOpacity:0.9,color:'#00ff00',weight:2
+        }).bindPopup('<strong>🛸 ISS — ESTAÇÃO ESPACIAL INTERNACIONAL</strong><br><span style="color:#4a7a60;font-size:11px">Altitude: '+Math.round(d.altitude)+'km<br>Velocidade: '+Math.round(d.velocity)+'km/h<br>Lat: '+d.latitude.toFixed(2)+' Lng: '+d.longitude.toFixed(2)+'<br>Visibilidade: '+d.visibility+'</span>').addTo(layers.satellites);
+        // Add ISS orbit trace (approximate great circle)
+        var orbitPts=[];
+        for(var deg=0;deg<360;deg+=3){
+          var oLng=d.longitude+deg;if(oLng>180)oLng-=360;
+          var oLat=51.6*Math.sin((deg+0)*Math.PI/180);// ISS inclination ~51.6°
+          orbitPts.push([oLat,oLng]);
+        }
+        L.polyline(orbitPts,{color:'#00ff00',weight:1,opacity:0.3,dashArray:'4 6'}).addTo(layers.satellites);
+        count=1;
+      }
+    }catch(e){console.log('ISS err',e)}
+
+    // Also try to get TLE data for a few notable satellites
+    try{
+      var r2=await pFetch('https://api.wheretheiss.at/v1/satellites',5000);
+      if(r2){var sats=await r2.json();
+        if(Array.isArray(sats)){sats.forEach(function(s){
+          if(s.id===25544)return;// already added ISS
+          try{
+            // Can't get position without individual call, skip for performance
+          }catch(e){}
+        })}
+      }
+    }catch(e){}
+
+    // Show config hint
+    if(count<=1){
+      L.popup({closeOnClick:true,autoClose:false}).setLatLng([30,0]).setContent('<strong>🛰️ RASTREAMENTO DE SATÉLITES</strong><br><span style="color:#4a7a60;font-size:11px">Mostrando apenas a ISS.<br>Para rastrear satélites militares,<br>GPS e científicos, configure a<br>API key gratuita do N2YO:<br><a href="https://www.n2yo.com/api/" target="_blank" style="color:#00aaff">www.n2yo.com/api →</a></span>').addTo(layers.satellites);
+    }
+  }
+  document.getElementById('stat-sats').textContent=count;
+}
+
+// ══════════════════════════════════
+// ██  10. DAY/NIGHT TERMINATOR  ██
 // ══════════════════════════════════
 function getDayNightCoords(){
   var now=new Date();
@@ -598,6 +756,12 @@ function loadWebcams(){
     {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1'},
     {name:'SEUL, COREIA DO SUL',url:'https://www.youtube.com/embed/gFRtAAmiFbE?autoplay=1&mute=1'},
     {name:'JACKSON HOLE, WY',url:'https://www.youtube.com/embed/DoUOrHHTMis?autoplay=1&mute=1'},
+    {name:'JERUSALÉM, ISRAEL',url:'https://www.youtube.com/embed/wK2JWCShYGU?autoplay=1&mute=1'},
+    {name:'MOSCOU, RÚSSIA',url:'https://www.youtube.com/embed/e_-Eg7-y4XE?autoplay=1&mute=1'},
+    {name:'DUBAI, EAU',url:'https://www.youtube.com/embed/JDDCsMQYeOg?autoplay=1&mute=1'},
+    {name:'RIO DE JANEIRO, BR',url:'https://www.youtube.com/embed/cSqCRjpJC-E?autoplay=1&mute=1'},
+    {name:'TAIPEI, TAIWAN',url:'https://www.youtube.com/embed/dBrYIi4l_Aw?autoplay=1&mute=1'},
+    {name:'ESTR. GIBRALTAR',url:'https://www.youtube.com/embed/TJ6IRqxnG1w?autoplay=1&mute=1'},
   ];
   var el=document.getElementById('webcam-grid');
   var h='';cams.forEach(function(c){h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>'});
@@ -679,6 +843,7 @@ setInterval(loadSolar,300000);
 setInterval(loadNews,600000);
 setInterval(loadOutages,600000);
 setInterval(function(){if(map.hasLayer(layers.flights))loadFlights()},120000);// refresh flights 2min
+setInterval(function(){if(map.hasLayer(layers.satellites))loadSatellites()},60000);// refresh sats 1min
 setInterval(function(){if(map.hasLayer(layers.daynight))updateDayNight()},60000);// update day/night 1min
 </script>
 </body>
