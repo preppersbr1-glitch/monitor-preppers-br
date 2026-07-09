@@ -7,106 +7,113 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
 <style>
-:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+:root{--bg:#050a08;--bg2:#080f0c;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
-header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
-.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
-.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:32px;height:32px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:4px}
 nav{display:flex;align-items:center;gap:4px}
-nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
 nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
-.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
-footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;text-align:center}
-footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+.clock{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green2);letter-spacing:2px}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:16px 24px;text-align:center}
+footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px}
 
-/* ══ DEFCON BAR ══ */
-.defcon-bar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;border-bottom:1px solid var(--border);background:rgba(5,10,8,0.9);gap:12px;flex-wrap:wrap}
+/* ══ DEFCON ══ */
+.defcon-bar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:44px;border-bottom:1px solid var(--border);background:rgba(5,10,8,0.9);gap:12px;flex-wrap:wrap}
 .defcon-level{display:flex;align-items:center;gap:12px}
-.defcon-badge{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;padding:4px 16px;border-radius:3px;border:2px solid}
-.defcon-5{color:#00ff88;border-color:#00ff88;background:rgba(0,255,136,0.1);text-shadow:0 0 10px rgba(0,255,136,0.5)}
-.defcon-4{color:#88ff00;border-color:#88ff00;background:rgba(136,255,0,0.1)}
-.defcon-3{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,0.1)}
-.defcon-2{color:#ff6600;border-color:#ff6600;background:rgba(255,102,0,0.1)}
-.defcon-1{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.15);animation:defcon-flash 1s infinite}
+.defcon-badge{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;padding:3px 14px;border-radius:3px;border:2px solid}
+.defcon-5{color:#00ff88;border-color:#00ff88;background:rgba(0,255,136,0.1)}.defcon-4{color:#88ff00;border-color:#88ff00;background:rgba(136,255,0,0.1)}.defcon-3{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,0.1)}.defcon-2{color:#ff6600;border-color:#ff6600;background:rgba(255,102,0,0.1)}.defcon-1{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.15);animation:defcon-flash 1s infinite}
 @keyframes defcon-flash{0%,100%{opacity:1}50%{opacity:0.7}}
-.defcon-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted)}
-.defcon-desc{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--text)}
-.threat-indicators{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.threat-ind{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px}
-.threat-dot{width:8px;height:8px;border-radius:50%}
+.defcon-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted)}
+.defcon-desc{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;color:var(--text)}
+.threat-indicators{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.threat-ind{display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px}
+.threat-dot{width:7px;height:7px;border-radius:50%}
 
-/* ══ MAIN LAYOUT ══ */
-.mgrid{display:grid;grid-template-columns:1fr 380px;gap:0;position:relative;z-index:1;min-height:calc(100vh - 170px)}
-.map-col{position:relative;border-right:1px solid var(--border)}
-#map{width:100%;height:100%;min-height:600px;background:#030806}
-.panel-col{overflow-y:auto;max-height:calc(100vh - 170px);background:var(--bg2)}
+/* ══ MAIN ══ */
+.mgrid{display:grid;grid-template-columns:52px 1fr 370px;gap:0;position:relative;z-index:1;min-height:calc(100vh - 160px)}
 
-/* Map controls */
-.map-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 80px)}
-.map-btn{font-family:'Share Tech Mono',monospace;font-size:8px;padding:4px 8px;border-radius:2px;border:1px solid var(--border);background:rgba(5,10,8,0.9);color:var(--muted);cursor:pointer;letter-spacing:1px;transition:all 0.2s;backdrop-filter:blur(5px)}
-.map-btn:hover,.map-btn.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.1)}
-.map-legend{position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);max-height:200px;overflow-y:auto}
-.legend-item{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);margin:2px 0;letter-spacing:1px}
-.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.map-stats{position:absolute;top:12px;right:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
+/* ══ LEFT SIDEBAR ══ */
+.sidebar{background:rgba(5,10,8,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;overflow-y:auto;padding-top:4px;z-index:50}
+.sb-group{position:relative}
+.sb-btn{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;background:transparent;border:none;border-left:3px solid transparent;cursor:pointer;transition:all 0.15s;color:var(--muted);gap:2px}
+.sb-btn:hover{background:rgba(0,255,136,0.06);color:var(--green)}
+.sb-btn.active{border-left-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
+.sb-icon{font-size:16px}
+.sb-label{font-family:'Share Tech Mono',monospace;font-size:6px;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.sb-sub{position:absolute;left:52px;top:0;min-width:220px;background:rgba(8,15,12,0.97);border:1px solid var(--border);border-radius:0 4px 4px 0;box-shadow:4px 4px 20px rgba(0,0,0,0.5);display:none;z-index:60;backdrop-filter:blur(10px)}
+.sb-sub.open{display:block}
+.sb-sub-title{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;color:var(--green);padding:10px 14px 6px;border-bottom:1px solid var(--border)}
+.sb-sub-item{display:flex;align-items:center;gap:8px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;border-bottom:1px solid rgba(26,61,42,0.3)}
+.sb-sub-item:hover{background:rgba(0,255,136,0.06);color:var(--text)}
+.sb-sub-item.active{color:var(--green)}
+.sb-sub-item .dot-sm{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-sub-item .count{margin-left:auto;font-size:8px;color:var(--muted)}
+.sb-divider{height:1px;background:var(--border);margin:4px 8px}
+
+/* Mode toggles at bottom of sidebar */
+.sb-mode{margin-top:auto;border-top:1px solid var(--border);padding:4px 0}
+.sb-mode-btn{width:100%;padding:8px 4px;background:transparent;border:none;cursor:pointer;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.15s}
+.sb-mode-btn:hover,.sb-mode-btn.active{color:var(--green);background:rgba(0,255,136,0.06)}
+.sb-mode-btn .sb-icon{font-size:14px}
+
+/* ══ MAP ══ */
+.map-col{position:relative}
+#map{width:100%;height:100%;min-height:500px;background:#030806}
+#globe-container{width:100%;height:100%;min-height:500px;background:#030806;display:none}
+.map-stats{position:absolute;bottom:12px;right:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
 .map-stats div{margin:2px 0;display:flex;align-items:center;gap:6px}
 .map-stats span{color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px}
-.leaflet-control-zoom{margin-top:50px!important}
+.leaflet-control-zoom{margin-top:8px!important}
 .leaflet-control-zoom a{background:rgba(5,10,8,0.9)!important;color:var(--green)!important;border-color:var(--border)!important}
 
 /* ══ PANELS ══ */
+.panel-col{overflow-y:auto;max-height:calc(100vh - 160px);background:var(--bg2);border-left:1px solid var(--border)}
 .panel{border-bottom:1px solid var(--border)}
-.panel-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.02);cursor:pointer}
-.panel-title{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;color:var(--green);display:flex;align-items:center;gap:6px}
+.panel-header{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.02)}
+.panel-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:3px;color:var(--green);display:flex;align-items:center;gap:6px}
 .panel-badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:1px}
-
-.news-threat{padding:10px 14px;border-bottom:1px solid rgba(26,61,42,0.5);transition:background 0.2s;cursor:pointer}
+.news-threat{padding:8px 14px;border-bottom:1px solid rgba(26,61,42,0.5);transition:background 0.2s;cursor:pointer}
 .news-threat:hover{background:rgba(0,255,136,0.03)}
-.news-threat-bar{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
-.threat-level{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:1px}
-.tl-critical{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
-.tl-high{background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)}
-.tl-medium{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)}
-.tl-low{background:rgba(0,255,136,0.08);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
-.tl-info{background:rgba(0,170,255,0.08);color:var(--blue);border:1px solid rgba(0,170,255,0.2)}
-.news-threat-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
-.news-threat-meta{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:1px}
-
-.solar-detail{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px}
-.solar-box{text-align:center;padding:10px 6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px}
-.solar-val{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700}
-.solar-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-top:4px}
-
-.webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px}
-.webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;cursor:pointer;aspect-ratio:16/9;background:#000}
+.news-threat-bar{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+.threat-level{font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;padding:2px 5px;border-radius:2px;letter-spacing:1px}
+.tl-critical{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}.tl-high{background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)}.tl-medium{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)}.tl-low{background:rgba(0,255,136,0.08);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}.tl-info{background:rgba(0,170,255,0.08);color:var(--blue);border:1px solid rgba(0,170,255,0.2)}
+.news-threat-title{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.news-threat-meta{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:1px}
+.solar-detail{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:10px 14px}
+.solar-box{text-align:center;padding:8px 4px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px}
+.solar-val{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700}
+.solar-lbl{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:1.5px;margin-top:3px}
+.webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px}
+.webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;aspect-ratio:16/9;background:#000}
 .webcam-item iframe{width:100%;height:100%;border:none}
-.webcam-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--green2);letter-spacing:1px;text-align:center}
-
+.webcam-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);padding:3px 6px;font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--green2);letter-spacing:1px;text-align:center}
 .loading-sm{padding:14px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 
 .leaflet-popup-content-wrapper{background:var(--card)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:4px!important;box-shadow:0 4px 20px rgba(0,0,0,0.5)!important}
 .leaflet-popup-tip{background:var(--card)!important}
-.leaflet-popup-content{font-family:'Rajdhani',sans-serif;font-size:13px;margin:10px 14px}
-.leaflet-popup-content strong{color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:1px}
+.leaflet-popup-content{font-family:'Rajdhani',sans-serif;font-size:12px;margin:8px 12px}
+.leaflet-popup-content strong{color:var(--green);font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px}
 
 @media(max-width:900px){
-  header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px}
+  header{flex-wrap:wrap;height:auto;padding:8px 12px;gap:6px}
   nav{flex-wrap:wrap;gap:2px;order:3;width:100%;justify-content:center;padding-top:4px;border-top:1px solid var(--border)}
-  nav a{font-size:10px;padding:4px 8px}
-  .defcon-bar{height:auto;padding:8px 16px;flex-direction:column;gap:6px}
-  .mgrid{grid-template-columns:1fr!important}
-  .map-col{min-height:400px}
-  .panel-col{max-height:none}
-  .webcam-grid{grid-template-columns:1fr}
-  .map-controls{max-width:calc(100% - 24px)}
+  nav a{font-size:9px;padding:3px 8px}
+  .defcon-bar{height:auto;padding:6px 12px;flex-direction:column;gap:4px}
+  .mgrid{grid-template-columns:44px 1fr!important}
+  .panel-col{display:none}
+  .map-col{min-height:500px}
+  .sb-label{display:none}
+  .sb-btn{padding:6px 2px}
   .map-stats{display:none}
 }
 </style>
@@ -114,22 +121,12 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 <body>
 <header>
   <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">INTELIGÊNCIA GLOBAL EM TEMPO REAL</div></div></div>
-  <nav>
-    <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
-    <a href="monitor-global.html" class="active">GLOBAL</a>
-    <a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a>
-  </nav>
-  <div style="display:flex;align-items:center;gap:20px"><div class="status-pill"><span class="dot"></span> LIVE</div><div class="clock" id="clock">--:--:--</div></div>
+  <nav><a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a><a href="monitor-global.html" class="active">GLOBAL</a><a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a></nav>
+  <div style="display:flex;align-items:center;gap:16px"><div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)"><span class="dot"></span>LIVE</div><div class="clock" id="clock">--:--:--</div></div>
 </header>
 
 <div class="defcon-bar">
-  <div class="defcon-level">
-    <div class="defcon-badge defcon-5" id="defcon-badge">DEFCON 5</div>
-    <div>
-      <div class="defcon-label">NÍVEL DE AMEAÇA GLOBAL</div>
-      <div class="defcon-desc" id="defcon-desc">SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS</div>
-    </div>
-  </div>
+  <div class="defcon-level"><div class="defcon-badge defcon-5" id="defcon-badge">DEFCON 5</div><div><div class="defcon-label">NÍVEL DE AMEAÇA GLOBAL</div><div class="defcon-desc" id="defcon-desc">SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS</div></div></div>
   <div class="threat-indicators">
     <div class="threat-ind"><div class="threat-dot" id="dot-sismo" style="background:var(--green)"></div>SÍSMICO</div>
     <div class="threat-ind"><div class="threat-dot" id="dot-solar" style="background:var(--green)"></div>SOLAR</div>
@@ -139,128 +136,198 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 </div>
 
 <div class="mgrid">
-  <div class="map-col">
-    <div id="map"></div>
-    <div class="map-controls">
-      <button class="map-btn active" onclick="toggleLayer('quakes',this)">🔴 SISMOS</button>
-      <button class="map-btn active" onclick="toggleLayer('volcanoes',this)">🌋 VULCÕES</button>
-      <button class="map-btn active" onclick="toggleLayer('disasters',this)">⚠️ DESASTRES</button>
-      <button class="map-btn" onclick="toggleLayer('fires',this)">🔥 INCÊNDIOS</button>
-      <button class="map-btn" onclick="toggleLayer('flights',this)">✈️ VOOS</button>
-      <button class="map-btn" onclick="toggleLayer('nuclear',this)">☢️ NUCLEAR</button>
-      <button class="map-btn" onclick="toggleLayer('cables',this)">🌐 CABOS</button>
-      <button class="map-btn" onclick="toggleLayer('gdelt',this)">📡 CONFLITOS</button>
-      <button class="map-btn" onclick="toggleLayer('satellites',this)">🛰️ SATÉLITES</button>
-      <button class="map-btn" onclick="toggleLayer('daynight',this)">🌙 DIA/NOITE</button>
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-group">
+      <button class="sb-btn active" id="sb-natural" onclick="toggleGroup('natural')"><span class="sb-icon">🌍</span><span class="sb-label">NATURAL</span></button>
+      <div class="sb-sub">
+        <div class="sb-sub-title">EVENTOS NATURAIS</div>
+        <div class="sb-sub-item active" onclick="togL('quakes',this)"><div class="dot-sm" style="background:var(--red)"></div>Sismos M2.5+ <span class="count" id="stat-quakes">—</span></div>
+        <div class="sb-sub-item active" onclick="togL('volcanoes',this)"><div class="dot-sm" style="background:#ff6600"></div>Vulcões ativos</div>
+        <div class="sb-sub-item active" onclick="togL('disasters',this)"><div class="dot-sm" style="background:var(--blue)"></div>Desastres (EONET)</div>
+        <div class="sb-sub-item" onclick="togL('fires',this)"><div class="dot-sm" style="background:#ff4400"></div>Incêndios (FIRMS) <span class="count" id="stat-fires">—</span></div>
+      </div>
     </div>
-    <div class="map-stats" id="map-stats">
-      <div>SISMOS 24H: <span id="stat-quakes">—</span></div>
-      <div>INCÊNDIOS: <span id="stat-fires">—</span></div>
-      <div>VOOS RASTREADOS: <span id="stat-flights">—</span></div>
-      <div>USINAS NUCLEARES: <span id="stat-nukes">—</span></div>
-      <div>CONFLITOS GDELT: <span id="stat-gdelt">—</span></div>
-      <div>SATÉLITES: <span id="stat-sats">—</span></div>
+    <div class="sb-group">
+      <button class="sb-btn" id="sb-military" onclick="toggleGroup('military')"><span class="sb-icon">⚔️</span><span class="sb-label">MILITAR</span></button>
+      <div class="sb-sub">
+        <div class="sb-sub-title">ATIVIDADE MILITAR & GEOPOLÍTICA</div>
+        <div class="sb-sub-item" onclick="togL('flights',this)"><div class="dot-sm" style="background:#aa66ff"></div>Voos / Aeronaves <span class="count" id="stat-flights">—</span></div>
+        <div class="sb-sub-item" onclick="togL('nuclear',this)"><div class="dot-sm" style="background:#ffff00"></div>Instalações nucleares <span class="count" id="stat-nukes">—</span></div>
+        <div class="sb-sub-item" onclick="togL('gdelt',this)"><div class="dot-sm" style="background:#ff0066"></div>Conflitos (GDELT) <span class="count" id="stat-gdelt">—</span></div>
+      </div>
     </div>
-    <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>SISMO M5+</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>SISMO M4-5</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--green2)"></div>SISMO &lt;M4</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div>VULCÃO</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff4400"></div>INCÊNDIO</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#aa66ff"></div>AERONAVE</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffff00"></div>USINA NUCLEAR</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>DESASTRE</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff0066"></div>CONFLITO GDELT</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#00ff00"></div>SATÉLITE</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#00ffff;width:14px;height:3px;border-radius:1px"></div>CABO SUBM.</div>
+    <div class="sb-group">
+      <button class="sb-btn" id="sb-space" onclick="toggleGroup('space')"><span class="sb-icon">🛰️</span><span class="sb-label">ESPAÇO</span></button>
+      <div class="sb-sub">
+        <div class="sb-sub-title">MONITORAMENTO ESPACIAL</div>
+        <div class="sb-sub-item" onclick="togL('satellites',this)"><div class="dot-sm" style="background:#00ff00"></div>Satélites (ISS/N2YO) <span class="count" id="stat-sats">—</span></div>
+        <div class="sb-sub-item" onclick="togL('daynight',this)"><div class="dot-sm" style="background:#ffcc00"></div>Linha dia/noite</div>
+      </div>
+    </div>
+    <div class="sb-group">
+      <button class="sb-btn" id="sb-infra" onclick="toggleGroup('infra')"><span class="sb-icon">🌐</span><span class="sb-label">INFRA</span></button>
+      <div class="sb-sub">
+        <div class="sb-sub-title">INFRAESTRUTURA GLOBAL</div>
+        <div class="sb-sub-item" onclick="togL('cables',this)"><div class="dot-sm" style="background:#00ffff"></div>Cabos submarinos</div>
+      </div>
+    </div>
+    <div class="sb-divider"></div>
+    <!-- MODE TOGGLES -->
+    <div class="sb-mode">
+      <button class="sb-mode-btn active" id="btn-2d" onclick="setView('2d')" title="Mapa 2D"><span class="sb-icon">🗺️</span><span class="sb-label">2D</span></button>
+      <button class="sb-mode-btn" id="btn-3d" onclick="setView('3d')" title="Globo 3D"><span class="sb-icon">🌐</span><span class="sb-label">3D</span></button>
+      <div class="sb-divider"></div>
+      <button class="sb-mode-btn active" id="btn-dark" onclick="setTile('dark')" title="Mapa escuro"><span class="sb-icon">🌑</span><span class="sb-label">DARK</span></button>
+      <button class="sb-mode-btn" id="btn-sat" onclick="setTile('satellite')" title="Satélite"><span class="sb-icon">🛰️</span><span class="sb-label">SAT</span></button>
+      <button class="sb-mode-btn" id="btn-night" onclick="setTile('night')" title="Visão noturna"><span class="sb-icon">🌙</span><span class="sb-label">NIGHT</span></button>
     </div>
   </div>
 
-  <div class="panel-col">
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">📡 NOTÍCIAS — CLASSIFICAÇÃO DE AMEAÇA</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="news-count">—</span></div>
-      <div id="news-list"><div class="loading-sm">▋ CARREGANDO FEEDS...</div></div>
+  <!-- MAP / GLOBE -->
+  <div class="map-col">
+    <div id="map"></div>
+    <div id="globe-container"></div>
+    <div class="map-stats" id="map-stats">
+      <div>SISMOS: <span id="stat-quakes2">—</span></div>
+      <div>INCÊNDIOS: <span id="stat-fires2">—</span></div>
+      <div>CAMADAS: <span id="stat-layers">3</span></div>
     </div>
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">☀️ CLIMA ESPACIAL DETALHADO</span><span class="panel-badge" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)" id="solar-status">—</span></div>
+  </div>
+
+  <!-- PANELS -->
+  <div class="panel-col">
+    <div class="panel"><div class="panel-header"><span class="panel-title">📡 NOTÍCIAS — AMEAÇA</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="news-count">—</span></div><div id="news-list"><div class="loading-sm">▋ CARREGANDO...</div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">☀️ CLIMA ESPACIAL</span><span class="panel-badge" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)" id="solar-status">—</span></div>
       <div class="solar-detail">
         <div class="solar-box"><div class="solar-val" id="s-kp" style="color:var(--green)">—</div><div class="solar-lbl">KP INDEX</div></div>
         <div class="solar-box"><div class="solar-val" id="s-xray" style="color:var(--green)">—</div><div class="solar-lbl">X-RAY FLARE</div></div>
-        <div class="solar-box"><div class="solar-val" id="s-wind" style="color:var(--green)">—</div><div class="solar-lbl">VENTO SOLAR KM/S</div></div>
-        <div class="solar-box"><div class="solar-val" id="s-bz" style="color:var(--green)">—</div><div class="solar-lbl">BZ FIELD nT</div></div>
-        <div class="solar-box"><div class="solar-val" id="s-proton" style="color:var(--green)">—</div><div class="solar-lbl">PRÓTONS ≥10MeV</div></div>
-        <div class="solar-box"><div class="solar-val" id="s-storm" style="color:var(--green)">—</div><div class="solar-lbl">TEMPESTADE GEO</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-wind" style="color:var(--green)">—</div><div class="solar-lbl">VENTO SOLAR</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-bz" style="color:var(--green)">—</div><div class="solar-lbl">BZ FIELD</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-proton" style="color:var(--green)">—</div><div class="solar-lbl">PRÓTONS</div></div>
+        <div class="solar-box"><div class="solar-val" id="s-storm" style="color:var(--green)">—</div><div class="solar-lbl">TEMPESTADE</div></div>
       </div>
-      <div style="padding:8px 14px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;margin-bottom:4px"><span style="color:var(--green)">G0</span><span style="color:var(--green)">G1</span><span style="color:var(--amber)">G2</span><span style="color:#ff6600">G3</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div><div style="height:4px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-4px;width:3px;height:12px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div></div>
+      <div style="padding:6px 14px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;margin-bottom:3px"><span style="color:var(--green)">G0</span><span style="color:var(--amber)">G2</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div><div style="height:3px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-3px;width:3px;height:9px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div></div>
     </div>
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">🔴 ATIVIDADE SÍSMICA 24H</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span></div>
-      <div id="quake-list"><div class="loading-sm">▋ CARREGANDO USGS...</div></div>
-    </div>
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">🌐 APAGÕES DE INTERNET</span><span class="panel-badge" style="background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)" id="outage-count">—</span></div>
-      <div id="outage-list"><div class="loading-sm">▋ MONITORANDO REDE GLOBAL...</div></div>
-      <div style="padding:8px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
-        <a href="https://radar.cloudflare.com/outage-center" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px">CLOUDFLARE →</a>
-        <a href="https://ioda.inetintel.cc.gatech.edu/" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px">IODA →</a>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">📹 WEBCAMS ESTRATÉGICAS</span><span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span></div>
-      <div class="webcam-grid" id="webcam-grid"></div>
-    </div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">🔴 SISMOS 24H</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span></div><div id="quake-list"><div class="loading-sm">▋ CARREGANDO...</div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">🌐 APAGÕES INTERNET</span><span class="panel-badge" style="background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)" id="outage-count">—</span></div><div id="outage-list"><div class="loading-sm">▋ MONITORANDO...</div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">📹 WEBCAMS</span><span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span></div><div class="webcam-grid" id="webcam-grid"></div></div>
   </div>
 </div>
-
-<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v3.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • NASA EONET • NASA FIRMS • OpenSky • GDELT • N2YO • IODA</p></footer>
+<footer><p>PREPPERS BR — MONITOR GLOBAL v3.0</p><p style="margin-top:4px;opacity:0.5">USGS • NOAA SWPC • NASA EONET/FIRMS • OpenSky • GDELT • N2YO • IODA</p></footer>
 <script>
-// ══════════════════════════════════════════════════════
-// ██  CONFIG  ██
-// ══════════════════════════════════════════════════════
-var CF_RADAR_TOKEN = ''; // Cloudflare Radar (gratuito, opcional)
-// ═══ N2YO API KEY (GRATUITO) ═══
-// 1. Crie conta em www.n2yo.com
-// 2. Vá em: www.n2yo.com/api/ → "Get API Key"
-// 3. Cole abaixo:
-var N2YO_KEY = '';
-// Exemplo: var N2YO_KEY = 'ABCDEF-123456-GHIJKL-7890';
-// Sem key: mostra posição calculada da ISS (aproximada)
-// Com key: rastreia ISS + satélites militares + GPS + ciência em tempo real
-
-// ── CLOCK & PROXY ──
+// ══ CONFIG ══
+var CF_RADAR_TOKEN='';
+var N2YO_KEY='';
+// ══ CLOCK & PROXY ══
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
 var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
-async function pFetch(url,timeout){
-  timeout=timeout||10000;
-  try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}
-  for(var i=0;i<proxies.length;i++){try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}}
-  return null;
+async function pFetch(url,timeout){timeout=timeout||10000;try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r}catch(e){}for(var i=0;i<proxies.length;i++){try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r}catch(e){}}return null}
+
+// ══ MAP SETUP ══
+var currentView='2d';
+var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
+var tileLayers={
+  dark:L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}),
+  satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18}),
+  night:L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',{maxZoom:8})
+};
+var currentTile='dark';
+tileLayers.dark.addTo(map);
+
+function setTile(t){
+  map.removeLayer(tileLayers[currentTile]);
+  tileLayers[t].addTo(map);
+  currentTile=t;
+  document.getElementById('btn-dark').classList.toggle('active',t==='dark');
+  document.getElementById('btn-sat').classList.toggle('active',t==='satellite');
+  document.getElementById('btn-night').classList.toggle('active',t==='night');
+  if(myGlobe&&currentView==='3d'){
+    var imgs={dark:'//unpkg.com/three-globe/example/img/earth-dark.jpg',satellite:'//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',night:'//unpkg.com/three-globe/example/img/earth-night.jpg'};
+    try{myGlobe.globeImageUrl(imgs[t])}catch(e){}
+  }
 }
 
-// ══════════════════════════════════
-// ██  MAP SETUP  ██
-// ══════════════════════════════════
-var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
+// ══ GLOBE 3D ══
+var myGlobe=null;var globePoints=[];
+function initGlobe(){
+  if(myGlobe)return;
+  if(typeof Globe==='undefined'){
+    document.getElementById('globe-container').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px"><div style="font-size:32px">⚠️</div><div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--amber);text-align:center;padding:0 20px">Biblioteca Globe.gl não carregou.<br>Verifique sua conexão ou tente recarregar a página.</div></div>';
+    return;
+  }
+  try{
+    var container=document.getElementById('globe-container');
+    myGlobe=Globe()(container)
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .atmosphereColor('#00ff88')
+      .atmosphereAltitude(0.15)
+      .pointAltitude(function(d){return d.alt||0.01})
+      .pointRadius(function(d){return d.size||0.3})
+      .pointColor(function(d){return d.color||'#00ff88'})
+      .pointLabel(function(d){return '<div style="background:#0a1610;border:1px solid #1a3d2a;padding:6px 10px;border-radius:4px;color:#c8fce8;font-family:Rajdhani,sans-serif;font-size:12px"><strong style="color:#00ff88;font-family:Orbitron,sans-serif;font-size:9px;letter-spacing:1px">'+d.label+'</strong><br>'+d.detail+'</div>'})
+      .arcsData([]).arcColor(function(){return '#00ffff'}).arcAltitude(0).arcStroke(0.5);
+    myGlobe.controls().autoRotate=true;
+    myGlobe.controls().autoRotateSpeed=0.3;
+    myGlobe.controls().enableDamping=true;
+    var w=container.offsetWidth,h=container.offsetHeight;
+    myGlobe.width(w).height(h);
+    window.addEventListener('resize',function(){if(currentView==='3d'&&myGlobe){myGlobe.width(container.offsetWidth).height(container.offsetHeight)}});
+    syncGlobePoints();
+  }catch(e){
+    console.log('Globe init error',e);
+    document.getElementById('globe-container').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px"><div style="font-size:32px">⚠️</div><div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--red);text-align:center;padding:0 20px">Erro ao inicializar o Globo 3D.<br>Seu navegador pode não suportar WebGL.</div></div>';
+  }
+}
 
-var layers={
-  quakes:L.layerGroup().addTo(map),
-  volcanoes:L.layerGroup().addTo(map),
-  disasters:L.layerGroup().addTo(map),
-  fires:L.layerGroup(),
-  flights:L.layerGroup(),
-  nuclear:L.layerGroup(),
-  cables:L.layerGroup(),
-  gdelt:L.layerGroup(),
-  satellites:L.layerGroup(),
-  daynight:L.layerGroup()
-};
+function syncGlobePoints(){
+  if(!myGlobe)return;
+  globePoints=[];
+  // Sync earthquakes
+  if(allQuakes&&allQuakes.length){allQuakes.forEach(function(q){globePoints.push({lat:q.lat,lng:q.lng,size:q.mag>=5?0.6:q.mag>=4?0.4:0.2,alt:q.mag>=5?0.05:0.01,color:quakeColor(q.mag),label:'SISMO M'+q.mag.toFixed(1),detail:q.place})})}
+  // Sync nuclear
+  if(map.hasLayer(layers.nuclear)){
+    layers.nuclear.eachLayer(function(l){
+      if(l.getLatLng){var ll=l.getLatLng();globePoints.push({lat:ll.lat,lng:ll.lng,size:0.4,alt:0.02,color:'#ffff00',label:'☢️ NUCLEAR',detail:'Instalação nuclear'})}
+    });
+  }
+  myGlobe.pointsData(globePoints);
+  // Sync cables as arcs
+  var arcs=[];
+  if(map.hasLayer(layers.cables)){
+    layers.cables.eachLayer(function(l){
+      if(l.getLatLngs){var pts=l.getLatLngs();if(pts.length>=2){arcs.push({startLat:pts[0].lat,startLng:pts[0].lng,endLat:pts[pts.length-1].lat,endLng:pts[pts.length-1].lng})}}
+    });
+  }
+  myGlobe.arcsData(arcs);
+}
 
-function toggleLayer(name,btn){
-  if(map.hasLayer(layers[name])){map.removeLayer(layers[name]);btn.classList.remove('active')}
-  else{map.addLayer(layers[name]);btn.classList.add('active');
-    // Lazy load data on first toggle
+function setView(v){
+  currentView=v;
+  document.getElementById('btn-2d').classList.toggle('active',v==='2d');
+  document.getElementById('btn-3d').classList.toggle('active',v==='3d');
+  if(v==='3d'){
+    document.getElementById('map').style.display='none';
+    document.getElementById('globe-container').style.display='block';
+    document.getElementById('globe-container').innerHTML='';
+    myGlobe=null;
+    setTimeout(initGlobe,100);
+  } else {
+    document.getElementById('map').style.display='block';
+    document.getElementById('globe-container').style.display='none';
+    setTimeout(function(){map.invalidateSize()},100);
+  }
+}
+
+// ══ LAYERS ══
+var layers={quakes:L.layerGroup().addTo(map),volcanoes:L.layerGroup().addTo(map),disasters:L.layerGroup().addTo(map),fires:L.layerGroup(),flights:L.layerGroup(),nuclear:L.layerGroup(),cables:L.layerGroup(),gdelt:L.layerGroup(),satellites:L.layerGroup(),daynight:L.layerGroup()};
+
+function togL(name,el){
+  if(map.hasLayer(layers[name])){map.removeLayer(layers[name]);el.classList.remove('active')}
+  else{map.addLayer(layers[name]);el.classList.add('active');
     if(name==='fires'&&!layers.fires._loaded){loadFires();layers.fires._loaded=true}
     if(name==='flights'&&!layers.flights._loaded){loadFlights();layers.flights._loaded=true}
     if(name==='nuclear'&&!layers.nuclear._loaded){loadNuclear();layers.nuclear._loaded=true}
@@ -269,15 +336,24 @@ function toggleLayer(name,btn){
     if(name==='satellites'){loadSatellites()}
     if(name==='daynight'){updateDayNight()}
   }
+  updateLayerCount();
 }
-
+function toggleGroup(name){
+  var allSubs=document.querySelectorAll('.sb-sub');
+  var clicked=document.getElementById('sb-'+name).parentElement.querySelector('.sb-sub');
+  var isOpen=clicked.classList.contains('open');
+  // Close all
+  allSubs.forEach(function(s){s.classList.remove('open')});
+  // Toggle clicked
+  if(!isOpen){clicked.classList.add('open')}
+}
+// Close submenus when clicking on map
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.sidebar')){document.querySelectorAll('.sb-sub').forEach(function(s){s.classList.remove('open')})}
+});
+function updateLayerCount(){var c=0;for(var k in layers){if(map.hasLayer(layers[k]))c++}document.getElementById('stat-layers').textContent=c}
 function quakeColor(m){return m>=5?'#ff3333':m>=4?'#ffb300':'#00cc6a'}
 function quakeRadius(m){return m>=6?14:m>=5?10:m>=4?7:4}
-
-// ══════════════════════════════════
-// ██  1. EARTHQUAKES (USGS)  ██
-// ══════════════════════════════════
-var allQuakes=[];
 async function loadQuakes(){
   try{
     var r=await pFetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
@@ -750,18 +826,16 @@ async function loadNews(){
 // ══════════════════════════════════
 function loadWebcams(){
   var cams=[
-    {name:'ISS — TERRA AO VIVO',url:'https://ustream.tv/embed/17074538'},
-    {name:'TIMES SQUARE, NYC',url:'https://www.youtube.com/embed/AdUw5RdyZxI?autoplay=1&mute=1'},
+    {name:'NYC — TIMES SQUARE 24/7',url:'https://www.youtube.com/embed/z-jYdOIKcTQ?autoplay=1&mute=1'},
+    {name:'NYC — SKYLINE MULTI-CAM',url:'https://www.youtube.com/embed/83VPsAPWiME?autoplay=1&mute=1'},
     {name:'TÓQUIO, SHIBUYA',url:'https://www.youtube.com/embed/DjdUEyjx8GM?autoplay=1&mute=1'},
-    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1'},
     {name:'SEUL, COREIA DO SUL',url:'https://www.youtube.com/embed/gFRtAAmiFbE?autoplay=1&mute=1'},
-    {name:'JACKSON HOLE, WY',url:'https://www.youtube.com/embed/DoUOrHHTMis?autoplay=1&mute=1'},
-    {name:'JERUSALÉM, ISRAEL',url:'https://www.youtube.com/embed/wK2JWCShYGU?autoplay=1&mute=1'},
-    {name:'MOSCOU, RÚSSIA',url:'https://www.youtube.com/embed/e_-Eg7-y4XE?autoplay=1&mute=1'},
-    {name:'DUBAI, EAU',url:'https://www.youtube.com/embed/JDDCsMQYeOg?autoplay=1&mute=1'},
-    {name:'RIO DE JANEIRO, BR',url:'https://www.youtube.com/embed/cSqCRjpJC-E?autoplay=1&mute=1'},
-    {name:'TAIPEI, TAIWAN',url:'https://www.youtube.com/embed/dBrYIi4l_Aw?autoplay=1&mute=1'},
-    {name:'ESTR. GIBRALTAR',url:'https://www.youtube.com/embed/TJ6IRqxnG1w?autoplay=1&mute=1'},
+    {name:'JERUSALÉM — MURO OCIDENTAL',url:'https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1'},
+    {name:'ISRAEL — MULTI-CAM AO VIVO',url:'https://www.youtube.com/embed/KSwPNkzEgxg?autoplay=1&mute=1'},
+    {name:'JERUSALÉM — ORAÇÃO 24/7',url:'https://www.youtube.com/embed/FGUKbzulB_Y?autoplay=1&mute=1'},
+    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1'},
+    {name:'TAIPEI, TAIWAN (OFICIAL)',url:'https://www.youtube.com/embed/live_stream?channel=UCzAMwTIGOSR41jRcdOt_SGA&autoplay=1&mute=1'},
+    {name:'ISS — TERRA AO VIVO',url:'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1'},
   ];
   var el=document.getElementById('webcam-grid');
   var h='';cams.forEach(function(c){h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>'});
@@ -813,38 +887,24 @@ async function loadOutages(){
 }
 
 // ══════════════════════════════════
-// ██  DEFCON CALCULATOR  ██
-// ══════════════════════════════════
+// ══ DEFCON ══
 var threats={sismo:'var(--green)',solar:'var(--green)',clima:'var(--green)',geo:'var(--green)'};
-function setThreat(key,color){
-  threats[key]=color;var dot=document.getElementById('dot-'+key);
-  if(dot){dot.style.background=color;dot.style.animation=color==='#ff3333'||color==='var(--red)'?'pulse 1s infinite':'pulse 2s infinite'}
-}
-function updateDefcon(){
-  var score=0;
-  for(var k in threats){var c=threats[k];if(c==='#ff3333'||c==='var(--red)')score+=4;else if(c==='#ff6600')score+=3;else if(c==='var(--amber)')score+=2}
-  var level,cls,desc;
-  if(score>=12){level=1;cls='defcon-1';desc='AMEAÇA MÁXIMA — MÚLTIPLOS EVENTOS CRÍTICOS'}
-  else if(score>=8){level=2;cls='defcon-2';desc='ALERTA ELEVADO — EVENTOS SEVEROS DETECTADOS'}
-  else if(score>=5){level=3;cls='defcon-3';desc='ATENÇÃO AUMENTADA — AMEAÇAS MODERADAS'}
-  else if(score>=2){level=4;cls='defcon-4';desc='VIGILÂNCIA — EVENTOS MENORES'}
-  else{level=5;cls='defcon-5';desc='SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS'}
-  document.getElementById('defcon-badge').textContent='DEFCON '+level;
-  document.getElementById('defcon-badge').className='defcon-badge '+cls;
-  document.getElementById('defcon-desc').textContent=desc;
-}
+function setThreat(key,color){threats[key]=color;var dot=document.getElementById('dot-'+key);if(dot){dot.style.background=color;dot.style.animation=color==='#ff3333'?'pulse 1s infinite':'pulse 2s infinite'}}
+function updateDefcon(){var score=0;for(var k in threats){var c=threats[k];if(c==='#ff3333'||c==='var(--red)')score+=4;else if(c==='#ff6600')score+=3;else if(c==='var(--amber)')score+=2}var level,cls,desc;if(score>=12){level=1;cls='defcon-1';desc='AMEAÇA MÁXIMA — MÚLTIPLOS EVENTOS CRÍTICOS'}else if(score>=8){level=2;cls='defcon-2';desc='ALERTA ELEVADO — EVENTOS SEVEROS'}else if(score>=5){level=3;cls='defcon-3';desc='ATENÇÃO AUMENTADA — AMEAÇAS MODERADAS'}else if(score>=2){level=4;cls='defcon-4';desc='VIGILÂNCIA — EVENTOS MENORES'}else{level=5;cls='defcon-5';desc='SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS'}document.getElementById('defcon-badge').textContent='DEFCON '+level;document.getElementById('defcon-badge').className='defcon-badge '+cls;document.getElementById('defcon-desc').textContent=desc}
 
-// ══════════════════════════════════
-// ██  INIT  ██
-// ══════════════════════════════════
+// ══ STAT SYNC ══
+var _origStatQ=document.getElementById('stat-quakes');
+var _origStatF=document.getElementById('stat-fires');
+new MutationObserver(function(){document.getElementById('stat-quakes2').textContent=_origStatQ.textContent}).observe(_origStatQ,{childList:true});
+new MutationObserver(function(){document.getElementById('stat-fires2').textContent=_origStatF.textContent}).observe(_origStatF,{childList:true});
+
+// ══ INIT ══
 loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();loadOutages();
-setInterval(loadQuakes,300000);
-setInterval(loadSolar,300000);
-setInterval(loadNews,600000);
-setInterval(loadOutages,600000);
-setInterval(function(){if(map.hasLayer(layers.flights))loadFlights()},120000);// refresh flights 2min
-setInterval(function(){if(map.hasLayer(layers.satellites))loadSatellites()},60000);// refresh sats 1min
-setInterval(function(){if(map.hasLayer(layers.daynight))updateDayNight()},60000);// update day/night 1min
+setInterval(loadQuakes,300000);setInterval(loadSolar,300000);setInterval(loadNews,600000);setInterval(loadOutages,600000);
+setInterval(function(){if(map.hasLayer(layers.flights))loadFlights()},120000);
+setInterval(function(){if(map.hasLayer(layers.satellites))loadSatellites()},60000);
+setInterval(function(){if(map.hasLayer(layers.daynight))updateDayNight()},60000);
+setInterval(function(){if(currentView==='3d')syncGlobePoints()},30000);
 </script>
 </body>
 </html>
