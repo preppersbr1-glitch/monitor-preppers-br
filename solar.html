@@ -70,7 +70,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
     <a href="solar.html" class="active">SOLAR</a>
     <a href="monitor-global.html">GLOBAL</a><a href="comunidade.html">COMUNIDADE</a>
     <a href="cursos.html">CURSOS</a>
-    <a href="membros.html">MEMBROS</a><a href="dispositivo.html">DISPOSITIVO</a>
+    <a href="membros.html">MEMBROS</a>
   </nav>
   <div class="header-status"><div class="status-pill"><span class="dot"></span> ONLINE</div><div class="clock" id="clock">--:--:--</div></div>
 </header>
@@ -138,11 +138,18 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
 
+var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
+async function pFetch(url){
+  try{var r=await fetch(url,{signal:AbortSignal.timeout(10000)});if(r.ok)return r;}catch(e){}
+  for(var i=0;i<proxies.length;i++){try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(10000)});if(r.ok)return r;}catch(e){}}
+  return null;
+}
+
 async function loadSolar(){const c=document.getElementById("solar-data");const b=document.getElementById("solar-badge");let fc="—",fl="QUIETO",fco="var(--green)",kv="—",kl="QUIETO",kco="var(--green)",ws="—",wco="var(--green)",bz="—",bzco="var(--green)";
-try{const r=await fetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json");const d=await r.json();if(d&&d.length){const l=d[d.length-1];fc=l.max_class||"B1.0";const ch=fc.charAt(0).toUpperCase();if(ch==="X"){fl="EXTREMO";fco="var(--red)"}else if(ch==="M"){fl="MODERADO";fco="var(--amber)"}else if(ch==="C"){fl="FRACO";fco="var(--amber)"}else{fl="QUIETO";fco="var(--green)"}}}catch(e){}
-try{const r=await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");const d=await r.json();if(d&&d.length>1){const l=d[d.length-1];const k=parseFloat(l[1]);if(!isNaN(k)){kv=k.toFixed(1);if(k>=8){kl="G4+ SEVERO";kco="var(--red)"}else if(k>=7){kl="G3 FORTE";kco="var(--red)"}else if(k>=6){kl="G2 MODERADO";kco="var(--amber)"}else if(k>=5){kl="G1 MENOR";kco="var(--amber)"}else if(k>=4){kl="ATIVO";kco="var(--amber)"}else{kl="QUIETO";kco="var(--green)"}}}}catch(e){}
-try{const r=await fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json");const d=await r.json();if(d&&d.WindSpeed){ws=Math.round(parseFloat(d.WindSpeed));if(ws>=700)wco="var(--red)";else if(ws>=500)wco="var(--amber)";else wco="var(--green)"}}catch(e){}
-try{const r=await fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json");const d=await r.json();if(d&&d.Bz){const v=parseFloat(d.Bz);bz=v.toFixed(1);if(v<=-10)bzco="var(--red)";else if(v<=-5)bzco="var(--amber)";else bzco="var(--green)"}}catch(e){}
+try{const r=await pFetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json");if(r){const d=await r.json();if(d&&d.length){const l=d[d.length-1];fc=l.max_class||"B1.0";const ch=fc.charAt(0).toUpperCase();if(ch==="X"){fl="EXTREMO";fco="var(--red)"}else if(ch==="M"){fl="MODERADO";fco="var(--amber)"}else if(ch==="C"){fl="FRACO";fco="var(--amber)"}else{fl="QUIETO";fco="var(--green)"}}}}catch(e){}
+try{const r=await pFetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");if(r){const d=await r.json();if(d&&d.length>1){const l=d[d.length-1];const k=parseFloat(l[1]);if(!isNaN(k)){kv=k.toFixed(1);if(k>=8){kl="G4+ SEVERO";kco="var(--red)"}else if(k>=7){kl="G3 FORTE";kco="var(--red)"}else if(k>=6){kl="G2 MODERADO";kco="var(--amber)"}else if(k>=5){kl="G1 MENOR";kco="var(--amber)"}else if(k>=4){kl="ATIVO";kco="var(--amber)"}else{kl="QUIETO";kco="var(--green)"}}}}}catch(e){}
+try{const r=await pFetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json");if(r){const d=await r.json();if(d&&d.WindSpeed){ws=Math.round(parseFloat(d.WindSpeed));if(ws>=700)wco="var(--red)";else if(ws>=500)wco="var(--amber)";else wco="var(--green)"}}}catch(e){}
+try{const r=await pFetch("https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json");if(r){const d=await r.json();if(d&&d.Bz){const v=parseFloat(d.Bz);bz=v.toFixed(1);if(v<=-10)bzco="var(--red)";else if(v<=-5)bzco="var(--amber)";else bzco="var(--green)"}}}catch(e){}
 const kn=parseFloat(kv);let bt="QUIETO",bc="card-badge badge-ok";if(fc.charAt(0)==="X"||kn>=7){bt="CLASSE X";bc="card-badge badge-live"}else if(fc.charAt(0)==="M"||kn>=5){bt="CLASSE M";bc="card-badge badge-warn"}else if(fc.charAt(0)==="C"||kn>=4){bt="CLASSE C";bc="card-badge badge-warn"}
 if(b){b.textContent=bt;b.className=bc}
 c.innerHTML='<div class="solar-stat"><div class="solar-stat-icon">☀️</div><div class="solar-stat-label">FLARE</div><div class="solar-stat-val" style="color:'+fco+'">'+fc+'</div><div class="solar-stat-sub" style="color:'+fco+'">'+fl+'</div></div><div class="solar-stat"><div class="solar-stat-icon">🌐</div><div class="solar-stat-label">Kp INDEX</div><div class="solar-stat-val" style="color:'+kco+'">'+kv+'</div><div class="solar-stat-sub" style="color:'+kco+'">'+kl+'</div></div><div class="solar-stat"><div class="solar-stat-icon">💨</div><div class="solar-stat-label">VENTO SOLAR</div><div class="solar-stat-val" style="color:'+wco+'">'+ws+'</div><div class="solar-stat-sub" style="color:var(--muted)">KM/S</div></div><div class="solar-stat"><div class="solar-stat-icon">🧲</div><div class="solar-stat-label">Bz (nT)</div><div class="solar-stat-val" style="color:'+bzco+'">'+bz+'</div><div class="solar-stat-sub" style="color:'+bzco+'">'+(parseFloat(bz)<=-5?"GEOEFETIVO":"NORMAL")+'</div></div>'}

@@ -31,10 +31,10 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .defcon-level{display:flex;align-items:center;gap:12px}
 .defcon-badge{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;padding:4px 16px;border-radius:3px;border:2px solid}
 .defcon-5{color:#00ff88;border-color:#00ff88;background:rgba(0,255,136,0.1);text-shadow:0 0 10px rgba(0,255,136,0.5)}
-.defcon-4{color:#88ff00;border-color:#88ff00;background:rgba(136,255,0,0.1);text-shadow:0 0 10px rgba(136,255,0,0.5)}
-.defcon-3{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,0.1);text-shadow:0 0 10px rgba(255,179,0,0.5)}
-.defcon-2{color:#ff6600;border-color:#ff6600;background:rgba(255,102,0,0.1);text-shadow:0 0 10px rgba(255,102,0,0.5)}
-.defcon-1{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.15);text-shadow:0 0 10px rgba(255,51,51,0.5);animation:defcon-flash 1s infinite}
+.defcon-4{color:#88ff00;border-color:#88ff00;background:rgba(136,255,0,0.1)}
+.defcon-3{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,0.1)}
+.defcon-2{color:#ff6600;border-color:#ff6600;background:rgba(255,102,0,0.1)}
+.defcon-1{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.15);animation:defcon-flash 1s infinite}
 @keyframes defcon-flash{0%,100%{opacity:1}50%{opacity:0.7}}
 .defcon-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted)}
 .defcon-desc{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--text)}
@@ -49,12 +49,17 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .panel-col{overflow-y:auto;max-height:calc(100vh - 170px);background:var(--bg2)}
 
 /* Map controls */
-.map-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:6px;flex-wrap:wrap}
-.map-btn{font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 10px;border-radius:2px;border:1px solid var(--border);background:rgba(5,10,8,0.9);color:var(--muted);cursor:pointer;letter-spacing:1px;transition:all 0.2s;backdrop-filter:blur(5px)}
+.map-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 80px)}
+.map-btn{font-family:'Share Tech Mono',monospace;font-size:8px;padding:4px 8px;border-radius:2px;border:1px solid var(--border);background:rgba(5,10,8,0.9);color:var(--muted);cursor:pointer;letter-spacing:1px;transition:all 0.2s;backdrop-filter:blur(5px)}
 .map-btn:hover,.map-btn.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.1)}
-.map-legend{position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:8px 12px;backdrop-filter:blur(5px)}
-.legend-item{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin:3px 0;letter-spacing:1px}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.map-legend{position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);max-height:200px;overflow-y:auto}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);margin:2px 0;letter-spacing:1px}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.map-stats{position:absolute;top:12px;right:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
+.map-stats div{margin:2px 0;display:flex;align-items:center;gap:6px}
+.map-stats span{color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px}
+.leaflet-control-zoom{margin-top:50px!important}
+.leaflet-control-zoom a{background:rgba(5,10,8,0.9)!important;color:var(--green)!important;border-color:var(--border)!important}
 
 /* ══ PANELS ══ */
 .panel{border-bottom:1px solid var(--border)}
@@ -62,10 +67,9 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .panel-title{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;color:var(--green);display:flex;align-items:center;gap:6px}
 .panel-badge{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:1px}
 
-/* News items */
 .news-threat{padding:10px 14px;border-bottom:1px solid rgba(26,61,42,0.5);transition:background 0.2s;cursor:pointer}
 .news-threat:hover{background:rgba(0,255,136,0.03)}
-.news-threat-bar{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.news-threat-bar{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
 .threat-level{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:1px}
 .tl-critical{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
 .tl-high{background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)}
@@ -75,25 +79,19 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .news-threat-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
 .news-threat-meta{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:1px}
 
-/* Solar detail */
 .solar-detail{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px}
 .solar-box{text-align:center;padding:10px 6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px}
 .solar-val{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700}
 .solar-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-top:4px}
 
-/* Webcams */
 .webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px}
 .webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;cursor:pointer;aspect-ratio:16/9;background:#000}
-.webcam-item iframe,.webcam-item img{width:100%;height:100%;object-fit:cover;border:none}
+.webcam-item iframe{width:100%;height:100%;border:none}
 .webcam-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--green2);letter-spacing:1px;text-align:center}
 
 .loading-sm{padding:14px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 
-/* Leaflet overrides */
-.leaflet-container{background:#030806!important;font-family:'Rajdhani',sans-serif}
-.leaflet-control-zoom{margin-top:50px!important}
-.leaflet-control-zoom a{background:rgba(5,10,8,0.9)!important;color:var(--green)!important;border-color:var(--border)!important}
 .leaflet-popup-content-wrapper{background:var(--card)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:4px!important;box-shadow:0 4px 20px rgba(0,0,0,0.5)!important}
 .leaflet-popup-tip{background:var(--card)!important}
 .leaflet-popup-content{font-family:'Rajdhani',sans-serif;font-size:13px;margin:10px 14px}
@@ -108,6 +106,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   .map-col{min-height:400px}
   .panel-col{max-height:none}
   .webcam-grid{grid-template-columns:1fr}
+  .map-controls{max-width:calc(100% - 24px)}
+  .map-stats{display:none}
 }
 </style>
 </head>
@@ -117,12 +117,11 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   <nav>
     <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
     <a href="monitor-global.html" class="active">GLOBAL</a>
-    <a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a><a href="dispositivo.html">DISPOSITIVO</a>
+    <a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a><a href="membros.html">MEMBROS</a>
   </nav>
   <div style="display:flex;align-items:center;gap:20px"><div class="status-pill"><span class="dot"></span> LIVE</div><div class="clock" id="clock">--:--:--</div></div>
 </header>
 
-<!-- DEFCON BAR -->
 <div class="defcon-bar">
   <div class="defcon-level">
     <div class="defcon-badge defcon-5" id="defcon-badge">DEFCON 5</div>
@@ -139,9 +138,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   </div>
 </div>
 
-<!-- MAIN GRID -->
 <div class="mgrid">
-  <!-- MAP -->
   <div class="map-col">
     <div id="map"></div>
     <div class="map-controls">
@@ -149,33 +146,37 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <button class="map-btn active" onclick="toggleLayer('volcanoes',this)">🌋 VULCÕES</button>
       <button class="map-btn active" onclick="toggleLayer('disasters',this)">⚠️ DESASTRES</button>
       <button class="map-btn" onclick="toggleLayer('fires',this)">🔥 INCÊNDIOS</button>
+      <button class="map-btn" onclick="toggleLayer('flights',this)">✈️ VOOS</button>
+      <button class="map-btn" onclick="toggleLayer('nuclear',this)">☢️ NUCLEAR</button>
+      <button class="map-btn" onclick="toggleLayer('cables',this)">🌐 CABOS</button>
+      <button class="map-btn" onclick="toggleLayer('daynight',this)">🌙 DIA/NOITE</button>
+    </div>
+    <div class="map-stats" id="map-stats">
+      <div>SISMOS 24H: <span id="stat-quakes">—</span></div>
+      <div>INCÊNDIOS: <span id="stat-fires">—</span></div>
+      <div>VOOS RASTREADOS: <span id="stat-flights">—</span></div>
+      <div>USINAS NUCLEARES: <span id="stat-nukes">—</span></div>
     </div>
     <div class="map-legend">
       <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>SISMO M5+</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>SISMO M4-5</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--green2)"></div>SISMO M2.5-4</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div>VULCÃO ATIVO</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>DESASTRE/ALERTA</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green2)"></div>SISMO &lt;M4</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div>VULCÃO</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff4400"></div>INCÊNDIO</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#aa66ff"></div>AERONAVE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffff00"></div>USINA NUCLEAR</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>DESASTRE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ffff;width:14px;height:3px;border-radius:1px"></div>CABO SUBM.</div>
     </div>
   </div>
 
-  <!-- PANELS -->
   <div class="panel-col">
-    <!-- THREAT NEWS -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">📡 NOTÍCIAS — CLASSIFICAÇÃO DE AMEAÇA</span>
-        <span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="news-count">—</span>
-      </div>
+      <div class="panel-header"><span class="panel-title">📡 NOTÍCIAS — CLASSIFICAÇÃO DE AMEAÇA</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="news-count">—</span></div>
       <div id="news-list"><div class="loading-sm">▋ CARREGANDO FEEDS...</div></div>
     </div>
-
-    <!-- SOLAR DETAIL -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">☀️ CLIMA ESPACIAL DETALHADO</span>
-        <span class="panel-badge" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)" id="solar-status">—</span>
-      </div>
+      <div class="panel-header"><span class="panel-title">☀️ CLIMA ESPACIAL DETALHADO</span><span class="panel-badge" style="background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)" id="solar-status">—</span></div>
       <div class="solar-detail">
         <div class="solar-box"><div class="solar-val" id="s-kp" style="color:var(--green)">—</div><div class="solar-lbl">KP INDEX</div></div>
         <div class="solar-box"><div class="solar-val" id="s-xray" style="color:var(--green)">—</div><div class="solar-lbl">X-RAY FLARE</div></div>
@@ -184,84 +185,81 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <div class="solar-box"><div class="solar-val" id="s-proton" style="color:var(--green)">—</div><div class="solar-lbl">PRÓTONS ≥10MeV</div></div>
         <div class="solar-box"><div class="solar-val" id="s-storm" style="color:var(--green)">—</div><div class="solar-lbl">TEMPESTADE GEO</div></div>
       </div>
-      <!-- SCALE BAR -->
-      <div style="padding:8px 14px;border-top:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;margin-bottom:4px"><span style="color:var(--green)">G0</span><span style="color:var(--green)">G1</span><span style="color:var(--amber)">G2</span><span style="color:#ff6600">G3</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div>
-        <div style="height:4px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-4px;width:3px;height:12px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div>
-      </div>
+      <div style="padding:8px 14px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;margin-bottom:4px"><span style="color:var(--green)">G0</span><span style="color:var(--green)">G1</span><span style="color:var(--amber)">G2</span><span style="color:#ff6600">G3</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div><div style="height:4px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-4px;width:3px;height:12px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div></div>
     </div>
-
-    <!-- SEISMIC SUMMARY -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">🔴 ATIVIDADE SÍSMICA 24H</span>
-        <span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span>
-      </div>
+      <div class="panel-header"><span class="panel-title">🔴 ATIVIDADE SÍSMICA 24H</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span></div>
       <div id="quake-list"><div class="loading-sm">▋ CARREGANDO USGS...</div></div>
     </div>
-
-    <!-- INTERNET OUTAGES -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">🌐 APAGÕES DE INTERNET</span>
-        <span class="panel-badge" style="background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)" id="outage-count">—</span>
-      </div>
+      <div class="panel-header"><span class="panel-title">🌐 APAGÕES DE INTERNET</span><span class="panel-badge" style="background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)" id="outage-count">—</span></div>
       <div id="outage-list"><div class="loading-sm">▋ MONITORANDO REDE GLOBAL...</div></div>
       <div style="padding:8px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
-        <a href="https://radar.cloudflare.com/outage-center" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px;letter-spacing:1px">CLOUDFLARE RADAR →</a>
-        <a href="https://ioda.inetintel.cc.gatech.edu/" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px;letter-spacing:1px">IODA →</a>
-        <a href="https://downdetector.com/" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px;letter-spacing:1px">DOWNDETECTOR →</a>
+        <a href="https://radar.cloudflare.com/outage-center" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px">CLOUDFLARE →</a>
+        <a href="https://ioda.inetintel.cc.gatech.edu/" target="_blank" rel="noopener" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--blue);text-decoration:none;border:1px solid rgba(0,170,255,0.3);padding:3px 8px;border-radius:2px">IODA →</a>
       </div>
     </div>
-
-    <!-- WEBCAMS -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">📹 WEBCAMS ESTRATÉGICAS</span>
-        <span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span>
-      </div>
+      <div class="panel-header"><span class="panel-title">📹 WEBCAMS ESTRATÉGICAS</span><span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span></div>
       <div class="webcam-grid" id="webcam-grid"></div>
     </div>
   </div>
 </div>
 
-<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v1.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • GDACS • NASA EONET • RSS FEEDS</p></footer>
+<footer><p>PREPPERS BR — MONITOR GLOBAL DE INTELIGÊNCIA v2.0</p><p style="margin-top:6px;opacity:0.5">DADOS: USGS • NOAA SWPC • NASA EONET • NASA FIRMS • OpenSky • GDELT • IODA</p></footer>
 <script>
-// ── CLOCK ──
+// ══════════════════════════════════════════════════════
+// ██  CONFIG  ██
+// ══════════════════════════════════════════════════════
+var CF_RADAR_TOKEN = ''; // Cloudflare Radar (gratuito, opcional)
+// var N2YO_KEY = ''; // n2yo.com para satélites (futuro)
+
+// ── CLOCK & PROXY ──
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
-
-// ── CORS PROXY ──
 var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
-var pi=0;
 async function pFetch(url,timeout){
   timeout=timeout||10000;
-  // Try direct first
-  try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;} catch(e){}
-  // Try proxies
-  for(var i=0;i<proxies.length;i++){
-    try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}
-  }
+  try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}
+  for(var i=0;i<proxies.length;i++){try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r;}catch(e){}}
   return null;
 }
 
 // ══════════════════════════════════
-// ██  MAP (Leaflet)  ██
+// ██  MAP SETUP  ██
 // ══════════════════════════════════
 var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
 
-var layers={quakes:L.layerGroup().addTo(map),volcanoes:L.layerGroup().addTo(map),disasters:L.layerGroup().addTo(map),fires:L.layerGroup()};
+var layers={
+  quakes:L.layerGroup().addTo(map),
+  volcanoes:L.layerGroup().addTo(map),
+  disasters:L.layerGroup().addTo(map),
+  fires:L.layerGroup(),
+  flights:L.layerGroup(),
+  nuclear:L.layerGroup(),
+  cables:L.layerGroup(),
+  daynight:L.layerGroup()
+};
 
 function toggleLayer(name,btn){
   if(map.hasLayer(layers[name])){map.removeLayer(layers[name]);btn.classList.remove('active')}
-  else{map.addLayer(layers[name]);btn.classList.add('active')}
+  else{map.addLayer(layers[name]);btn.classList.add('active');
+    // Lazy load data on first toggle
+    if(name==='fires'&&!layers.fires._loaded){loadFires();layers.fires._loaded=true}
+    if(name==='flights'&&!layers.flights._loaded){loadFlights();layers.flights._loaded=true}
+    if(name==='nuclear'&&!layers.nuclear._loaded){loadNuclear();layers.nuclear._loaded=true}
+    if(name==='cables'&&!layers.cables._loaded){loadCables();layers.cables._loaded=true}
+    if(name==='daynight'){updateDayNight()}
+  }
 }
 
 function quakeColor(m){return m>=5?'#ff3333':m>=4?'#ffb300':'#00cc6a'}
 function quakeRadius(m){return m>=6?14:m>=5?10:m>=4?7:4}
 
-// ── LOAD EARTHQUAKES ──
+// ══════════════════════════════════
+// ██  1. EARTHQUAKES (USGS)  ██
+// ══════════════════════════════════
 var allQuakes=[];
 async function loadQuakes(){
   try{
@@ -274,128 +272,278 @@ async function loadQuakes(){
       var mag=p.mag,place=p.place,time=new Date(p.time);
       if(mag>maxMag)maxMag=mag;
       allQuakes.push({mag:mag,place:place,time:time,lat:c[1],lng:c[0],depth:c[2]});
-      L.circleMarker([c[1],c[0]],{radius:quakeRadius(mag),fillColor:quakeColor(mag),fillOpacity:0.7,color:quakeColor(mag),weight:1,opacity:0.9}).bindPopup('<strong>SISMO M'+mag.toFixed(1)+'</strong><br>'+place+'<br><span style="color:var(--muted);font-size:11px">'+time.toLocaleString('pt-BR')+'<br>Profundidade: '+c[2].toFixed(0)+'km</span>').addTo(layers.quakes);
+      L.circleMarker([c[1],c[0]],{radius:quakeRadius(mag),fillColor:quakeColor(mag),fillOpacity:0.7,color:quakeColor(mag),weight:1}).bindPopup('<strong>SISMO M'+mag.toFixed(1)+'</strong><br>'+place+'<br><span style="color:#4a7a60;font-size:11px">'+time.toLocaleString('pt-BR')+'<br>Prof: '+c[2].toFixed(0)+'km</span>').addTo(layers.quakes);
     });
-    // Update panel
     document.getElementById('quake-count').textContent=data.features.length+' EVENTOS';
+    document.getElementById('stat-quakes').textContent=data.features.length;
     renderQuakeList();
-    // DEFCON sismo
-    if(maxMag>=7){setThreat('sismo','#ff3333')}
-    else if(maxMag>=6){setThreat('sismo','#ff6600')}
-    else if(maxMag>=5){setThreat('sismo','var(--amber)')}
-    else{setThreat('sismo','var(--green)')}
+    if(maxMag>=7)setThreat('sismo','#ff3333');
+    else if(maxMag>=6)setThreat('sismo','#ff6600');
+    else if(maxMag>=5)setThreat('sismo','var(--amber)');
+    else setThreat('sismo','var(--green)');
     updateDefcon();
-  }catch(e){console.log('Quake error',e)}
+  }catch(e){console.log('Quake err',e)}
 }
-
 function renderQuakeList(){
   var el=document.getElementById('quake-list');
   var sorted=allQuakes.slice().sort(function(a,b){return b.mag-a.mag}).slice(0,12);
   if(!sorted.length){el.innerHTML='<div class="loading-sm">Sem dados</div>';return}
   var h='';sorted.forEach(function(q){
     var cls=q.mag>=5?'tl-critical':q.mag>=4?'tl-high':'tl-medium';
-    h+='<div class="news-threat" onclick="map.setView(['+q.lat+','+q.lng+'],6)"><div class="news-threat-bar"><span class="threat-level '+cls+'">M'+q.mag.toFixed(1)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--muted)">PROF: '+q.depth.toFixed(0)+'KM</span></div><div class="news-threat-title">'+q.place+'</div><div class="news-threat-meta">'+q.time.toLocaleString('pt-BR')+'</div></div>';
-  });
-  el.innerHTML=h;
+    h+='<div class="news-threat" onclick="map.setView(['+q.lat+','+q.lng+'],6)"><div class="news-threat-bar"><span class="threat-level '+cls+'">M'+q.mag.toFixed(1)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#4a7a60">PROF: '+q.depth.toFixed(0)+'KM</span></div><div class="news-threat-title">'+q.place+'</div><div class="news-threat-meta">'+q.time.toLocaleString('pt-BR')+'</div></div>';
+  });el.innerHTML=h;
 }
 
-// ── LOAD VOLCANOES ──
+// ══════════════════════════════════
+// ██  2. VOLCANOES (EONET)  ██
+// ══════════════════════════════════
 async function loadVolcanoes(){
   try{
-    var r=await pFetch('https://volcano.si.edu/news/WeeklyVolcanoRSS.xml');
-    if(!r)return;var txt=await r.text();
-    var parser=new DOMParser(),doc=parser.parseFromString(txt,'text/xml');
-    var items=doc.querySelectorAll('item');
-    // Also try EONET for volcanoes
-    var r2=await pFetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&days=7&limit=20');
-    if(r2){var eodata=await r2.json();
-      if(eodata.events){eodata.events.forEach(function(ev){
-        var geo=ev.geometry;if(geo&&geo.length>0){var g=geo[geo.length-1];
-          L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:8,fillColor:'#ff6600',fillOpacity:0.8,color:'#ff6600',weight:2}).bindPopup('<strong>🌋 '+ev.title+'</strong><br><span style="color:var(--muted);font-size:11px">'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(layers.volcanoes)}
-      })}
-    }
-  }catch(e){console.log('Volcano error',e)}
+    var r=await pFetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&days=7&limit=20');
+    if(!r)return;var data=await r.json();
+    if(data.events){data.events.forEach(function(ev){
+      var geo=ev.geometry;if(geo&&geo.length>0){var g=geo[geo.length-1];
+        L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:8,fillColor:'#ff6600',fillOpacity:0.8,color:'#ff6600',weight:2}).bindPopup('<strong>🌋 '+ev.title+'</strong><br><span style="color:#4a7a60;font-size:11px">'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(layers.volcanoes)}
+    })}
+  }catch(e){console.log('Volcano err',e)}
 }
 
-// ── LOAD DISASTERS (EONET) ──
+// ══════════════════════════════════
+// ██  3. DISASTERS (EONET)  ██
+// ══════════════════════════════════
 async function loadDisasters(){
   try{
     var r=await pFetch('https://eonet.gsfc.nasa.gov/api/v3/events?days=7&limit=30');
     if(!r)return;var data=await r.json();
     if(!data.events)return;
     data.events.forEach(function(ev){
-      if(ev.categories[0].id==='volcanoes')return;// handled above
+      if(ev.categories[0].id==='volcanoes')return;
       var geo=ev.geometry;if(geo&&geo.length>0){var g=geo[geo.length-1];
         var color=ev.categories[0].id==='wildfires'?'#ff4400':ev.categories[0].id==='severeStorms'?'#aa00ff':'#00aaff';
-        var layerTarget=ev.categories[0].id==='wildfires'?layers.fires:layers.disasters;
-        L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:6,fillColor:color,fillOpacity:0.7,color:color,weight:1}).bindPopup('<strong>'+ev.title+'</strong><br><span style="color:var(--muted);font-size:11px">'+ev.categories[0].title+'<br>'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(layerTarget);
+        var target=ev.categories[0].id==='wildfires'?layers.fires:layers.disasters;
+        L.circleMarker([g.coordinates[1],g.coordinates[0]],{radius:6,fillColor:color,fillOpacity:0.7,color:color,weight:1}).bindPopup('<strong>'+ev.title+'</strong><br><span style="color:#4a7a60;font-size:11px">'+ev.categories[0].title+'<br>'+new Date(g.date).toLocaleDateString('pt-BR')+'</span>').addTo(target);
       }
     });
-  }catch(e){console.log('EONET error',e)}
+  }catch(e){console.log('EONET err',e)}
 }
 
 // ══════════════════════════════════
-// ██  SOLAR DATA (NOAA SWPC)  ██
+// ██  4. FIRES (NASA FIRMS)  ██
+// ══════════════════════════════════
+async function loadFires(){
+  try{
+    // FIRMS CSV - active fires last 24h (MODIS)
+    var r=await pFetch('https://firms.modaps.eosdis.nasa.gov/api/area/csv/d93f4e8ff42a6f29ce4b65c5df0b1498/VIIRS_SNPP_NRT/world/1');
+    if(!r){r=await pFetch('https://firms.modaps.eosdis.nasa.gov/api/area/csv/d93f4e8ff42a6f29ce4b65c5df0b1498/MODIS_NRT/world/1')}
+    if(!r)return;
+    var txt=await r.text();
+    var lines=txt.trim().split('\n');
+    var header=lines[0].split(',');
+    var latIdx=header.indexOf('latitude');
+    var lngIdx=header.indexOf('longitude');
+    var brIdx=header.indexOf('bright_ti4');if(brIdx===-1)brIdx=header.indexOf('brightness');
+    var confIdx=header.indexOf('confidence');
+    var count=0;
+    for(var i=1;i<lines.length;i++){
+      var cols=lines[i].split(',');
+      var lat=parseFloat(cols[latIdx]),lng=parseFloat(cols[lngIdx]);
+      if(isNaN(lat))continue;
+      var bright=brIdx>=0?parseFloat(cols[brIdx]):300;
+      var conf=confIdx>=0?cols[confIdx]:'';
+      var radius=bright>400?5:bright>350?4:3;
+      var opacity=conf==='h'||conf==='high'?0.8:conf==='n'||conf==='nominal'?0.5:0.3;
+      L.circleMarker([lat,lng],{radius:radius,fillColor:'#ff4400',fillOpacity:opacity,color:'#ff6600',weight:0.5}).bindPopup('<strong>🔥 FOCO DE CALOR</strong><br><span style="color:#4a7a60;font-size:11px">Brilho: '+(bright||'—')+'K<br>Confiança: '+(conf||'—')+'<br>'+lat.toFixed(3)+', '+lng.toFixed(3)+'</span>').addTo(layers.fires);
+      count++;
+    }
+    document.getElementById('stat-fires').textContent=count;
+  }catch(e){console.log('FIRMS err',e)}
+}
+
+// ══════════════════════════════════
+// ██  5. FLIGHTS (OpenSky)  ██
+// ══════════════════════════════════
+async function loadFlights(){
+  try{
+    // OpenSky anonymous API - all states
+    var r=await pFetch('https://opensky-network.org/api/states/all',15000);
+    if(!r)return;var data=await r.json();
+    if(!data.states)return;
+    layers.flights.clearLayers();
+    var count=0;
+    // Limit to prevent browser lag - show every Nth flight
+    var step=Math.max(1,Math.floor(data.states.length/2000));
+    for(var i=0;i<data.states.length;i+=step){
+      var s=data.states[i];
+      var lng=s[5],lat=s[6];
+      if(lat===null||lng===null)continue;
+      var callsign=(s[1]||'').trim();
+      var country=s[2]||'';
+      var alt=s[7]?Math.round(s[7])+'m':'—';
+      var speed=s[9]?Math.round(s[9]*3.6)+'km/h':'—';
+      var heading=s[10]||0;
+      var onGround=s[8];
+      if(onGround)continue;// skip grounded
+      var isMil=callsign.match(/^(RCH|DUKE|EVAC|NAVY|AIR|RRR|CASA|NATO|GOLD|TOPCAT|VIPER|RAGD|JAKE|DEMON|HAZE|TITAN|STNG)/i)||country.match(/military/i);
+      var color=isMil?'#ff3333':'#aa66ff';
+      var marker=L.circleMarker([lat,lng],{radius:isMil?4:2.5,fillColor:color,fillOpacity:isMil?0.9:0.5,color:color,weight:0.5});
+      marker.bindPopup('<strong>✈️ '+(callsign||'DESCONHECIDO')+'</strong><br><span style="color:#4a7a60;font-size:11px">País: '+country+'<br>Altitude: '+alt+'<br>Velocidade: '+speed+'<br>Heading: '+Math.round(heading)+'°'+(isMil?'<br><span style="color:#ff3333">⚠ POSSÍVEL MILITAR</span>':'')+'</span>');
+      marker.addTo(layers.flights);
+      count++;
+    }
+    document.getElementById('stat-flights').textContent=count;
+  }catch(e){console.log('OpenSky err',e)}
+}
+
+// ══════════════════════════════════
+// ██  6. NUCLEAR FACILITIES  ██
+// ══════════════════════════════════
+function loadNuclear(){
+  // Static data - major nuclear power plants worldwide
+  var plants=[
+    {n:'Angra (BRA)',lat:-23.008,lng:-44.457,mw:1884,s:'Operando'},
+    {n:'Zaporizhzhia (UKR)',lat:47.507,lng:34.585,mw:5700,s:'Zona de conflito'},
+    {n:'Fukushima Daiichi (JPN)',lat:37.421,lng:141.033,mw:0,s:'Descomissionada'},
+    {n:'Chernobyl (UKR)',lat:51.389,lng:30.099,mw:0,s:'Exclusão'},
+    {n:'Three Mile Island (EUA)',lat:40.153,lng:-76.725,mw:0,s:'Descomissionada'},
+    {n:'Palo Verde (EUA)',lat:33.388,lng:-112.862,mw:3942,s:'Operando'},
+    {n:'Bruce (CAN)',lat:44.326,lng:-81.600,mw:6288,s:'Operando'},
+    {n:'Kashiwazaki-Kariwa (JPN)',lat:37.429,lng:138.597,mw:7965,s:'Parada'},
+    {n:'Koeberg (ZAF)',lat:-33.677,lng:18.434,mw:1860,s:'Operando'},
+    {n:'Hinkley Point C (GBR)',lat:51.209,lng:-3.129,mw:3260,s:'Em construção'},
+    {n:'Flamanville (FRA)',lat:49.538,lng:-1.881,mw:5460,s:'Operando'},
+    {n:'Gravelines (FRA)',lat:50.993,lng:2.108,mw:5460,s:'Operando'},
+    {n:'Taishan (CHN)',lat:21.916,lng:112.582,mw:3440,s:'Operando'},
+    {n:'Barakah (UAE)',lat:23.958,lng:52.197,mw:5600,s:'Operando'},
+    {n:'Kudankulam (IND)',lat:8.169,lng:77.710,mw:2000,s:'Operando'},
+    {n:'Leningrad (RUS)',lat:59.834,lng:29.046,mw:4000,s:'Operando'},
+    {n:'Bushehr (IRN)',lat:28.830,lng:50.889,mw:1000,s:'Operando'},
+    {n:'Natanz (IRN)',lat:33.724,lng:51.727,mw:0,s:'Enriquecimento'},
+    {n:'Yongbyon (PRK)',lat:39.799,lng:125.756,mw:0,s:'Enriquecimento'},
+    {n:'Dimona (ISR)',lat:31.001,lng:35.146,mw:0,s:'Pesquisa/Armas'},
+    {n:'Cattenom (FRA)',lat:49.407,lng:6.219,mw:5448,s:'Operando'},
+    {n:'Doel (BEL)',lat:51.326,lng:4.259,mw:2911,s:'Descomissionando'},
+    {n:'Olkiluoto (FIN)',lat:61.235,lng:21.447,mw:2790,s:'Operando'},
+    {n:'Ringhals (SWE)',lat:57.264,lng:12.113,mw:3956,s:'Operando'},
+    {n:'Cernavoda (ROU)',lat:44.319,lng:28.058,mw:1300,s:'Operando'},
+    {n:'Akkuyu (TUR)',lat:36.146,lng:33.536,mw:4800,s:'Em construção'},
+    {n:'Sizewell B (GBR)',lat:52.215,lng:1.619,mw:1198,s:'Operando'},
+    {n:'Laguna Verde (MEX)',lat:19.719,lng:-96.402,mw:1510,s:'Operando'},
+  ];
+  plants.forEach(function(p){
+    var color=p.s==='Zona de conflito'||p.s==='Enriquecimento'||p.s==='Pesquisa/Armas'?'#ff3333':p.s==='Operando'?'#ffff00':p.s==='Em construção'?'#00aaff':'#888';
+    var icon=L.divIcon({html:'<div style="width:12px;height:12px;background:'+color+';border:2px solid rgba(0,0,0,0.5);border-radius:2px;box-shadow:0 0 6px '+color+'"></div>',className:'',iconSize:[12,12],iconAnchor:[6,6]});
+    L.marker([p.lat,p.lng],{icon:icon}).bindPopup('<strong>☢️ '+p.n+'</strong><br><span style="color:#4a7a60;font-size:11px">Capacidade: '+p.mw+'MW<br>Status: <span style="color:'+color+'">'+p.s+'</span></span>').addTo(layers.nuclear);
+  });
+  document.getElementById('stat-nukes').textContent=plants.length;
+}
+
+// ══════════════════════════════════
+// ██  7. SUBMARINE CABLES  ██
+// ══════════════════════════════════
+async function loadCables(){
+  try{
+    var r=await pFetch('https://raw.githubusercontent.com/telegeography/www.submarinecablemap.com/master/web/public/api/v3/cable/cable-geo.json');
+    if(!r)return;var data=await r.json();
+    if(!data.features)return;
+    var count=0;
+    data.features.forEach(function(f){
+      if(f.geometry.type==='MultiLineString'){
+        f.geometry.coordinates.forEach(function(line){
+          var latlngs=line.map(function(c){return[c[1],c[0]]});
+          L.polyline(latlngs,{color:'#00ffff',weight:1.2,opacity:0.25}).bindPopup('<strong>🌐 '+(f.properties.name||'Cabo')+'</strong><br><span style="color:#4a7a60;font-size:11px">'+(f.properties.owners||'')+'</span>').addTo(layers.cables);
+        });
+        count++;
+      }
+    });
+  }catch(e){console.log('Cables err',e)}
+}
+
+// ══════════════════════════════════
+// ██  8. DAY/NIGHT TERMINATOR  ██
+// ══════════════════════════════════
+function getDayNightCoords(){
+  var now=new Date();
+  var start=new Date(now.getFullYear(),0,0);
+  var diff=(now-start)+(start.getTimezoneOffset()*60000);
+  var oneDay=86400000;
+  var dayOfYear=Math.floor(diff/oneDay);
+  var declination=-23.45*Math.cos(Math.PI/180*360/365*(dayOfYear+10));
+  var decRad=declination*Math.PI/180;
+  var hourUTC=now.getUTCHours()+now.getUTCMinutes()/60+now.getUTCSeconds()/3600;
+  var subsolarLng=(12-hourUTC)*15;
+
+  var coords=[];
+  for(var lng=-180;lng<=180;lng+=2){
+    var lngRad=(lng-subsolarLng)*Math.PI/180;
+    var lat=Math.atan(-Math.cos(lngRad)/Math.tan(decRad))*180/Math.PI;
+    coords.push([lat,lng]);
+  }
+  // Close polygon for the dark side
+  var south=declination>=0;
+  var darkPoly=[];
+  if(south){
+    darkPoly.push([-90,-180]);
+    coords.forEach(function(c){darkPoly.push(c)});
+    darkPoly.push([-90,180]);
+  }else{
+    darkPoly.push([90,-180]);
+    coords.forEach(function(c){darkPoly.push(c)});
+    darkPoly.push([90,180]);
+  }
+  return darkPoly;
+}
+function updateDayNight(){
+  layers.daynight.clearLayers();
+  var coords=getDayNightCoords();
+  L.polygon(coords,{fillColor:'#000',fillOpacity:0.35,stroke:true,color:'#ffcc00',weight:1,opacity:0.5,dashArray:'4 4'}).addTo(layers.daynight);
+}
+
+// ══════════════════════════════════
+// ██  9. SOLAR DATA (NOAA)  ██
 // ══════════════════════════════════
 var solarThreat=0;
 async function loadSolar(){
   try{
-    // Kp Index
     var r=await pFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
     if(r){var d=await r.json();if(d.length>1){var kp=parseFloat(d[d.length-1][1]);
       document.getElementById('s-kp').textContent=kp.toFixed(1);
       document.getElementById('s-kp').style.color=kp>=7?'var(--red)':kp>=5?'var(--amber)':kp>=4?'#ff6600':'var(--green)';
-      var pct=Math.min(kp/9*100,100);document.getElementById('kp-marker').style.left=pct+'%';
+      document.getElementById('kp-marker').style.left=Math.min(kp/9*100,100)+'%';
       solarThreat=Math.max(solarThreat,kp>=7?4:kp>=5?3:kp>=4?2:0);
-      var stormLvl=kp>=9?'G5 EXTREMA':kp>=8?'G4 SEVERA':kp>=7?'G3 FORTE':kp>=5?'G2 MODERADA':kp>=4?'G1 MENOR':'NENHUMA';
-      document.getElementById('s-storm').textContent=stormLvl;
+      document.getElementById('s-storm').textContent=kp>=9?'G5 EXTREMA':kp>=8?'G4 SEVERA':kp>=7?'G3 FORTE':kp>=5?'G2 MODERADA':kp>=4?'G1 MENOR':'NENHUMA';
       document.getElementById('s-storm').style.color=kp>=7?'var(--red)':kp>=5?'var(--amber)':kp>=4?'#ff6600':'var(--green)';
     }}
-
-    // X-ray flares
     var r2=await pFetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json');
-    if(r2){var d2=await r2.json();if(d2.length>0){var last=d2[d2.length-1];var cls=last.max_class||'—';
+    if(r2){var d2=await r2.json();if(d2.length>0){var cls=d2[d2.length-1].max_class||'—';
       document.getElementById('s-xray').textContent=cls;
       document.getElementById('s-xray').style.color=cls.startsWith('X')?'var(--red)':cls.startsWith('M')?'var(--amber)':'var(--green)';
-      if(cls.startsWith('X'))solarThreat=Math.max(solarThreat,4);
-      else if(cls.startsWith('M'))solarThreat=Math.max(solarThreat,2);
+      if(cls.startsWith('X'))solarThreat=Math.max(solarThreat,4);else if(cls.startsWith('M'))solarThreat=Math.max(solarThreat,2);
     }}
-
-    // Solar wind
     var r3=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json');
-    if(r3){var d3=await r3.json();if(d3.WindSpeed){
-      var ws=parseFloat(d3.WindSpeed);
+    if(r3){var d3=await r3.json();if(d3.WindSpeed){var ws=parseFloat(d3.WindSpeed);
       document.getElementById('s-wind').textContent=ws.toFixed(0);
       document.getElementById('s-wind').style.color=ws>700?'var(--red)':ws>500?'var(--amber)':'var(--green)';
       if(ws>700)solarThreat=Math.max(solarThreat,3);
     }}
-
-    // Bz field
     var r4=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json');
-    if(r4){var d4=await r4.json();if(d4.Bz){
-      var bz=parseFloat(d4.Bz);
+    if(r4){var d4=await r4.json();if(d4.Bz){var bz=parseFloat(d4.Bz);
       document.getElementById('s-bz').textContent=bz.toFixed(1);
       document.getElementById('s-bz').style.color=bz<-10?'var(--red)':bz<-5?'var(--amber)':'var(--green)';
     }}
-
-    // Proton flux
     var r5=await pFetch('https://services.swpc.noaa.gov/products/summary/10mev-protons-24hr.json');
     if(r5){var d5=await r5.json();if(d5.Flux){
       document.getElementById('s-proton').textContent=parseFloat(d5.Flux).toFixed(1);
       document.getElementById('s-proton').style.color=parseFloat(d5.Flux)>100?'var(--red)':parseFloat(d5.Flux)>10?'var(--amber)':'var(--green)';
     }}
-
-    // Update solar indicator
-    var sc=solarThreat>=4?'#ff3333':solarThreat>=3?'#ff6600':solarThreat>=2?'var(--amber)':'var(--green)';
-    setThreat('solar',sc);
+    setThreat('solar',solarThreat>=4?'#ff3333':solarThreat>=3?'#ff6600':solarThreat>=2?'var(--amber)':'var(--green)');
     document.getElementById('solar-status').textContent=solarThreat>=3?'ALERTA':solarThreat>=2?'ELEVADO':'NORMAL';
     document.getElementById('solar-status').style.color=solarThreat>=3?'var(--red)':solarThreat>=2?'var(--amber)':'var(--green2)';
     updateDefcon();
-  }catch(e){console.log('Solar error',e)}
+  }catch(e){console.log('Solar err',e)}
 }
 
 // ══════════════════════════════════
-// ██  NEWS WITH THREAT LEVEL  ██
+// ██  10. NEWS + THREAT LEVEL  ██
 // ══════════════════════════════════
 var threatKeywords={
   critical:['guerra','nuclear','invasão','ataque','míssil','bomba','explosão','massacre','colapso','emergência nacional'],
@@ -403,53 +551,36 @@ var threatKeywords={
   medium:['tensão','sanção','protesto','seca','tempestade','vulcão','inundação','militar','fronteira','embargo'],
   low:['exercício militar','diplomacia','negociação','monitoramento','previsão','risco','ameaça','segurança']
 };
-
-function classifyThreat(title){
-  var t=title.toLowerCase();
-  for(var k in threatKeywords){for(var i=0;i<threatKeywords[k].length;i++){if(t.indexOf(threatKeywords[k][i])!==-1)return k}}
-  return 'info';
-}
-
+function classifyThreat(t){t=t.toLowerCase();for(var k in threatKeywords){for(var i=0;i<threatKeywords[k].length;i++){if(t.indexOf(threatKeywords[k][i])!==-1)return k}}return 'info'}
 var threatLabels={critical:'CRÍTICO',high:'ALTO',medium:'MÉDIO',low:'BAIXO',info:'INFO'};
 
 async function loadNews(){
-  var feeds=[
-    'https://news.google.com/rss/search?q=desastre+OR+terremoto+OR+guerra+OR+crise+OR+emergencia&hl=pt-BR&gl=BR',
-    'https://news.google.com/rss/search?q=earthquake+OR+tsunami+OR+war+OR+nuclear+OR+disaster&hl=en',
-  ];
+  var feeds=['https://news.google.com/rss/search?q=desastre+OR+terremoto+OR+guerra+OR+crise+OR+emergencia&hl=pt-BR&gl=BR','https://news.google.com/rss/search?q=earthquake+OR+tsunami+OR+war+OR+nuclear+OR+disaster&hl=en'];
   var allNews=[];
   for(var i=0;i<feeds.length;i++){
-    try{
-      var r=await pFetch(feeds[i],8000);if(!r)continue;
-      var txt=await r.text();var parser=new DOMParser(),doc=parser.parseFromString(txt,'text/xml');
-      var items=doc.querySelectorAll('item');
-      items.forEach(function(item){
+    try{var r=await pFetch(feeds[i],8000);if(!r)continue;
+      var txt=await r.text();var doc=new DOMParser().parseFromString(txt,'text/xml');
+      doc.querySelectorAll('item').forEach(function(item){
         var title=item.querySelector('title')?.textContent||'';
         var link=item.querySelector('link')?.textContent||'';
         var pubDate=item.querySelector('pubDate')?.textContent||'';
         var source=item.querySelector('source')?.textContent||'';
-        if(title){allNews.push({title:title,link:link,date:new Date(pubDate),source:source,threat:classifyThreat(title)})}
+        if(title)allNews.push({title:title,link:link,date:new Date(pubDate),source:source,threat:classifyThreat(title)});
       });
     }catch(e){}
   }
-  // Sort by threat then date
   var order={critical:0,high:1,medium:2,low:3,info:4};
   allNews.sort(function(a,b){var d=order[a.threat]-order[b.threat];return d!==0?d:b.date-a.date});
   allNews=allNews.slice(0,25);
-
   var el=document.getElementById('news-list');
   if(!allNews.length){el.innerHTML='<div class="loading-sm">Sem dados</div>';return}
   var critCount=allNews.filter(function(n){return n.threat==='critical'||n.threat==='high'}).length;
   document.getElementById('news-count').textContent=critCount>0?critCount+' ALERTAS':'MONITORANDO';
-
   var h='';allNews.forEach(function(n){
     var ago=Math.round((Date.now()-n.date.getTime())/60000);
     var agoStr=ago<60?ago+'MIN':Math.round(ago/60)+'H';
     h+='<a href="'+n.link+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level tl-'+n.threat+'">'+threatLabels[n.threat]+'</span></div><div class="news-threat-title">'+n.title+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS'+(n.source?' • '+n.source:'')+'</div></div></a>';
-  });
-  el.innerHTML=h;
-
-  // Geo threat indicator
+  });el.innerHTML=h;
   if(allNews.filter(function(n){return n.threat==='critical'}).length>=3)setThreat('geo','#ff3333');
   else if(critCount>=2)setThreat('geo','var(--amber)');
   else setThreat('geo','var(--green)');
@@ -457,197 +588,98 @@ async function loadNews(){
 }
 
 // ══════════════════════════════════
-// ██  WEBCAMS  ██
+// ██  11. WEBCAMS  ██
 // ══════════════════════════════════
 function loadWebcams(){
   var cams=[
-    {name:'ISS — TERRA AO VIVO',url:'https://ustream.tv/embed/17074538',type:'iframe'},
-    {name:'TIMES SQUARE, NYC',url:'https://www.youtube.com/embed/AdUw5RdyZxI?autoplay=1&mute=1',type:'iframe'},
-    {name:'TÓQUIO, SHIBUYA',url:'https://www.youtube.com/embed/DjdUEyjx8GM?autoplay=1&mute=1',type:'iframe'},
-    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1',type:'iframe'},
+    {name:'ISS — TERRA AO VIVO',url:'https://ustream.tv/embed/17074538'},
+    {name:'TIMES SQUARE, NYC',url:'https://www.youtube.com/embed/AdUw5RdyZxI?autoplay=1&mute=1'},
+    {name:'TÓQUIO, SHIBUYA',url:'https://www.youtube.com/embed/DjdUEyjx8GM?autoplay=1&mute=1'},
+    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1'},
+    {name:'SEUL, COREIA DO SUL',url:'https://www.youtube.com/embed/gFRtAAmiFbE?autoplay=1&mute=1'},
+    {name:'JACKSON HOLE, WY',url:'https://www.youtube.com/embed/DoUOrHHTMis?autoplay=1&mute=1'},
   ];
   var el=document.getElementById('webcam-grid');
-  var h='';cams.forEach(function(c){
-    h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>';
-  });
+  var h='';cams.forEach(function(c){h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>'});
   el.innerHTML=h;
+}
+
+// ══════════════════════════════════
+// ██  12. INTERNET OUTAGES  ██
+// ══════════════════════════════════
+async function loadOutages(){
+  var el=document.getElementById('outage-list');var outages=[];
+  if(CF_RADAR_TOKEN){try{
+    var r=await fetch('https://api.cloudflare.com/client/v4/radar/annotations/outages?limit=15&dateRange=7d&format=json',{headers:{'Authorization':'Bearer '+CF_RADAR_TOKEN},signal:AbortSignal.timeout(10000)});
+    if(r.ok){var data=await r.json();if(data.success&&data.result&&data.result.annotations){data.result.annotations.forEach(function(a){
+      var locs=(a.locationsDetails||[]).map(function(l){return l.name}).join(', ');
+      var sev=a.outage&&a.outage.outageType==='NATIONWIDE'?'critical':a.outage&&a.outage.outageCause==='GOVERNMENT'?'high':'medium';
+      outages.push({name:locs||'Apagão',severity:sev,time:new Date(a.startDate),endTime:a.endDate?new Date(a.endDate):null,source:'CLOUDFLARE',link:'https://radar.cloudflare.com/outage-center'});
+    })}}
+  }catch(e){}}
+  try{var now=Math.floor(Date.now()/1000),ago=now-86400;
+    var r2=await pFetch('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts?from='+ago+'&until='+now+'&limit=20',8000);
+    if(r2){var d2=await r2.json();if(d2&&d2.data){d2.data.forEach(function(a){
+      var name=(a.entity||{}).name||'Desconhecido';var code=(a.entity||{}).code||'';
+      var isDup=outages.some(function(o){return o.name.indexOf(name)!==-1});
+      if(!isDup)outages.push({name:name+(code?' ('+code+')':''),severity:a.level==='critical'?'critical':a.level==='warning'?'high':'medium',time:new Date(a.time*1000),source:'IODA',link:'https://ioda.inetintel.cc.gatech.edu/'});
+    })}}
+  }catch(e){}
+  try{var r3=await pFetch('https://news.google.com/rss/search?q=internet+outage+OR+apagão+internet+OR+internet+shutdown&hl=en',8000);
+    if(r3){var txt=await r3.text();var doc=new DOMParser().parseFromString(txt,'text/xml');var ct=0;
+      doc.querySelectorAll('item').forEach(function(item){if(ct>=6)return;
+        var title=item.querySelector('title')?.textContent||'';
+        if(title.toLowerCase().match(/outage|apagão|shutdown|disruption|blackout/)){
+          var isDup=outages.some(function(o){return o.name.indexOf(title.substring(0,25))!==-1});
+          if(!isDup){outages.push({name:title,severity:'medium',time:new Date(item.querySelector('pubDate')?.textContent),source:'News',link:item.querySelector('link')?.textContent});ct++}
+    }})}}catch(e){}
+  outages.sort(function(a,b){var s={critical:0,high:1,medium:2};return(s[a.severity]||2)-(s[b.severity]||2)||b.time-a.time});
+  outages=outages.slice(0,12);
+  document.getElementById('outage-count').textContent=outages.length>0?outages.length+' EVENTOS':'ESTÁVEL';
+  if(!outages.length){el.innerHTML='<div style="padding:16px;text-align:center"><div style="font-size:20px">✓</div><div style="font-family:\'Orbitron\',sans-serif;font-size:10px;color:var(--green);letter-spacing:2px;margin-top:4px">REDE ESTÁVEL</div></div>';return}
+  var h='';outages.forEach(function(o){
+    var cls=o.severity==='critical'?'tl-critical':o.severity==='high'?'tl-high':'tl-medium';
+    var label=o.severity==='critical'?'CRÍTICO':o.severity==='high'?'ALTO':'MÉDIO';
+    var ago=Math.round((Date.now()-o.time.getTime())/60000);var agoStr=ago<60?ago+'MIN':ago<1440?Math.round(ago/60)+'H':Math.round(ago/1440)+'D';
+    h+='<a href="'+(o.link||'#')+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level '+cls+'">'+label+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:var(--muted);background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:2px;margin-left:4px">'+o.source+'</span></div><div class="news-threat-title">'+o.name+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS</div></div></a>';
+  });el.innerHTML=h;
+  var critCount=outages.filter(function(o){return o.severity==='critical'&&!o.endTime}).length;
+  if(critCount>=3)setThreat('clima','#ff3333');else if(critCount>=1)setThreat('clima','var(--amber)');else setThreat('clima','var(--green)');
+  updateDefcon();
 }
 
 // ══════════════════════════════════
 // ██  DEFCON CALCULATOR  ██
 // ══════════════════════════════════
 var threats={sismo:'var(--green)',solar:'var(--green)',clima:'var(--green)',geo:'var(--green)'};
-
 function setThreat(key,color){
-  threats[key]=color;
-  var dot=document.getElementById('dot-'+key);
-  if(dot){dot.style.background=color;if(color==='#ff3333'||color==='var(--red)'){dot.style.boxShadow='0 0 8px '+color;dot.style.animation='pulse 1s infinite'}else{dot.style.animation='pulse 2s infinite'}}
+  threats[key]=color;var dot=document.getElementById('dot-'+key);
+  if(dot){dot.style.background=color;dot.style.animation=color==='#ff3333'||color==='var(--red)'?'pulse 1s infinite':'pulse 2s infinite'}
 }
-
 function updateDefcon(){
   var score=0;
-  for(var k in threats){
-    var c=threats[k];
-    if(c==='#ff3333'||c==='var(--red)')score+=4;
-    else if(c==='#ff6600')score+=3;
-    else if(c==='var(--amber)')score+=2;
-    else score+=0;
-  }
+  for(var k in threats){var c=threats[k];if(c==='#ff3333'||c==='var(--red)')score+=4;else if(c==='#ff6600')score+=3;else if(c==='var(--amber)')score+=2}
   var level,cls,desc;
-  if(score>=12){level=1;cls='defcon-1';desc='AMEAÇA MÁXIMA — MÚLTIPLOS EVENTOS CRÍTICOS EM CURSO'}
+  if(score>=12){level=1;cls='defcon-1';desc='AMEAÇA MÁXIMA — MÚLTIPLOS EVENTOS CRÍTICOS'}
   else if(score>=8){level=2;cls='defcon-2';desc='ALERTA ELEVADO — EVENTOS SEVEROS DETECTADOS'}
-  else if(score>=5){level=3;cls='defcon-3';desc='ATENÇÃO AUMENTADA — AMEAÇAS MODERADAS ATIVAS'}
-  else if(score>=2){level=4;cls='defcon-4';desc='VIGILÂNCIA — EVENTOS MENORES EM MONITORAMENTO'}
+  else if(score>=5){level=3;cls='defcon-3';desc='ATENÇÃO AUMENTADA — AMEAÇAS MODERADAS'}
+  else if(score>=2){level=4;cls='defcon-4';desc='VIGILÂNCIA — EVENTOS MENORES'}
   else{level=5;cls='defcon-5';desc='SITUAÇÃO NORMAL — SEM AMEAÇAS SIGNIFICATIVAS'}
-
-  var badge=document.getElementById('defcon-badge');
-  badge.textContent='DEFCON '+level;
-  badge.className='defcon-badge '+cls;
+  document.getElementById('defcon-badge').textContent='DEFCON '+level;
+  document.getElementById('defcon-badge').className='defcon-badge '+cls;
   document.getElementById('defcon-desc').textContent=desc;
 }
 
 // ══════════════════════════════════
 // ██  INIT  ██
 // ══════════════════════════════════
-loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();
-// Auto refresh
-setInterval(loadQuakes,300000);// 5min
+loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();loadOutages();
+setInterval(loadQuakes,300000);
 setInterval(loadSolar,300000);
-setInterval(loadNews,600000);// 10min
+setInterval(loadNews,600000);
 setInterval(loadOutages,600000);
-
-// ══════════════════════════════════
-// ██  INTERNET OUTAGES  ██
-// ══════════════════════════════════
-// ═══ CONFIGURAÇÃO: Token Cloudflare Radar (GRATUITO) ═══
-// 1. Crie conta em dash.cloudflare.com/sign-up
-// 2. Vá em: dash.cloudflare.com/profile/api-tokens
-// 3. Create Token → Custom Token → Permissions: Account > Cloudflare Radar > Read
-// 4. Cole abaixo:
-var CF_RADAR_TOKEN = '';
-// Exemplo: var CF_RADAR_TOKEN = 'Sn3lZJTBX6kkg7OdcBUAxOO963GEIyGQqnFTOFYY';
-// ═══════════════════════════════════════════════════════
-
-var outageCauses={CABLE_CUT:'🔌 CORTE DE CABO',GOVERNMENT:'🏛️ GOVERNO',POWER_OUTAGE:'⚡ APAGÃO ELÉTRICO',WEATHER:'🌪️ CLIMA SEVERO',TECHNICAL:'⚙️ FALHA TÉCNICA',UNKNOWN:'❓ CAUSA DESCONHECIDA'};
-var outageTypes={NATIONWIDE:'🌍 NACIONAL',REGIONAL:'📍 REGIONAL',NETWORK:'🔗 REDE',PLATFORM:'☁️ PLATAFORMA'};
-
-async function loadOutages(){
-  var el=document.getElementById('outage-list');
-  var outages=[];
-
-  // ── Source 1: Cloudflare Radar (if token configured) ──
-  if(CF_RADAR_TOKEN){
-    try{
-      var r=await fetch('https://api.cloudflare.com/client/v4/radar/annotations/outages?limit=15&dateRange=7d&format=json',{
-        headers:{'Authorization':'Bearer '+CF_RADAR_TOKEN},
-        signal:AbortSignal.timeout(10000)
-      });
-      if(r.ok){var data=await r.json();
-        if(data.success&&data.result&&data.result.annotations){
-          data.result.annotations.forEach(function(a){
-            var locs=(a.locationsDetails||[]).map(function(l){return l.name}).join(', ');
-            var asns=(a.asnsDetails||[]).map(function(x){return x.name}).join(', ');
-            var cause=a.outage?outageCauses[a.outage.outageCause]||a.outage.outageCause:'';
-            var type=a.outage?outageTypes[a.outage.outageType]||a.outage.outageType:'';
-            var scope=a.scope||'';
-            var severity='medium';
-            if(a.outage&&a.outage.outageType==='NATIONWIDE')severity='critical';
-            else if(a.outage&&(a.outage.outageType==='REGIONAL'||a.outage.outageCause==='GOVERNMENT'))severity='high';
-            
-            outages.push({
-              name:(locs||asns||'Apagão detectado')+(scope?' — '+scope:''),
-              detail:cause+(type?' • '+type:'')+(asns&&locs?' • '+asns:''),
-              severity:severity,
-              time:new Date(a.startDate),
-              endTime:a.endDate?new Date(a.endDate):null,
-              source:'CLOUDFLARE',
-              link:a.linkedUrl||'https://radar.cloudflare.com/outage-center'
-            });
-          });
-        }
-      }
-    }catch(e){console.log('Cloudflare Radar error',e)}
-  }
-
-  // ── Source 2: IODA API (Georgia Tech) — always available, no token ──
-  try{
-    var now=Math.floor(Date.now()/1000);
-    var ago=now-86400;
-    var r2=await pFetch('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts?from='+ago+'&until='+now+'&limit=20',8000);
-    if(r2){var d2=await r2.json();
-      if(d2&&d2.data){d2.data.forEach(function(a){
-        var entity=a.entity||{};
-        var name=entity.name||'Desconhecido';
-        var code=entity.code||'';
-        var severity=a.level==='critical'?'critical':a.level==='warning'?'high':'medium';
-        // Avoid duplicates with Cloudflare
-        var isDup=outages.some(function(o){return o.name.indexOf(name)!==-1});
-        if(!isDup){outages.push({
-          name:name+(code?' ('+code+')':''),
-          detail:(a.datasource||'')+(a.condition?' • '+a.condition:''),
-          severity:severity,time:new Date(a.time*1000),
-          source:'IODA',link:'https://ioda.inetintel.cc.gatech.edu/'
-        })}
-      })}
-    }
-  }catch(e){console.log('IODA error',e)}
-
-  // ── Source 3: Google News fallback for outage headlines ──
-  try{
-    var r3=await pFetch('https://news.google.com/rss/search?q=internet+outage+OR+apagão+internet+OR+internet+shutdown&hl=en',8000);
-    if(r3){var txt=await r3.text();var parser=new DOMParser(),doc=parser.parseFromString(txt,'text/xml');
-      var items=doc.querySelectorAll('item');var count=0;
-      items.forEach(function(item){
-        if(count>=6)return;
-        var title=item.querySelector('title')?.textContent||'';
-        var pubDate=item.querySelector('pubDate')?.textContent||'';
-        var source=item.querySelector('source')?.textContent||'';
-        var link=item.querySelector('link')?.textContent||'';
-        if(title.toLowerCase().match(/outage|apagão|shutdown|disruption|offline|blackout/)){
-          var isDup=outages.some(function(o){return o.name.indexOf(title.substring(0,30))!==-1});
-          if(!isDup){outages.push({name:title,detail:'',severity:'medium',time:new Date(pubDate),source:source||'News',link:link});count++}
-        }
-      });
-    }
-  }catch(e){}
-
-  // Sort and render
-  outages.sort(function(a,b){
-    var sev={critical:0,high:1,medium:2};
-    var d=(sev[a.severity]||2)-(sev[b.severity]||2);
-    return d!==0?d:b.time-a.time;
-  });
-  outages=outages.slice(0,15);
-
-  document.getElementById('outage-count').textContent=outages.length>0?outages.length+' EVENTOS':'ESTÁVEL';
-  document.getElementById('outage-count').style.color=outages.some(function(o){return o.severity==='critical'})?'var(--red)':outages.length>0?'#ff6600':'var(--green2)';
-
-  if(!outages.length){
-    el.innerHTML='<div style="padding:20px;text-align:center"><div style="font-size:24px;margin-bottom:8px">✓</div><div style="font-family:\'Orbitron\',sans-serif;font-size:11px;color:var(--green);letter-spacing:3px;margin-bottom:4px">REDE GLOBAL ESTÁVEL</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted)">Nenhum apagão significativo nas últimas 24h</div>'+(CF_RADAR_TOKEN?'':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--muted);margin-top:10px;opacity:0.5">Configure CF_RADAR_TOKEN para dados detalhados do Cloudflare Radar</div>')+'</div>';
-    return;
-  }
-
-  var h='';outages.forEach(function(o){
-    var cls=o.severity==='critical'?'tl-critical':o.severity==='high'?'tl-high':'tl-medium';
-    var label=o.severity==='critical'?'CRÍTICO':o.severity==='high'?'ALTO':'MÉDIO';
-    var ago=Math.round((Date.now()-o.time.getTime())/60000);
-    var agoStr=ago<60?ago+'MIN':ago<1440?Math.round(ago/60)+'H':Math.round(ago/1440)+'D';
-    var srcColor=o.source==='CLOUDFLARE'?'var(--amber)':o.source==='IODA'?'var(--blue)':'var(--muted)';
-    var status=o.endTime?'<span style="color:var(--green2);font-size:8px"> ✓ RESOLVIDO</span>':'<span style="color:var(--red);font-size:8px"> ● ATIVO</span>';
-    
-    h+='<a href="'+(o.link||'#')+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level '+cls+'">'+label+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:'+srcColor+';background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:2px;margin-left:4px">'+o.source+'</span>'+status+'</div><div class="news-threat-title">'+o.name+'</div>'+(o.detail?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);margin-top:2px">'+o.detail+'</div>':'')+'<div class="news-threat-meta">'+agoStr+' ATRÁS</div></div></a>';
-  });
-  el.innerHTML=h;
-
-  // DEFCON: internet outages affect "clima" indicator
-  var critCount=outages.filter(function(o){return o.severity==='critical'&&!o.endTime}).length;
-  if(critCount>=3)setThreat('clima','#ff3333');
-  else if(critCount>=1)setThreat('clima','var(--amber)');
-  else setThreat('clima','var(--green)');
-  updateDefcon();
-}
-
-loadOutages();
+setInterval(function(){if(map.hasLayer(layers.flights))loadFlights()},120000);// refresh flights 2min
+setInterval(function(){if(map.hasLayer(layers.daynight))updateDayNight()},60000);// update day/night 1min
 </script>
 </body>
 </html>
