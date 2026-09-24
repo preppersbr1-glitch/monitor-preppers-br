@@ -270,14 +270,12 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 //    - Ative Authentication → Email/Senha + Google
 //    - Ative Realtime Database (modo teste)
 //
+// Mesmo projeto da Comunidade: uma única conta vale para o fórum e para a área de membros
 var firebaseConfig = {
-  apiKey: "COLE_SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "COLE_SEU_APP_ID"
+  apiKey: "AIzaSyDFD02ywD0i_lTHwgJ8BRwwb6fwbh3VgC8",
+  authDomain: "comunidade-preppers-br-f5253.firebaseapp.com",
+  databaseURL: "https://comunidade-preppers-br-f5253-default-rtdb.firebaseio.com",
+  projectId: "comunidade-preppers-br-f5253"
 };
 //
 // 2. CHAVE PIX (email, CPF, celular ou chave aleatória)
@@ -319,8 +317,12 @@ function loadProfile(){
     userData=s.val();
     if(!userData){
       userData={name:currentUser.displayName||currentUser.email.split('@')[0],email:currentUser.email,level:'sentinela',createdAt:Date.now()};
-      db.ref('members/'+currentUser.uid).set(userData);
+      db.ref('members/'+currentUser.uid).set(userData).catch(function(e){console.warn('Perfil não salvo',e)});
     }
+    renderUI(true);
+  }).catch(function(e){
+    console.warn('Perfil não carregado',e);
+    userData={name:currentUser.displayName||currentUser.email.split('@')[0],email:currentUser.email,level:'sentinela'};
     renderUI(true);
   });
 }
@@ -379,7 +381,9 @@ function doLogin(){
   auth.signInWithEmailAndPassword(email,pass).then(function(){closeAuth()}).catch(function(e){
     var m='Erro ao entrar';
     if(e.code==='auth/user-not-found')m='Conta não encontrada';
-    else if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')m='Senha incorreta';
+    else if(e.code==='auth/wrong-password')m='Senha incorreta';
+    else if(e.code==='auth/invalid-credential')m='E-mail ou senha incorretos';
+    else if(e.code==='auth/network-request-failed')m='Sem conexão. Tente de novo.';
     else if(e.code==='auth/invalid-email')m='E-mail inválido';
     else if(e.code==='auth/too-many-requests')m='Muitas tentativas. Aguarde.';
     showErr('login-err',m);
@@ -387,7 +391,13 @@ function doLogin(){
 }
 
 function doGoogleLogin(){
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(){closeAuth()}).catch(function(e){showErr('login-err','Erro: '+e.message)});
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(){closeAuth()}).catch(function(e){
+    var m='Erro: '+e.message;
+    if(e.code==='auth/unauthorized-domain'||e.code==='auth/operation-not-allowed')m='Login com Google indisponível no momento. Use e-mail e senha.';
+    else if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request')return;
+    else if(e.code==='auth/popup-blocked')m='O navegador bloqueou a janela do Google. Libere pop-ups ou use e-mail e senha.';
+    showErr('login-err',m);
+  });
 }
 
 // ── REGISTER ──
