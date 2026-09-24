@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — PREPPERS BR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--purple:#aa66ff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:4px;margin-top:1px}
+.hdr-links{display:flex;gap:6px;align-items:center}
+.hdr-links a,.hdr-links button{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--border);border-radius:3px;background:none;cursor:pointer}
+.hdr-links a:hover,.hdr-links button:hover{color:var(--green);border-color:var(--green3)}
+main{max-width:1200px;margin:0 auto;padding:24px}
+.title{font-family:'Orbitron',sans-serif;font-size:18px;letter-spacing:4px;color:var(--green);margin-bottom:4px}
+.subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px}
+.center{text-align:center;max-width:460px;margin:40px auto}
+.center p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;margin:10px 0 18px}
+.btn{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;padding:10px 18px;border-radius:3px;border:1px solid var(--green2);background:rgba(0,255,136,0.1);color:var(--green);cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{background:rgba(0,255,136,0.18)}
+.btn:disabled{opacity:0.4;cursor:default}
+.btn-ghost{border-color:var(--border);background:none;color:var(--muted)}
+.input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;padding:11px 12px;border-radius:3px;outline:none;margin-bottom:10px}
+.input:focus{border-color:var(--green3)}
+.err{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);margin:6px 0;min-height:14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.stat-val{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900}
+.stat-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.toolbar .input{margin:0;flex:1;min-width:200px}
+.toolbar select{width:auto;flex:none}
+table{width:100%;border-collapse:collapse}
+th{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:400}
+td{padding:10px;border-bottom:1px solid rgba(26,61,42,0.5);font-size:14px;vertical-align:middle}
+td .email{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);word-break:break-all}
+.lvl{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:3px;display:inline-block}
+.lvl-sentinela{color:var(--green2);border:1px solid rgba(0,204,106,0.3);background:rgba(0,204,106,0.08)}
+.lvl-operador{color:var(--blue);border:1px solid rgba(0,170,255,0.3);background:rgba(0,170,255,0.08)}
+.lvl-comando{color:var(--amber);border:1px solid rgba(255,179,0,0.3);background:rgba(255,179,0,0.08)}
+.due{font-family:'Share Tech Mono',monospace;font-size:11px}
+.due.late{color:var(--red)}
+.edit{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.edit select,.edit input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 8px;border-radius:3px}
+.saved{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green)}
+.rules{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text);white-space:pre;overflow-x:auto;margin:10px 0;text-align:left}
+.hidden{display:none!important}
+@media(max-width:800px){
+  header{padding:10px 14px;height:auto;flex-wrap:wrap}
+  .logo-text{font-size:12px;letter-spacing:2px}
+  main{padding:14px}
+  .stats{grid-template-columns:1fr 1fr}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr{border:1px solid var(--border);border-radius:6px;margin-bottom:10px;padding:6px 4px;background:var(--card)}
+  td{border:none;padding:6px 10px}
+  td[data-l]::before{content:attr(data-l);display:block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:3px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🛡️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">PAINEL DE ADMINISTRAÇÃO</div></div></div>
+  <div class="hdr-links"><a href="membros.html">← MEMBROS</a><button id="btn-logout" class="hidden" onclick="auth.signOut()">SAIR</button></div>
+</header>
+
+<main>
+  <!-- carregando -->
+  <div id="v-loading" class="center"><p>▋ VERIFICANDO ACESSO...</p></div>
+
+  <!-- não logado -->
+  <div id="v-login" class="card center hidden">
+    <div class="title">ACESSO RESTRITO</div>
+    <p>Entre com a conta de administrador.</p>
+    <input class="input" type="email" id="l-email" placeholder="E-mail" autocomplete="email">
+    <input class="input" type="password" id="l-pass" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="l-err"></div>
+    <button class="btn" onclick="doLogin()">ENTRAR</button>
+  </div>
+
+  <!-- logado, mas não é admin -->
+  <div id="v-denied" class="card center hidden">
+    <div class="title">ACESSO NEGADO</div>
+    <p>Esta área é exclusiva da administração.</p>
+    <a class="btn" href="membros.html">VOLTAR</a>
+  </div>
+
+  <!-- admin com e-mail não verificado -->
+  <div id="v-verify" class="card center hidden">
+    <div class="title">VERIFIQUE SEU E-MAIL</div>
+    <p>Por segurança, o banco de dados só libera a lista de membros para o e-mail de administrador <strong>verificado</strong>. Enviaremos um link para <span id="v-email"></span>.</p>
+    <div class="err" id="v-err" style="color:var(--green)"></div>
+    <button class="btn" id="btn-send" onclick="sendVerify()">ENVIAR LINK DE VERIFICAÇÃO</button>
+    <button class="btn btn-ghost" onclick="recheckVerify()">JÁ VERIFIQUEI</button>
+  </div>
+
+  <!-- painel -->
+  <div id="v-panel" class="hidden">
+    <div class="title">MEMBROS</div>
+    <div class="subtitle">ALTERE O PLANO DE CADA MEMBRO APÓS CONFIRMAR O PAGAMENTO</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">TOTAL</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green2)" id="s-sentinela">—</div><div class="stat-lbl">SENTINELA</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--blue)" id="s-operador">—</div><div class="stat-lbl">OPERADOR</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)" id="s-comando">—</div><div class="stat-lbl">COMANDO</div></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="toolbar">
+        <input class="input" id="q" placeholder="Buscar por nome ou e-mail" oninput="render()">
+        <select class="input" id="f-level" onchange="render()">
+          <option value="">Todos os planos</option>
+          <option value="sentinela">Sentinela</option>
+          <option value="operador">Operador</option>
+          <option value="comando">Comando</option>
+          <option value="late">Pagamento vencido</option>
+        </select>
+      </div>
+      <table>
+        <thead><tr><th>MEMBRO</th><th>PLANO ATUAL</th><th>PAGO ATÉ</th><th>DESDE</th><th>ALTERAR PLANO</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5" style="text-align:center;color:var(--muted)">▋ CARREGANDO...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- regras do banco ainda não liberam o admin -->
+  <div id="v-rules" class="card hidden">
+    <div class="title" style="color:var(--amber)">FALTA CONFIGURAR AS REGRAS DO BANCO</div>
+    <p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;margin:8px 0">
+      O Firebase recusou a leitura da lista de membros. No console do Firebase, abra <strong>Realtime Database → Rules</strong> e, dentro de <code>"rules": { ... }</code>, adicione o bloco <code>"members"</code> abaixo (mantenha as regras que já existem para o fórum). Depois clique em <strong>Publish</strong> e recarregue esta página.
+    </p>
+    <div class="rules" id="rules-text"></div>
+    <button class="btn btn-ghost" onclick="copyRules()">COPIAR REGRAS</button> <span class="saved" id="rules-copied"></span>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+// Mesmo projeto da Comunidade e da área de Membros
+var firebaseConfig = {
+  apiKey: "AIzaSyDFD02ywD0i_lTHwgJ8BRwwb6fwbh3VgC8",
+  authDomain: "comunidade-preppers-br-f5253.firebaseapp.com",
+  databaseURL: "https://comunidade-preppers-br-f5253-default-rtdb.firebaseio.com",
+  projectId: "comunidade-preppers-br-f5253"
+};
+// Esconder a tela não protege os dados: quem protege são as regras do banco (RULES abaixo),
+// que só deixam este e-mail, verificado, ler a lista e alterar planos.
+var ADMIN_EMAIL = 'preppersbr1@gmail.com';
+var RULES = '"members": {\n' +
+'  ".read": "auth != null && auth.token.email == \'' + ADMIN_EMAIL + '\' && auth.token.email_verified == true",\n' +
+'  ".write": "auth != null && auth.token.email == \'' + ADMIN_EMAIL + '\' && auth.token.email_verified == true",\n' +
+'  "$uid": {\n' +
+'    ".read": "auth != null && auth.uid == $uid",\n' +
+'    ".write": "auth != null && auth.uid == $uid && newData.exists() && (data.exists() ? newData.child(\'level\').val() == data.child(\'level\').val() && newData.child(\'paidUntil\').val() == data.child(\'paidUntil\').val() : newData.child(\'level\').val() == \'sentinela\')",\n' +
+'    "level": { ".validate": "newData.isString() && newData.val().matches(/^(sentinela|operador|comando)$/)" }\n' +
+'  }\n' +
+'}';
+
+var auth, db, members = {};
+var views = ['v-loading','v-login','v-denied','v-verify','v-panel','v-rules'];
+function show(){ var on = [].slice.call(arguments); views.forEach(function(v){ document.getElementById(v).classList.toggle('hidden', on.indexOf(v) === -1); }); }
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function fmtDate(ms){ return ms ? new Date(ms).toLocaleDateString('pt-BR') : '—'; }
+function isAdmin(u){ return u && (u.email || '').toLowerCase() === ADMIN_EMAIL; }
+
+document.getElementById('rules-text').textContent = RULES;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth(); db = firebase.database();
+} catch(e) {
+  document.getElementById('v-loading').innerHTML = '<p style="color:var(--red)">Não foi possível carregar o Firebase. Recarregue a página.</p>';
+}
+
+if (auth) auth.onAuthStateChanged(function(user){
+  document.getElementById('btn-logout').classList.toggle('hidden', !user);
+  if (!user) { show('v-login'); return; }
+  if (!isAdmin(user)) { show('v-denied'); return; }
+  if (!user.emailVerified) {
+    document.getElementById('v-email').textContent = user.email;
+    show('v-verify'); return;
+  }
+  loadMembers();
+});
+
+function doLogin(){
+  var email = document.getElementById('l-email').value.trim(), pass = document.getElementById('l-pass').value;
+  var err = document.getElementById('l-err'); err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Preencha e-mail e senha'; return; }
+  auth.signInWithEmailAndPassword(email, pass).catch(function(e){
+    err.textContent = e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' ? 'E-mail ou senha incorretos'
+      : e.code === 'auth/too-many-requests' ? 'Muitas tentativas. Aguarde.' : 'Erro ao entrar';
+  });
+}
+
+function sendVerify(){
+  var msg = document.getElementById('v-err');
+  auth.currentUser.sendEmailVerification().then(function(){
+    msg.style.color = 'var(--green)';
+    msg.textContent = 'Link enviado. Abra seu e-mail (veja também o spam), clique no link e depois em "JÁ VERIFIQUEI".';
+    document.getElementById('btn-send').disabled = true;
+  }).catch(function(e){
+    msg.style.color = 'var(--red)';
+    msg.textContent = e.code === 'auth/too-many-requests' ? 'Link já enviado há pouco. Aguarde alguns minutos.' : 'Erro ao enviar: ' + e.message;
+  });
+}
+function recheckVerify(){
+  var u = auth.currentUser;
+  u.reload().then(function(){ return u.getIdToken(true); }).then(function(){
+    if (u.emailVerified) loadMembers();
+    else { var m = document.getElementById('v-err'); m.style.color = 'var(--red)'; m.textContent = 'Ainda não verificado. Clique no link enviado ao seu e-mail.'; }
+  });
+}
+
+function loadMembers(){
+  show('v-panel');
+  db.ref('members').on('value', function(snap){
+    members = snap.val() || {};
+    render();
+  }, function(err){
+    console.warn('Leitura negada', err);
+    show('v-rules');
+  });
+}
+
+function render(){
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var f = document.getElementById('f-level').value;
+  var now = Date.now();
+  var counts = { sentinela:0, operador:0, comando:0 };
+  var list = Object.keys(members).map(function(uid){ var m = members[uid] || {}; m.uid = uid; m.level = m.level || 'sentinela'; return m; });
+  list.forEach(function(m){ if (counts[m.level] !== undefined) counts[m.level]++; });
+  document.getElementById('s-total').textContent = list.length;
+  ['sentinela','operador','comando'].forEach(function(l){ document.getElementById('s-'+l).textContent = counts[l]; });
+
+  list = list.filter(function(m){
+    var late = m.level !== 'sentinela' && m.paidUntil && m.paidUntil < now;
+    if (f === 'late') { if (!late) return false; }
+    else if (f && m.level !== f) return false;
+    return !q || (m.name || '').toLowerCase().indexOf(q) !== -1 || (m.email || '').toLowerCase().indexOf(q) !== -1;
+  }).sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+
+  var tb = document.getElementById('rows');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum membro encontrado</td></tr>'; return; }
+  tb.innerHTML = list.map(function(m){
+    var late = m.level !== 'sentinela' && m.paidUntil && m.paidUntil < now;
+    var due = m.level === 'sentinela' ? '—' : (m.paidUntil ? fmtDate(m.paidUntil) + (late ? ' (VENCIDO)' : '') : 'sem data');
+    var dateVal = m.paidUntil ? new Date(m.paidUntil).toISOString().slice(0, 10) : '';
+    return '<tr>' +
+      '<td data-l="MEMBRO"><strong>' + esc(m.name || '—') + '</strong><div class="email">' + esc(m.email || m.uid) + '</div></td>' +
+      '<td data-l="PLANO ATUAL"><span class="lvl lvl-' + esc(m.level) + '">' + esc(m.level.toUpperCase()) + '</span></td>' +
+      '<td data-l="PAGO ATÉ"><span class="due' + (late ? ' late' : '') + '">' + due + '</span></td>' +
+      '<td data-l="DESDE"><span class="due">' + fmtDate(m.createdAt) + '</span></td>' +
+      '<td data-l="ALTERAR PLANO"><div class="edit">' +
+        '<select id="lv-' + esc(m.uid) + '" onchange="suggestDate(\'' + esc(m.uid) + '\')">' +
+          ['sentinela','operador','comando'].map(function(l){ return '<option value="' + l + '"' + (l === m.level ? ' selected' : '') + '>' + l.charAt(0).toUpperCase() + l.slice(1) + '</option>'; }).join('') +
+        '</select>' +
+        '<input type="date" id="dt-' + esc(m.uid) + '" value="' + dateVal + '" title="Pago até">' +
+        '<button class="btn" style="padding:7px 12px" onclick="save(\'' + esc(m.uid) + '\')">SALVAR</button>' +
+        '<span class="saved" id="ok-' + esc(m.uid) + '"></span>' +
+      '</div></td></tr>';
+  }).join('');
+}
+
+// Ao escolher um plano pago sem data, sugere 30 dias a partir de hoje
+function suggestDate(uid){
+  var lv = document.getElementById('lv-' + uid).value, dt = document.getElementById('dt-' + uid);
+  if (lv === 'sentinela') dt.value = '';
+  else if (!dt.value) dt.value = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+}
+
+function save(uid){
+  var lv = document.getElementById('lv-' + uid).value;
+  var dt = document.getElementById('dt-' + uid).value;
+  var ok = document.getElementById('ok-' + uid);
+  var upd = { level: lv, paidUntil: lv !== 'sentinela' && dt ? new Date(dt + 'T23:59:59').getTime() : null, updatedAt: Date.now(), updatedBy: auth.currentUser.email };
+  ok.style.color = 'var(--muted)'; ok.textContent = 'salvando...';
+  db.ref('members/' + uid).update(upd).then(function(){
+    ok.style.color = 'var(--green)'; ok.textContent = '✓ salvo';
+  }).catch(function(e){
+    ok.style.color = 'var(--red)'; ok.textContent = 'erro: sem permissão';
+    console.warn(e); show('v-panel', 'v-rules');
+  });
+}
+
+function copyRules(){
+  navigator.clipboard.writeText(RULES).then(function(){ document.getElementById('rules-copied').textContent = '✓ copiado'; });
+}
+</script>
+</body>
+</html>
