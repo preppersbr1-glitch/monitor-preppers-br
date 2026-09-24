@@ -94,12 +94,12 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <div class="course-layout">
         <div class="sidebar">
           <div class="sidebar-title">CONTEÚDO DO CURSO</div>
-          <div class="lesson-item active" onclick="showLesson(0)" id="sidebar-0"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">01</span><span class="lesson-name">Consciência Situacional</span><span class="lesson-dur">20min</span></div>
-<div class="lesson-item" onclick="showLesson(1)" id="sidebar-1"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">02</span><span class="lesson-name">Desescalada de Conflitos</span><span class="lesson-dur">20min</span></div>
-<div class="lesson-item" onclick="showLesson(2)" id="sidebar-2"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">03</span><span class="lesson-name">Segurança em Deslocamento</span><span class="lesson-dur">20min</span></div>
-<div class="lesson-item" onclick="showLesson(3)" id="sidebar-3"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">04</span><span class="lesson-name">Segurança Residencial Avançada</span><span class="lesson-dur">25min</span></div>
-<div class="lesson-item" onclick="showLesson(4)" id="sidebar-4"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">05</span><span class="lesson-name">Defesa Pessoal Básica</span><span class="lesson-dur">25min</span></div>
-<div class="lesson-item" onclick="showLesson(5)" id="sidebar-5"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">06</span><span class="lesson-name">Plano de Segurança Pessoal</span><span class="lesson-dur">20min</span></div>
+          <div class="lesson-item active" onclick="showLesson(0,true)" id="sidebar-0"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">01</span><span class="lesson-name">Consciência Situacional</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(1,true)" id="sidebar-1"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">02</span><span class="lesson-name">Desescalada de Conflitos</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(2,true)" id="sidebar-2"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">03</span><span class="lesson-name">Segurança em Deslocamento</span><span class="lesson-dur">20min</span></div>
+<div class="lesson-item" onclick="showLesson(3,true)" id="sidebar-3"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">04</span><span class="lesson-name">Segurança Residencial Avançada</span><span class="lesson-dur">25min</span></div>
+<div class="lesson-item" onclick="showLesson(4,true)" id="sidebar-4"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">05</span><span class="lesson-name">Defesa Pessoal Básica</span><span class="lesson-dur">25min</span></div>
+<div class="lesson-item" onclick="showLesson(5,true)" id="sidebar-5"><span class="lesson-check" onclick="event.stopPropagation();toggleCheck(this)">☐</span><span class="lesson-num">06</span><span class="lesson-name">Plano de Segurança Pessoal</span><span class="lesson-dur">20min</span></div>
 
           <div style="padding:12px 16px"><a href="cursos.html" class="nav-btn" style="display:block;text-align:center;font-size:10px">← TODOS OS CURSOS</a></div>
         </div>
@@ -121,7 +121,9 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}setInterval(updateClock,1000);updateClock();
 var totalLessons = 6;
 var currentLesson = 0;
-function showLesson(n) {
+function showLesson(n, fromList) {
+  var item = document.getElementById('sidebar-'+n);
+  var anchor = fromList && item ? item.getBoundingClientRect().top : null;
   for(var i=0;i<totalLessons;i++) {
     document.getElementById('lesson-'+i).style.display = i===n?'block':'none';
     var sb = document.getElementById('sidebar-'+i);
@@ -131,7 +133,13 @@ function showLesson(n) {
   var pct = Math.round(((n+1)/totalLessons)*100);
   document.getElementById('progress-fill').style.width = pct+'%';
   document.getElementById('progress-text').textContent = '📊 PROGRESSO: '+pct+'%';
-  // Leva ao início da aula aberta (abaixo do cabeçalho fixo), só se ele não estiver à vista
+  placeContent();
+  if (anchor !== null) {
+    // Clique na lista: o tópico clicado fica parado onde estava na tela
+    window.scrollBy(0, item.getBoundingClientRect().top - anchor);
+    return;
+  }
+  // PRÓXIMA/ANTERIOR: leva ao início da aula aberta (abaixo do cabeçalho fixo), só se ele não estiver à vista
   var lesson = document.getElementById('lesson-'+n);
   var header = document.querySelector('header');
   var offset = (header ? header.offsetHeight : 0) + 12;
@@ -140,6 +148,20 @@ function showLesson(n) {
     window.scrollTo({ top: window.scrollY + top - offset, behavior: 'smooth' });
   }
 }
+// No celular a aula abre logo abaixo do tópico clicado (sanfona); no computador fica ao lado da lista
+var contentArea = document.querySelector('.content-area');
+var listMobile = window.matchMedia('(max-width:900px)');
+function placeContent() {
+  if (listMobile.matches) {
+    var item = document.getElementById('sidebar-'+currentLesson);
+    if (item && item.nextElementSibling !== contentArea) item.after(contentArea);
+  } else if (contentArea.parentElement !== document.querySelector('.course-layout')) {
+    document.querySelector('.sidebar').after(contentArea);
+  }
+}
+listMobile.addEventListener('change', placeContent);
+placeContent();
+
 function toggleCheck(el) {
   el.textContent = el.textContent === '☐' ? '☑' : '☐';
   el.style.color = el.textContent === '☑' ? 'var(--green)' : '';
