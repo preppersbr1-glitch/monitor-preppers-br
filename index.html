@@ -1153,13 +1153,12 @@ initWeather();
 
 // ── MARKETS (COMPLETO) ────────────────────────
 
-// Helper: Yahoo Finance via proxy CORS (tenta múltiplos proxies)
+// Helper: Yahoo Finance via proxy CORS (só para petróleo, Ibovespa e S&P — sem API gratuita com CORS)
 async function fetchYahoo(symbol) {
   const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=2d';
   const proxies = [
+    'https://api.cors.lol/?url=' + encodeURIComponent(yahooUrl),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
-    'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
-    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
   ];
   for (const proxyUrl of proxies) {
     try {
@@ -1178,47 +1177,69 @@ async function fetchYahoo(symbol) {
   return null;
 }
 
+// Cripto via Coinbase Exchange (CORS liberado): variação = último vs. abertura 24h
+async function fetchCoinbase(pair) {
+  try {
+    const r = await fetch('https://api.exchange.coinbase.com/products/' + pair + '/stats', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const price = parseFloat(d.last), open = parseFloat(d.open);
+    if (isNaN(price)) return null;
+    return { price, chgPct: open ? ((price - open) / open) * 100 : 0 };
+  } catch(e) { return null; }
+}
+
+// Ouro e prata via gold-api.com (CORS liberado, sem variação diária)
+async function fetchMetal(symbol) {
+  try {
+    const r = await fetch('https://api.gold-api.com/price/' + symbol, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return isNaN(parseFloat(d.price)) ? null : { price: parseFloat(d.price), chgPct: null };
+  } catch(e) { return null; }
+}
+
 async function loadMarkets() {
-  // TUDO via Yahoo Finance com proxy — sem CoinGecko (rate limit)
-  const yahooQuotes = [
-    { symbol: 'BTC-USD', ids: {price:'btc-price', val:'btc-val', pctCard:'btc-pct', chgTicker:'btc-chg'}, prefix:'$', dec:0 },
-    { symbol: 'ETH-USD', ids: {price:'eth-price', val:'eth-val', pctCard:'eth-pct', chgTicker:'eth-chg'}, prefix:'$', dec:0 },
-    { symbol: 'GC=F',   ids: {price:'gold-price', val:'gold-val', pctCard:'gold-pct', chgTicker:'gold-chg'}, prefix:'$', dec:0 },
-    { symbol: 'SI=F',   ids: {price:'silver-price', val:'silver-val', pctCard:'silver-pct', chgTicker:'silver-chg'}, prefix:'$', dec:2 },
-    { symbol: 'CL=F',   ids: {price:'oil-price', val:'oil-val', pctCard:'oil-pct', chgTicker:'oil-chg'}, prefix:'$', dec:2 },
-    { symbol: '^BVSP',  ids: {val:'ibov-val', chgTicker:'ibov-chg'}, prefix:'', dec:0 },
-    { symbol: '^GSPC',  ids: {val:'sp-val', chgTicker:'sp-chg'}, prefix:'', dec:0 },
+  const quotes = [
+    { fetch: () => fetchCoinbase('BTC-USD'), ids: {price:'btc-price', val:'btc-val', pctCard:'btc-pct', chgTicker:'btc-chg'}, prefix:'$', dec:0 },
+    { fetch: () => fetchCoinbase('ETH-USD'), ids: {price:'eth-price', val:'eth-val', pctCard:'eth-pct', chgTicker:'eth-chg'}, prefix:'$', dec:0 },
+    { fetch: () => fetchMetal('XAU'),        ids: {price:'gold-price', val:'gold-val', pctCard:'gold-pct', chgTicker:'gold-chg'}, prefix:'$', dec:0 },
+    { fetch: () => fetchMetal('XAG'),        ids: {price:'silver-price', val:'silver-val', pctCard:'silver-pct', chgTicker:'silver-chg'}, prefix:'$', dec:2 },
+    { fetch: () => fetchYahoo('CL=F'),       ids: {price:'oil-price', val:'oil-val', pctCard:'oil-pct', chgTicker:'oil-chg'}, prefix:'$', dec:2 },
+    { fetch: () => fetchYahoo('^BVSP'),      ids: {val:'ibov-val', chgTicker:'ibov-chg'}, prefix:'', dec:0 },
+    { fetch: () => fetchYahoo('^GSPC'),      ids: {val:'sp-val', chgTicker:'sp-chg'}, prefix:'', dec:0 },
   ];
 
-  // USD/BRL via Frankfurter (API dedicada, confiável)
+  // USD/BRL via Frankfurter (endpoint novo; o antigo redireciona e o navegador bloqueia)
   try {
-    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=BRL');
+    const since = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const r = await fetch('https://api.frankfurter.dev/v1/' + since + '..?base=USD&symbols=BRL');
     const d = await r.json();
-    if (d.rates && d.rates.BRL) {
-      const v = d.rates.BRL.toFixed(2);
-      safeSet('usd-price', 'R$'+v);
+    const days = Object.keys(d.rates || {}).sort();
+    if (days.length) {
+      const last = d.rates[days[days.length - 1]].BRL;
+      const prev = days.length > 1 ? d.rates[days[days.length - 2]].BRL : last;
+      const chg = prev ? ((last - prev) / prev) * 100 : 0;
+      const v = last.toFixed(2);
+      safeSet('usd-price', 'R$'+v, 'market-price '+cls(chg));
       safeSet('usd-val', 'R$'+v);
-      safeSet('usd-pct', '—', 'market-change neu');
-      safeSet('usd-chg', '—', 'chg neu');
+      safeSet('usd-pct', pct(chg), 'market-change '+cls(chg));
+      safeSet('usd-chg', pct(chg), 'chg '+cls(chg));
     }
   } catch(e) { console.warn('FX fetch error:', e); }
 
-  // Buscar todos os Yahoo quotes em paralelo
-  const yahooResults = await Promise.allSettled(
-    yahooQuotes.map(q => fetchYahoo(q.symbol).then(data => ({ config: q, data })))
-  );
-
-  for (const result of yahooResults) {
-    if (result.status !== 'fulfilled' || !result.value.data) continue;
-    const { config, data } = result.value;
+  // Buscar todas as cotações em paralelo; cada uma aparece assim que chega
+  function render(config, data) {
+    if (!data) return;
     const { price, chgPct } = data;
     const priceStr = config.prefix + fmt(price, config.dec);
-
-    if (config.ids.price) safeSet(config.ids.price, priceStr, 'market-price '+cls(chgPct));
+    if (config.ids.price) safeSet(config.ids.price, priceStr, 'market-price '+(chgPct === null ? 'neu' : cls(chgPct)));
     if (config.ids.val) safeSet(config.ids.val, config.prefix ? priceStr : fmt(price, config.dec));
-    if (config.ids.pctCard) safeSet(config.ids.pctCard, pct(chgPct), 'market-change '+cls(chgPct));
-    if (config.ids.chgTicker) safeSet(config.ids.chgTicker, pct(chgPct), 'chg '+cls(chgPct));
+    if (config.ids.pctCard) safeSet(config.ids.pctCard, chgPct === null ? '—' : pct(chgPct), 'market-change '+(chgPct === null ? 'neu' : cls(chgPct)));
+    if (config.ids.chgTicker) safeSet(config.ids.chgTicker, chgPct === null ? '—' : pct(chgPct), 'chg '+(chgPct === null ? 'neu' : cls(chgPct)));
+    syncTicker();
   }
+  await Promise.allSettled(quotes.map(q => q.fetch().then(data => render(q, data))));
 
   // Sincronizar ticker duplicado
   syncTicker();
@@ -1276,10 +1297,10 @@ async function loadSolar() {
   try {
     const r = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
     const d = await r.json();
-    if (d && d.length > 1) {
-      // Última linha contém dados mais recentes (header é d[0])
+    if (d && d.length) {
+      // Último item é o mais recente (NOAA trocou arrays por objetos {Kp})
       const latest = d[d.length - 1];
-      const kp = parseFloat(latest[1]); // Kp value
+      const kp = parseFloat(Array.isArray(latest) ? latest[1] : latest.Kp);
       if (!isNaN(kp)) {
         kpVal = kp.toFixed(1);
         if (kp >= 8) { kpLabel = 'G4+ SEVERO'; kpColor = 'var(--red)'; }
@@ -1295,9 +1316,11 @@ async function loadSolar() {
   // 3) Vento Solar (NOAA DSCOVR real-time solar wind)
   try {
     const r = await fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json');
-    const d = await r.json();
-    if (d && d.WindSpeed) {
-      windSpeed = Math.round(parseFloat(d.WindSpeed));
+    const j = await r.json();
+    const d = Array.isArray(j) ? j[0] || {} : j;
+    const ws = parseFloat(d.proton_speed != null ? d.proton_speed : d.WindSpeed);
+    if (!isNaN(ws)) {
+      windSpeed = Math.round(ws);
       if (windSpeed >= 700) windColor = 'var(--red)';
       else if (windSpeed >= 500) windColor = 'var(--amber)';
       else windColor = 'var(--green)';
@@ -1307,9 +1330,10 @@ async function loadSolar() {
   // 4) Bz (componente magnético) — indicador de impacto geomagnético
   try {
     const r = await fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json');
-    const d = await r.json();
-    if (d && d.Bz) {
-      const bzVal = parseFloat(d.Bz);
+    const j = await r.json();
+    const d = Array.isArray(j) ? j[0] || {} : j;
+    const bzVal = parseFloat(d.bz_gsm != null ? d.bz_gsm : d.Bz);
+    if (!isNaN(bzVal)) {
       bz = bzVal.toFixed(1);
       // Bz negativo = mais geoefetivo (pior)
       if (bzVal <= -10) { bzColor = 'var(--red)'; }
@@ -1652,25 +1676,22 @@ setInterval(loadDefesaCivil, 600000); // Atualiza a cada 10 min
 
 // ── NEWS via RSS MULTI-FONTE (PT-BR) ──────────────────
 
-// CORS Proxies (encadeados como fallback)
-const CORS_PROXIES = [
-  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-  url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
-  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
-];
-
+// RSS via rss2json (os proxies CORS gratuitos saíram do ar).
+// Remonta um XML RSS mínimo para o parseRSSXML continuar igual.
+function xmlEsc(t) { return String(t == null ? '' : t).replace(/[<>&]/g, function(c) { return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
 async function fetchRSS(url) {
-  for (const makeProxy of CORS_PROXIES) {
-    try {
-      const proxyUrl = makeProxy(url);
-      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-      if (r.ok) {
-        const text = await r.text();
-        if (text.includes('<item') || text.includes('<entry')) return text;
-      }
-    } catch(e) { continue; }
-  }
-  return null;
+  try {
+    const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (d.status !== 'ok' || !d.items || !d.items.length) return null;
+    return '<rss><channel>' + d.items.map(function(i) {
+      var date = i.pubDate ? new Date(i.pubDate.replace(' ', 'T') + 'Z').toUTCString() : '';
+      return '<item><title>' + xmlEsc(i.title) + '</title><link>' + xmlEsc(i.link) + '</link>' +
+        (date ? '<pubDate>' + date + '</pubDate>' : '') +
+        '<description>' + xmlEsc((i.description || '').replace(/<[^>]*>/g, ' ')) + '</description></item>';
+    }).join('') + '</channel></rss>';
+  } catch(e) { return null; }
 }
 
 // Fontes RSS diretas de veículos brasileiros e internacionais (em PT-BR)
