@@ -336,7 +336,8 @@ function renderUI(loggedIn){
     document.getElementById('p-email').textContent=currentUser.email;
     var lv=document.getElementById('p-level');
     lv.textContent=level.toUpperCase();lv.className='profile-level level-'+level;
-    document.getElementById('auth-actions').innerHTML='<button class="btn btn-logout" onclick="doLogout()">SAIR DA CONTA</button>';
+    var adminLink=(currentUser.email||'').toLowerCase()==='preppersbr1@gmail.com'?'<a class="btn btn-green" href="admin.html" style="margin-right:8px;text-decoration:none">⚙️ PAINEL ADMIN</a>':'';
+    document.getElementById('auth-actions').innerHTML=adminLink+'<button class="btn btn-logout" onclick="doLogout()">SAIR DA CONTA</button>';
     updateButtons(level);
   } else {
     document.getElementById('p-avatar').textContent='?';
