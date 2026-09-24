@@ -82,6 +82,12 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .post-body{font-size:14px;line-height:1.7;color:var(--text);padding-left:38px;white-space:pre-wrap;word-wrap:break-word}
 .post-actions{padding-left:38px;margin-top:8px}
 .post-action-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
+.post-action-btn.danger:hover{border-color:rgba(255,51,51,0.4);color:var(--red);background:rgba(255,51,51,0.06)}
+.post-actions{display:flex;gap:6px;flex-wrap:wrap}
+.post-edit{padding-left:38px}
+.post-edit input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;text-align:left;padding:10px 12px;margin-bottom:8px}
+.post-edit textarea{margin-bottom:8px}
+.post-edited{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:6px}
 .post-action-btn:hover,.post-action-btn.liked{border-color:var(--green3);color:var(--green);background:rgba(0,255,136,0.06)}
 /* REPLY */
 .reply-box{padding:16px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
@@ -251,7 +257,9 @@ firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 
 var DB_URL = 'https://comunidade-preppers-br-f5253-default-rtdb.firebaseio.com';
-var USERNAME = '';
+var USERNAME = '', MY_UID = '', IS_ADMIN = false;
+// Admin do fórum: pode apagar qualquer tópico ou resposta (as regras do banco conferem o mesmo e-mail verificado)
+var ADMIN_EMAIL = 'preppersbr1@gmail.com';
 var currentFilter = 'all', currentTopicId = null, allTopics = {};
 var CAT_LABELS = {equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'🏠 ABRIGO',comunicacao:'📡 COMUNICAÇÃO',saude:'🏥 SAÚDE',ameacas:'📊 AMEAÇAS',geral:'💬 GERAL'};
 
@@ -259,7 +267,8 @@ var CAT_LABELS = {equipamentos:'🎒 EQUIPAMENTOS',agua:'💧 ÁGUA',abrigo:'�
 async function getToken(){if(!auth.currentUser)return '';try{return await auth.currentUser.getIdToken()}catch(e){return ''}}
 async function fbGet(p){var tk=await getToken();var r=await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''));return await r.json()}
 async function fbSet(p,d){var tk=await getToken();await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
-async function fbPush(p,d){var tk=await getToken();var r=await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return await r.json()}
+async function fbReq(p,method,d){var tk=await getToken();var r=await fetch(DB_URL+'/'+p+'.json'+(tk?'?auth='+tk:''),{method:method,headers:{'Content-Type':'application/json'},body:d===undefined?undefined:JSON.stringify(d)});if(!r.ok)throw new Error('HTTP '+r.status);return r}
+async function fbPush(p,d){var r=await fbReq(p,'POST',d);return await r.json()}
 
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
 function timeAgo(ts){if(!ts)return '';var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'Agora';if(m<60)return m+'min';var h=Math.floor(m/60);if(h<24)return h+'h atrás';var dd=Math.floor(h/24);return dd===1?'Ontem':dd+'d atrás'}
@@ -323,6 +332,9 @@ function doLogout(){auth.signOut()}
 
 function enterForum(user){
   USERNAME=(user.displayName||user.email.split('@')[0]).toUpperCase();
+  MY_UID=user.uid;
+  IS_ADMIN=(user.email||'').toLowerCase()===ADMIN_EMAIL&&user.emailVerified;
+  if(IS_ADMIN)user.getIdToken(true).catch(function(){});
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
   document.getElementById('user-display-name').textContent=USERNAME;
@@ -353,7 +365,8 @@ async function loadStats(){
 
 // ── TOPICS ──
 async function loadTopics(){
-  try{var d=await fbGet('topics');allTopics=d||{};renderTopics();updateCatCounts();if(currentTopicId)loadPosts(currentTopicId)}
+  try{var d=await fbGet('topics');allTopics=d||{};renderTopics();updateCatCounts();
+  if(currentTopicId){if(!allTopics[currentTopicId]){backToTopics()}else if(!editingPost)loadPosts(currentTopicId)}}
   catch(e){document.getElementById('topics-list').innerHTML='<div class="loading" style="color:var(--red)">ERRO DE CONEXÃO</div>'}}
 
 function renderTopics(){
@@ -382,19 +395,64 @@ async function openTopic(id){currentTopicId=id;var t=allTopics[id];if(!t)return;
   loadPosts(id)}
 
 async function loadPosts(tid){var t=allTopics[tid];if(!t)return;var c=document.getElementById('posts-list');
-  var h=mkPost(t.author,t.body,t.createdAt,tid,'main',t.likes||0);
+  var h=mkPost(t,tid,'main');
   try{var reps=await fbGet('replies/'+tid);var count=0;if(reps){var sorted=Object.entries(reps).sort(function(a,b){return(a[1].createdAt||0)-(b[1].createdAt||0)});
-    for(var i=0;i<sorted.length;i++){h+=mkPost(sorted[i][1].author,sorted[i][1].body,sorted[i][1].createdAt,tid,sorted[i][0],sorted[i][1].likes||0);count++}}
+    for(var i=0;i<sorted.length;i++){h+=mkPost(sorted[i][1],tid,sorted[i][0]);count++}}
     document.getElementById('topic-reply-count').textContent=count+' RESPOSTA'+(count!==1?'S':'')}catch(e){}c.innerHTML=h}
 
-function mkPost(author,body,time,tid,pid,likes){var ini=author?author.charAt(0).toUpperCase():'?';
-  return '<div class="post-item"><div class="post-header"><div class="post-avatar">'+ini+'</div><div><div class="post-author">'+esc(author)+'</div><div class="post-time">'+timeAgo(time)+'</div></div></div><div class="post-body">'+esc(body)+'</div><div class="post-actions"><button class="post-action-btn" onclick="likePost(\''+tid+'\',\''+pid+'\',this)">▲ '+likes+'</button></div></div>'}
+// Autor edita e apaga o que é seu; admin apaga qualquer post. Posts antigos (sem authorUid) só o admin apaga.
+function mkPost(p,tid,pid){var author=p.author||'';var ini=author?author.charAt(0).toUpperCase():'?';
+  var mine=!!p.authorUid&&p.authorUid===MY_UID;
+  var args='\''+tid+'\',\''+pid+'\'';
+  var acts='<button class="post-action-btn" onclick="likePost('+args+',this)">▲ '+(p.likes||0)+'</button>';
+  if(mine)acts+='<button class="post-action-btn" onclick="editPost('+args+')">✏️ EDITAR</button>';
+  if(mine||IS_ADMIN)acts+='<button class="post-action-btn danger" onclick="deletePost('+args+')">🗑️ APAGAR</button>';
+  return '<div class="post-item" id="post-'+pid+'"><div class="post-header"><div class="post-avatar">'+ini+'</div><div><div class="post-author">'+esc(author)+'</div><div class="post-time">'+timeAgo(p.createdAt)+(p.editedAt?'<span class="post-edited">(editado)</span>':'')+'</div></div></div><div class="post-body">'+esc(p.body)+'</div><div class="post-actions">'+acts+'</div></div>'}
+
+var editingPost=null;
+async function editPost(tid,pid){
+  var box=document.getElementById('post-'+pid);if(!box)return;
+  var cur=pid==='main'?allTopics[tid]:((await fbGet('replies/'+tid+'/'+pid))||{});
+  editingPost=pid;
+  box.querySelector('.post-body').outerHTML='<div class="post-edit">'+(pid==='main'?'<input type="text" id="edit-title" maxlength="120" value="'+esc(cur.title)+'">':'')+'<textarea id="edit-body" rows="5">'+esc(cur.body)+'</textarea><button class="btn btn-primary" onclick="saveEdit(\''+tid+'\',\''+pid+'\')">SALVAR</button> <button class="btn btn-back" onclick="cancelEdit()">CANCELAR</button></div>';
+  box.querySelector('.post-actions').style.display='none';
+  document.getElementById('edit-body').focus();
+}
+function cancelEdit(){editingPost=null;if(currentTopicId)loadPosts(currentTopicId)}
+async function saveEdit(tid,pid){
+  var body=document.getElementById('edit-body').value.trim();
+  var titleEl=document.getElementById('edit-title');var title=titleEl?titleEl.value.trim():null;
+  if(!body||(titleEl&&!title)){alert('Preencha o conteúdo!');return}
+  var upd={body:body,editedAt:Date.now()};if(titleEl)upd.title=title;
+  try{
+    await fbReq((pid==='main'?'topics/'+tid:'replies/'+tid+'/'+pid),'PATCH',upd);
+    if(pid==='main'){Object.assign(allTopics[tid],upd);document.getElementById('topic-title-display').textContent=title;renderTopics()}
+    editingPost=null;loadPosts(tid);
+  }catch(e){alert('Não foi possível salvar. Você só pode editar os seus próprios posts.')}
+}
+async function deletePost(tid,pid){
+  var isTopic=pid==='main';
+  if(!confirm(isTopic?'Apagar este tópico e todas as respostas dele?':'Apagar esta resposta?'))return;
+  try{
+    if(isTopic){
+      // tópico e respostas numa única gravação (as regras só deixam o autor apagar as respostas junto com o tópico)
+      var del={};del['topics/'+tid]=null;del['replies/'+tid]=null;
+      await fbReq('','PATCH',del);
+      delete allTopics[tid];backToTopics();renderTopics();updateCatCounts();loadStats();
+    }else{
+      await fbReq('replies/'+tid+'/'+pid,'DELETE');
+      var nc=Math.max(0,(allTopics[tid].replyCount||1)-1);
+      await fbSet('topics/'+tid+'/replyCount',nc);allTopics[tid].replyCount=nc;
+      loadPosts(tid);loadStats();
+    }
+  }catch(e){alert('Não foi possível apagar. Você só pode apagar os seus próprios posts.')}
+}
 
 function backToTopics(){currentTopicId=null;document.getElementById('topics-view').style.display='block';document.getElementById('topic-view').style.display='none'}
 
 // ── REPLY ──
 async function submitReply(){var body=document.getElementById('reply-input').value.trim();if(!body||!currentTopicId)return;
-  try{await fbPush('replies/'+currentTopicId,{author:USERNAME,body:body,createdAt:Date.now(),likes:0});
+  try{await fbPush('replies/'+currentTopicId,{author:USERNAME,authorUid:MY_UID,body:body,createdAt:Date.now(),likes:0});
   var nc=(allTopics[currentTopicId].replyCount||0)+1;await fbSet('topics/'+currentTopicId+'/replyCount',nc);allTopics[currentTopicId].replyCount=nc;
   document.getElementById('reply-input').value='';loadPosts(currentTopicId);loadStats()}catch(e){alert('Erro ao enviar.')}}
 
@@ -403,7 +461,7 @@ function showNewTopicModal(){document.getElementById('new-topic-modal').classLis
 function closeModal(){document.getElementById('new-topic-modal').classList.remove('show')}
 async function submitNewTopic(){var cat=document.getElementById('new-topic-cat').value;var title=document.getElementById('new-topic-title').value.trim();var body=document.getElementById('new-topic-body').value.trim();
   if(!title){alert('Preencha o título!');return}if(!body){alert('Preencha o conteúdo!');return}
-  try{var res=await fbPush('topics',{category:cat,title:title,body:body,author:USERNAME,createdAt:Date.now(),replyCount:0,likes:0,pinned:false});
+  try{var res=await fbPush('topics',{category:cat,title:title,body:body,author:USERNAME,authorUid:MY_UID,createdAt:Date.now(),replyCount:0,likes:0,pinned:false});
   closeModal();document.getElementById('new-topic-title').value='';document.getElementById('new-topic-body').value='';
   loadTopics();setTimeout(function(){if(res.name)openTopic(res.name)},500)}catch(e){alert('Erro ao criar tópico.')}}
 
