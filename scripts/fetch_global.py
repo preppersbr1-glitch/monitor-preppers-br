@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 UA = {'User-Agent': 'monitor-preppers-br (github.com/preppersbr1-glitch/monitor-preppers-br)'}
 MAX_CIVIL = 2500        # voos civis enviados ao mapa (amostra)
-GDELT_FILES = 24        # 24 x 15 min = últimas 6 horas
+GDELT_FILES = 48        # 48 x 15 min = últimas 12 horas
 MAX_CONFLICTS = 500
 
 
@@ -58,14 +58,33 @@ def fetch_flights():
 
 
 # ── CONFLITOS (GDELT 2.0 events) ──
-# EventRootCode: 14 protesto, 15 postura militar, 18 agressão, 19 combate, 20 violência em massa; 183x = atentados/explosões
-SEVERITY = {'terrorism': 6, 'war': 5, 'explosion': 4, 'attack': 3, 'military': 2, 'protest': 1}
+# Só conflito armado: nada de crime comum ou ação policial local.
+# Códigos CAMEO que por si só já são militares (artilharia/tanques, ataque aéreo, violação de cessar-fogo,
+# atentados a bomba, violência em massa); os demais (uso de força, tiroteio, agressão, sequestro) só
+# entram com militares, rebeldes, insurgentes ou separatistas entre os atores.
+HEAVY = {'194', '195', '1951', '1952', '196', '1831', '1832', '1833', '1834', '200', '201', '202', '203', '204'}
+MILITARY_POSTURE = {'150', '152', '154'}   # demonstração de força, alerta militar, mobilização de tropas
+ARMED = {'MIL', 'REB', 'INS', 'SEP'}
+IRREGULAR = {'REB', 'INS', 'SEP'}
+LAW = {'COP', 'CRM', 'JUD'}                 # polícia, criminosos, judiciário
+SEVERITY = {'terrorism': 5, 'war': 4, 'explosion': 3, 'attack': 2, 'military': 1}
 
 
-def category(root, code):
+def category(r):
+    root, code = r[28], r[26]
+    actors = {r[12], r[13], r[14], r[22], r[23], r[24]} - {''}
+    armed, law = bool(actors & ARMED), bool(actors & LAW)
+    if root == '15':
+        return 'military' if code in MILITARY_POSTURE and not law else None
+    if root not in ('18', '19', '20'):
+        return None
+    if law and code not in HEAVY and not actors & IRREGULAR:
+        return None
+    if code not in HEAVY and not armed:
+        return None
     if code.startswith('183'):
         return 'explosion'
-    return {'20': 'terrorism', '19': 'war', '18': 'attack', '15': 'military', '14': 'protest'}.get(root)
+    return {'20': 'terrorism', '19': 'war', '18': 'attack'}[root]
 
 
 def fetch_conflicts():
@@ -85,7 +104,7 @@ def fetch_conflicts():
         for r in csv.reader(io.StringIO(raw), delimiter='\t'):
             if len(r) < 61:
                 continue
-            cat = category(r[28], r[26])
+            cat = category(r)
             if not cat or not r[56] or not r[57]:
                 continue
             try:
