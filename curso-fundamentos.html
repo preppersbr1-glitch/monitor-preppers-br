@@ -191,7 +191,14 @@ function showLesson(n) {
   var pct = Math.round(((n+1)/totalLessons)*100);
   document.getElementById('progress-fill').style.width = pct+'%';
   document.getElementById('progress-text').textContent = '📊 PROGRESSO: '+pct+'%';
-  window.scrollTo(0,0);
+  // Leva ao início da aula aberta (abaixo do cabeçalho fixo), só se ele não estiver à vista
+  var lesson = document.getElementById('lesson-'+n);
+  var header = document.querySelector('header');
+  var offset = (header ? header.offsetHeight : 0) + 12;
+  var top = lesson.getBoundingClientRect().top;
+  if (top < offset || top > window.innerHeight * 0.6) {
+    window.scrollTo({ top: window.scrollY + top - offset, behavior: 'smooth' });
+  }
 }
 function toggleCheck(el) {
   el.textContent = el.textContent === '☐' ? '☑' : '☐';
