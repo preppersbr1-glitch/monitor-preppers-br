@@ -487,39 +487,33 @@ async function loadFires(){
 // ══════════════════════════════════
 // ██  5. FLIGHTS (Multi-source)  ██
 // ══════════════════════════════════
+// Voos e conflitos vêm de global.json, gerado a cada 30 min pelo GitHub Actions
+// (scripts/fetch_global.py): OpenSky/adsb.lol não liberam CORS e a API geo do GDELT foi desativada.
+var GLOBAL_DATA_URL='https://raw.githubusercontent.com/preppersbr1-glitch/monitor-preppers-br/data/global.json';
+var globalData=null,globalDataAt=0;
+async function loadGlobalData(){
+  if(globalData&&Date.now()-globalDataAt<300000)return globalData;
+  var r=await pFetch(GLOBAL_DATA_URL,15000);
+  if(r){try{globalData=await r.json();globalDataAt=Date.now()}catch(e){}}
+  return globalData;
+}
+function agoLabel(ms){var m=Math.round((Date.now()-ms)/60000);return m<60?m+' min':Math.round(m/60)+' h'}
+
 async function loadFlights(){
-  var states=null;
-  // Try OpenSky (free, may rate-limit)
-  try{
-    var r=await pFetch('https://opensky-network.org/api/states/all?lamin=-60&lomin=-180&lamax=80&lomax=180',15000);
-    if(r){var d=await r.json();if(d&&d.states)states=d.states}
-  }catch(e){}
-  // If no data, show fallback message
-  if(!states||!states.length){
+  var d=await loadGlobalData();var f=d&&d.flights;
+  layers.flights.clearLayers();
+  if(!f||!f.items||!f.items.length){
     document.getElementById('stat-flights').textContent='INDISPONÍVEL';
-    layers.flights.clearLayers();
-    L.popup({closeOnClick:true}).setLatLng([0,0]).setContent('<strong>✈️ RASTREAMENTO DE VOOS</strong><br><span style="color:#4a7a60;font-size:11px">API temporariamente indisponível.<br>Acesse diretamente:<br><a href="https://globe.adsbexchange.com" target="_blank" style="color:#00aaff">ADS-B Exchange</a> • <a href="https://www.flightradar24.com" target="_blank" style="color:#00aaff">FlightRadar24</a></span>').addTo(layers.flights);
+    L.popup({closeOnClick:true}).setLatLng([0,0]).setContent('<strong>✈️ RASTREAMENTO DE VOOS</strong><br><span style="color:#4a7a60;font-size:11px">Dados temporariamente indisponíveis.<br>Acesse diretamente:<br><a href="https://globe.adsbexchange.com" target="_blank" style="color:#00aaff">ADS-B Exchange</a> • <a href="https://www.flightradar24.com" target="_blank" style="color:#00aaff">FlightRadar24</a></span>').addTo(layers.flights);
     return;
   }
-  layers.flights.clearLayers();
-  var count=0;
-  var step=Math.max(1,Math.floor(states.length/2000));
-  for(var i=0;i<states.length;i+=step){
-    var s=states[i];
-    var lng=s[5],lat=s[6];
-    if(lat===null||lng===null)continue;
-    var callsign=(s[1]||'').trim();
-    var country=s[2]||'';
-    var alt=s[7]?Math.round(s[7])+'m':'—';
-    var speed=s[9]?Math.round(s[9]*3.6)+'km/h':'—';
-    var heading=s[10]||0;
-    if(s[8])continue;
-    var isMil=callsign.match(/^(RCH|DUKE|EVAC|NAVY|AIR|RRR|CASA|NATO|GOLD|TOPCAT|VIPER|RAGD|JAKE|DEMON|HAZE|TITAN|STNG|FORTE|NCHO|HOMER|ETHYL|PRTY|ORDER|BATON)/i);
-    var color=isMil?'#ff3333':'#aa66ff';
-    L.circleMarker([lat,lng],{radius:isMil?4:2.5,fillColor:color,fillOpacity:isMil?0.9:0.5,color:color,weight:0.5}).bindPopup('<strong>✈️ '+(callsign||'DESCONHECIDO')+'</strong><br><span style="color:#4a7a60;font-size:11px">País: '+country+'<br>Altitude: '+alt+'<br>Velocidade: '+speed+'<br>Heading: '+Math.round(heading)+'°'+(isMil?'<br><span style="color:#ff3333">⚠ POSSÍVEL MILITAR</span>':'')+'</span>').addTo(layers.flights);
-    count++;
-  }
-  document.getElementById('stat-flights').textContent=count;
+  var upd=agoLabel(d.updated);
+  f.items.forEach(function(a){
+    // [lat, lon, callsign, país/tipo, altitude m, velocidade km/h, rumo, militar]
+    var isMil=a[7]===1,color=isMil?'#ff3333':'#aa66ff';
+    L.circleMarker([a[0],a[1]],{radius:isMil?4:2.5,fillColor:color,fillOpacity:isMil?0.9:0.5,color:color,weight:0.5}).bindPopup('<strong>✈️ '+esc(a[2]||'DESCONHECIDO')+'</strong><br><span style="color:#4a7a60;font-size:11px">'+(isMil?'Tipo: ':'País: ')+esc(a[3]||'—')+'<br>Altitude: '+(a[4]!=null?a[4]+'m':'—')+'<br>Velocidade: '+(a[5]!=null?a[5]+'km/h':'—')+'<br>Rumo: '+a[6]+'°'+(isMil?'<br><span style="color:#ff3333">⚠ AERONAVE MILITAR</span>':'')+'<br>Atualizado há '+upd+'</span>').addTo(layers.flights);
+  });
+  document.getElementById('stat-flights').textContent=f.items.length+(f.military?' ('+f.military+' MIL)':'');
 }
 
 // ══════════════════════════════════
@@ -604,42 +598,22 @@ function loadCables(){
 // ██  8. GDELT CONFLICTS  ██
 // ══════════════════════════════════
 async function loadGdelt(){
-  var queries=['conflict','war','attack','protest','military','explosion','terrorism'];
-  var allPoints=[];
-  for(var q=0;q<queries.length;q++){
-    try{
-      var url='https://api.gdeltproject.org/api/v2/geo/geo?query='+queries[q]+'&format=GeoJSON&TIMESPAN=1440&MAXROWS=100';
-      var r=await pFetch(url,12000);
-      if(!r)continue;
-      var data=await r.json();
-      if(!data.features)continue;
-      data.features.forEach(function(f){
-        if(!f.geometry||!f.geometry.coordinates)return;
-        var lng=f.geometry.coordinates[0],lat=f.geometry.coordinates[1];
-        if(isNaN(lat)||isNaN(lng))return;
-        var name=f.properties.name||'';
-        var url=f.properties.url||'';
-        var html=f.properties.html||'';
-        var count=f.properties.count||1;
-        // Deduplicate by location proximity
-        var isDup=allPoints.some(function(p){return Math.abs(p[0]-lat)<0.5&&Math.abs(p[1]-lng)<0.5});
-        if(!isDup){allPoints.push([lat,lng,name,url,html,count,queries[q]])}
-      });
-    }catch(e){console.log('GDELT err',e)}
-  }
-  // Render on map
-  var catColors={conflict:'#ff0066',war:'#ff0033',attack:'#ff3333',protest:'#ff9900',military:'#cc0066',explosion:'#ff4444',terrorism:'#cc0000'};
-  allPoints.forEach(function(p){
-    var radius=p[5]>=10?7:p[5]>=5?5:4;
-    var color=catColors[p[6]]||'#ff0066';
-    L.circleMarker([p[0],p[1]],{radius:radius,fillColor:color,fillOpacity:0.6,color:color,weight:1}).bindPopup('<strong>📡 '+p[6].toUpperCase()+'</strong><br><div style="font-size:12px;max-width:220px;line-height:1.4;margin-top:4px">'+p[2]+'</div>'+(p[3]?'<br><a href="'+p[3]+'" target="_blank" style="color:#00aaff;font-size:10px">Fonte →</a>':'')).addTo(layers.gdelt);
-  });
-  document.getElementById('stat-gdelt').textContent=allPoints.length;
-  // Fallback if no data
-  if(!allPoints.length){
+  var d=await loadGlobalData();var c=d&&d.conflicts;
+  layers.gdelt.clearLayers();
+  if(!c||!c.items||!c.items.length){
     L.popup({closeOnClick:true}).setLatLng([20,0]).setContent('<strong>📡 GDELT</strong><br><span style="color:#4a7a60;font-size:11px">Dados indisponíveis no momento.<br><a href="https://gdelt.github.io/" target="_blank" style="color:#00aaff">Acessar GDELT →</a></span>').addTo(layers.gdelt);
     document.getElementById('stat-gdelt').textContent='INDISPONÍVEL';
+    return;
   }
+  var catColors={war:'#ff0033',attack:'#ff3333',terrorism:'#cc0000',explosion:'#ff4444',military:'#cc0066',protest:'#ff9900'};
+  var catNames={war:'COMBATE',attack:'ATAQUE',terrorism:'VIOLÊNCIA EM MASSA',explosion:'EXPLOSÃO / ATENTADO',military:'MOVIMENTAÇÃO MILITAR',protest:'PROTESTO'};
+  var upd=agoLabel(d.updated);
+  c.items.forEach(function(p){
+    var radius=p.mentions>=100?9:p.mentions>=30?7:p.mentions>=10?5:4;
+    var color=catColors[p.cat]||'#ff0066';
+    L.circleMarker([p.lat,p.lon],{radius:radius,fillColor:color,fillOpacity:0.6,color:color,weight:1}).bindPopup('<strong>📡 '+(catNames[p.cat]||'CONFLITO')+'</strong><br><div style="font-size:12px;max-width:220px;line-height:1.4;margin-top:4px">'+esc(p.name)+'</div><span style="color:#4a7a60;font-size:11px">'+p.events+' evento'+(p.events!==1?'s':'')+' • '+p.mentions+' menções nas últimas '+c.hours+'h<br>Atualizado há '+upd+'</span>'+(p.url?'<br><a href="'+esc(p.url)+'" target="_blank" rel="noopener" style="color:#00aaff;font-size:10px">Notícia →</a>':'')).addTo(layers.gdelt);
+  });
+  document.getElementById('stat-gdelt').textContent=c.items.length;
 }
 
 // ══════════════════════════════════
@@ -940,7 +914,7 @@ new MutationObserver(function(){document.getElementById('stat-fires2').textConte
 // ══ INIT ══
 loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();loadOutages();
 setInterval(loadQuakes,300000);setInterval(loadSolar,300000);setInterval(loadNews,600000);setInterval(loadOutages,600000);
-setInterval(function(){if(map.hasLayer(layers.flights))loadFlights()},120000);
+setInterval(function(){if(map.hasLayer(layers.flights))loadFlights();if(map.hasLayer(layers.gdelt))loadGdelt()},600000);
 setInterval(function(){if(map.hasLayer(layers.satellites))loadSatellites()},60000);
 setInterval(function(){if(map.hasLayer(layers.daynight))updateDayNight()},60000);
 setInterval(function(){if(currentView==='3d')syncGlobePoints()},30000);

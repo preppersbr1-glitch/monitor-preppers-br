@@ -1,0 +1,38 @@
+name: Dados do Monitor Global
+
+# Gera global.json (voos + conflitos GDELT) e publica no branch `data`,
+# lido pelo monitor-global.html via raw.githubusercontent.com.
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: global-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Buscar voos e conflitos
+        run: |
+          mkdir -p out
+          python3 scripts/fetch_global.py out/global.json
+
+      - name: Publicar no branch data
+        working-directory: out
+        run: |
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add global.json
+          git commit -q -m "Dados de $(date -u +'%Y-%m-%d %H:%M UTC')"
+          # um único commit, sobrescrito a cada execução: o branch não acumula histórico
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
