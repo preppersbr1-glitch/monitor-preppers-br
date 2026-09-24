@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://unpkg.com/globe.gl"></script>
+<script>if(!window.L){document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"><\/script>')}</script>
 <style>
 :root{--bg:#050a08;--bg2:#080f0c;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -39,36 +39,33 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
 .threat-dot{width:7px;height:7px;border-radius:50%}
 
 /* ══ MAIN ══ */
-.mgrid{display:grid;grid-template-columns:52px 1fr 370px;gap:0;position:relative;z-index:1;min-height:calc(100vh - 160px)}
+.mgrid{display:grid;grid-template-columns:1fr 370px;gap:0;position:relative;z-index:1;min-height:calc(100vh - 160px)}
 
-/* ══ LEFT SIDEBAR ══ */
-.sidebar{background:rgba(5,10,8,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;overflow-y:auto;padding-top:4px;z-index:50}
-.sb-group{position:relative}
-.sb-btn{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;background:transparent;border:none;border-left:3px solid transparent;cursor:pointer;transition:all 0.15s;color:var(--muted);gap:2px}
-.sb-btn:hover{background:rgba(0,255,136,0.06);color:var(--green)}
-.sb-btn.active{border-left-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
-.sb-icon{font-size:16px}
-.sb-label{font-family:'Share Tech Mono',monospace;font-size:6px;letter-spacing:1px;text-transform:uppercase;line-height:1}
-.sb-sub{position:absolute;left:52px;top:0;min-width:220px;background:rgba(8,15,12,0.97);border:1px solid var(--border);border-radius:0 4px 4px 0;box-shadow:4px 4px 20px rgba(0,0,0,0.5);display:none;z-index:60;backdrop-filter:blur(10px)}
-.sb-sub.open{display:block}
-.sb-sub-title{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;color:var(--green);padding:10px 14px 6px;border-bottom:1px solid var(--border)}
-.sb-sub-item{display:flex;align-items:center;gap:8px;padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;border-bottom:1px solid rgba(26,61,42,0.3)}
-.sb-sub-item:hover{background:rgba(0,255,136,0.06);color:var(--text)}
-.sb-sub-item.active{color:var(--green)}
-.sb-sub-item .dot-sm{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.sb-sub-item .count{margin-left:auto;font-size:8px;color:var(--muted)}
-.sb-divider{height:1px;background:var(--border);margin:4px 8px}
-
-/* Mode toggles at bottom of sidebar */
-.sb-mode{margin-top:auto;border-top:1px solid var(--border);padding:4px 0}
-.sb-mode-btn{width:100%;padding:8px 4px;background:transparent;border:none;cursor:pointer;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.15s}
-.sb-mode-btn:hover,.sb-mode-btn.active{color:var(--green);background:rgba(0,255,136,0.06)}
-.sb-mode-btn .sb-icon{font-size:14px}
+/* ══ MAP TOOLBAR ══ */
+.map-toolbar{position:relative;z-index:1100;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border)}
+.tb-group{position:relative}
+.tb-sep{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+.tb-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;white-space:nowrap}
+.tb-btn:hover{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.06)}
+.tb-btn.active{color:var(--green);border-color:var(--green2);background:rgba(0,255,136,0.1)}
+.tb-btn .tb-icon{font-size:13px}
+.tb-btn .tb-caret{font-size:8px;opacity:0.7}
+.tb-drop{position:absolute;left:0;top:calc(100% + 6px);min-width:240px;background:rgba(8,15,12,0.98);border:1px solid var(--border);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,0.6);display:none;z-index:1200}
+.tb-drop.open{display:block}
+.tb-drop-title{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;color:var(--green);padding:10px 14px 6px;border-bottom:1px solid var(--border)}
+.tb-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;border-bottom:1px solid rgba(26,61,42,0.3)}
+.tb-item::before{content:'';width:12px;height:12px;border:1px solid var(--muted);border-radius:2px;flex-shrink:0}
+.tb-item:hover{background:rgba(0,255,136,0.06);color:var(--text)}
+.tb-item.active{color:var(--green)}
+.tb-item.active::before{background:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 2px var(--bg)}
+.tb-item .dot-sm{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.tb-item .count{margin-left:auto;font-size:9px;color:var(--muted)}
 
 /* ══ MAP ══ */
-.map-col{position:relative}
-#map{width:100%;height:100%;min-height:500px;background:#030806}
-#globe-container{width:100%;height:100%;min-height:500px;background:#030806;display:none}
+.map-col{position:relative;display:flex;flex-direction:column;min-width:0}
+.map-area{position:relative;flex:1;min-height:500px}
+#map{position:absolute;inset:0;background:#030806}
+#globe-container{position:absolute;inset:0;background:#030806;display:none}
 .map-stats{position:absolute;bottom:12px;right:12px;z-index:500;background:rgba(5,10,8,0.9);border:1px solid var(--border);border-radius:3px;padding:6px 10px;backdrop-filter:blur(5px);font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
 .map-stats div{margin:2px 0;display:flex;align-items:center;gap:6px}
 .map-stats span{color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px}
@@ -95,6 +92,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
 .webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px}
 .webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;aspect-ratio:16/9;background:#000}
 .webcam-item iframe{width:100%;height:100%;border:none}
+.webcam-offline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:center;padding:0 8px 16px}
+.webcam-offline a{color:var(--blue)}
 .webcam-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);padding:3px 6px;font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--green2);letter-spacing:1px;text-align:center}
 .loading-sm{padding:14px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
@@ -109,13 +108,22 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
   nav{flex-wrap:wrap;gap:2px;order:3;width:100%;justify-content:center;padding-top:4px;border-top:1px solid var(--border)}
   nav a{font-size:9px;padding:3px 8px}
   .defcon-bar{height:auto;padding:6px 12px;flex-direction:column;gap:4px}
-  .mgrid{grid-template-columns:44px 1fr!important}
-  .panel-col{display:none}
-  .map-col{min-height:500px}
-  .sb-label{display:none}
-  .sb-btn{padding:6px 2px}
+  .mgrid{grid-template-columns:1fr;min-height:0}
+  .map-toolbar{gap:4px;padding:6px 8px}
+  .tb-btn{padding:6px 8px;font-size:9px}
+  .tb-group{position:static}
+  .tb-sep{display:none}
+  .tb-drop{left:8px;right:8px;min-width:0}
+  .map-area{flex:none;height:55vh;min-height:340px}
+  .panel-col{max-height:none;overflow:visible;border-left:none;border-top:1px solid var(--border)}
+  .panel-title{font-size:9px}
+  .news-threat-title{font-size:13px}
+  .news-threat-meta,.threat-level{font-size:9px}
+  .webcam-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+  .webcam-label{font-size:9px}
   .map-stats{display:none}
 }
+@media(max-width:420px){.tb-btn .tb-label-long{display:none}}
 </style>
 </head>
 <body>
@@ -136,62 +144,59 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
 </div>
 
 <div class="mgrid">
-  <!-- LEFT SIDEBAR -->
-  <div class="sidebar">
-    <div class="sb-group">
-      <button class="sb-btn active" id="sb-natural" onclick="toggleGroup('natural')"><span class="sb-icon">🌍</span><span class="sb-label">NATURAL</span></button>
-      <div class="sb-sub">
-        <div class="sb-sub-title">EVENTOS NATURAIS</div>
-        <div class="sb-sub-item active" onclick="togL('quakes',this)"><div class="dot-sm" style="background:var(--red)"></div>Sismos M2.5+ <span class="count" id="stat-quakes">—</span></div>
-        <div class="sb-sub-item active" onclick="togL('volcanoes',this)"><div class="dot-sm" style="background:#ff6600"></div>Vulcões ativos</div>
-        <div class="sb-sub-item active" onclick="togL('disasters',this)"><div class="dot-sm" style="background:var(--blue)"></div>Desastres (EONET)</div>
-        <div class="sb-sub-item" onclick="togL('fires',this)"><div class="dot-sm" style="background:#ff4400"></div>Incêndios (FIRMS) <span class="count" id="stat-fires">—</span></div>
-      </div>
-    </div>
-    <div class="sb-group">
-      <button class="sb-btn" id="sb-military" onclick="toggleGroup('military')"><span class="sb-icon">⚔️</span><span class="sb-label">MILITAR</span></button>
-      <div class="sb-sub">
-        <div class="sb-sub-title">ATIVIDADE MILITAR & GEOPOLÍTICA</div>
-        <div class="sb-sub-item" onclick="togL('flights',this)"><div class="dot-sm" style="background:#aa66ff"></div>Voos / Aeronaves <span class="count" id="stat-flights">—</span></div>
-        <div class="sb-sub-item" onclick="togL('nuclear',this)"><div class="dot-sm" style="background:#ffff00"></div>Instalações nucleares <span class="count" id="stat-nukes">—</span></div>
-        <div class="sb-sub-item" onclick="togL('gdelt',this)"><div class="dot-sm" style="background:#ff0066"></div>Conflitos (GDELT) <span class="count" id="stat-gdelt">—</span></div>
-      </div>
-    </div>
-    <div class="sb-group">
-      <button class="sb-btn" id="sb-space" onclick="toggleGroup('space')"><span class="sb-icon">🛰️</span><span class="sb-label">ESPAÇO</span></button>
-      <div class="sb-sub">
-        <div class="sb-sub-title">MONITORAMENTO ESPACIAL</div>
-        <div class="sb-sub-item" onclick="togL('satellites',this)"><div class="dot-sm" style="background:#00ff00"></div>Satélites (ISS/N2YO) <span class="count" id="stat-sats">—</span></div>
-        <div class="sb-sub-item" onclick="togL('daynight',this)"><div class="dot-sm" style="background:#ffcc00"></div>Linha dia/noite</div>
-      </div>
-    </div>
-    <div class="sb-group">
-      <button class="sb-btn" id="sb-infra" onclick="toggleGroup('infra')"><span class="sb-icon">🌐</span><span class="sb-label">INFRA</span></button>
-      <div class="sb-sub">
-        <div class="sb-sub-title">INFRAESTRUTURA GLOBAL</div>
-        <div class="sb-sub-item" onclick="togL('cables',this)"><div class="dot-sm" style="background:#00ffff"></div>Cabos submarinos</div>
-      </div>
-    </div>
-    <div class="sb-divider"></div>
-    <!-- MODE TOGGLES -->
-    <div class="sb-mode">
-      <button class="sb-mode-btn active" id="btn-2d" onclick="setView('2d')" title="Mapa 2D"><span class="sb-icon">🗺️</span><span class="sb-label">2D</span></button>
-      <button class="sb-mode-btn" id="btn-3d" onclick="setView('3d')" title="Globo 3D"><span class="sb-icon">🌐</span><span class="sb-label">3D</span></button>
-      <div class="sb-divider"></div>
-      <button class="sb-mode-btn active" id="btn-dark" onclick="setTile('dark')" title="Mapa escuro"><span class="sb-icon">🌑</span><span class="sb-label">DARK</span></button>
-      <button class="sb-mode-btn" id="btn-sat" onclick="setTile('satellite')" title="Satélite"><span class="sb-icon">🛰️</span><span class="sb-label">SAT</span></button>
-      <button class="sb-mode-btn" id="btn-night" onclick="setTile('night')" title="Visão noturna"><span class="sb-icon">🌙</span><span class="sb-label">NIGHT</span></button>
-    </div>
-  </div>
-
   <!-- MAP / GLOBE -->
   <div class="map-col">
-    <div id="map"></div>
-    <div id="globe-container"></div>
-    <div class="map-stats" id="map-stats">
-      <div>SISMOS: <span id="stat-quakes2">—</span></div>
-      <div>INCÊNDIOS: <span id="stat-fires2">—</span></div>
-      <div>CAMADAS: <span id="stat-layers">3</span></div>
+    <div class="map-toolbar" id="map-toolbar">
+      <div class="tb-group">
+        <button class="tb-btn active" id="tb-natural" onclick="toggleGroup('natural')"><span class="tb-icon">🌍</span>NATURAL<span class="tb-caret">▼</span></button>
+        <div class="tb-drop">
+          <div class="tb-drop-title">EVENTOS NATURAIS</div>
+          <div class="tb-item active" onclick="togL('quakes',this)"><div class="dot-sm" style="background:var(--red)"></div>Sismos M2.5+ <span class="count" id="stat-quakes">—</span></div>
+          <div class="tb-item active" onclick="togL('volcanoes',this)"><div class="dot-sm" style="background:#ff6600"></div>Vulcões ativos</div>
+          <div class="tb-item active" onclick="togL('disasters',this)"><div class="dot-sm" style="background:var(--blue)"></div>Desastres (EONET)</div>
+          <div class="tb-item" onclick="togL('fires',this)"><div class="dot-sm" style="background:#ff4400"></div>Incêndios <span class="count" id="stat-fires">—</span></div>
+        </div>
+      </div>
+      <div class="tb-group">
+        <button class="tb-btn" id="tb-military" onclick="toggleGroup('military')"><span class="tb-icon">⚔️</span>MILITAR<span class="tb-caret">▼</span></button>
+        <div class="tb-drop">
+          <div class="tb-drop-title">ATIVIDADE MILITAR & GEOPOLÍTICA</div>
+          <div class="tb-item" onclick="togL('flights',this)"><div class="dot-sm" style="background:#aa66ff"></div>Voos / Aeronaves <span class="count" id="stat-flights">—</span></div>
+          <div class="tb-item" onclick="togL('nuclear',this)"><div class="dot-sm" style="background:#ffff00"></div>Instalações nucleares <span class="count" id="stat-nukes">—</span></div>
+          <div class="tb-item" onclick="togL('gdelt',this)"><div class="dot-sm" style="background:#ff0066"></div>Conflitos (GDELT) <span class="count" id="stat-gdelt">—</span></div>
+        </div>
+      </div>
+      <div class="tb-group">
+        <button class="tb-btn" id="tb-space" onclick="toggleGroup('space')"><span class="tb-icon">🛰️</span>ESPAÇO<span class="tb-caret">▼</span></button>
+        <div class="tb-drop">
+          <div class="tb-drop-title">MONITORAMENTO ESPACIAL</div>
+          <div class="tb-item" onclick="togL('satellites',this)"><div class="dot-sm" style="background:#00ff00"></div>Satélites (ISS/N2YO) <span class="count" id="stat-sats">—</span></div>
+          <div class="tb-item" onclick="togL('daynight',this)"><div class="dot-sm" style="background:#ffcc00"></div>Linha dia/noite</div>
+        </div>
+      </div>
+      <div class="tb-group">
+        <button class="tb-btn" id="tb-infra" onclick="toggleGroup('infra')"><span class="tb-icon">🌐</span>INFRA<span class="tb-caret">▼</span></button>
+        <div class="tb-drop">
+          <div class="tb-drop-title">INFRAESTRUTURA GLOBAL</div>
+          <div class="tb-item" onclick="togL('cables',this)"><div class="dot-sm" style="background:#00ffff"></div>Cabos submarinos</div>
+        </div>
+      </div>
+      <div class="tb-sep"></div>
+      <button class="tb-btn active" id="btn-2d" onclick="setView('2d')" title="Mapa 2D">🗺️ 2D</button>
+      <button class="tb-btn" id="btn-3d" onclick="setView('3d')" title="Globo 3D">🌐 3D</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn active" id="btn-dark" onclick="setTile('dark')" title="Mapa escuro">🌑<span class="tb-label-long">&nbsp;DARK</span></button>
+      <button class="tb-btn" id="btn-sat" onclick="setTile('satellite')" title="Satélite">🛰️<span class="tb-label-long">&nbsp;SAT</span></button>
+      <button class="tb-btn" id="btn-night" onclick="setTile('night')" title="Visão noturna">🌙<span class="tb-label-long">&nbsp;NIGHT</span></button>
+    </div>
+    <div class="map-area">
+      <div id="map"></div>
+      <div id="globe-container"></div>
+      <div class="map-stats" id="map-stats">
+        <div>SISMOS: <span id="stat-quakes2">—</span></div>
+        <div>INCÊNDIOS: <span id="stat-fires2">—</span></div>
+        <div>CAMADAS: <span id="stat-layers">3</span></div>
+      </div>
     </div>
   </div>
 
@@ -222,16 +227,28 @@ var N2YO_KEY='';
 // ══ CLOCK & PROXY ══
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR')+' BRT'}
 setInterval(updateClock,1000);updateClock();
-var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url='];
-async function pFetch(url,timeout){timeout=timeout||10000;try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r}catch(e){}for(var i=0;i<proxies.length;i++){try{var r=await fetch(proxies[i]+encodeURIComponent(url),{signal:AbortSignal.timeout(timeout)});if(r.ok)return r}catch(e){}}return null}
+async function pFetch(url,timeout){timeout=timeout||10000;try{var r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(r.ok)return r}catch(e){}return null}
+// RSS (Google News) via rss2json — os proxies CORS gratuitos antigos saíram do ar
+async function fetchRss(url){
+  try{
+    var r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url),{signal:AbortSignal.timeout(12000)});
+    if(!r.ok)return [];var d=await r.json();if(d.status!=='ok'||!d.items)return [];
+    return d.items.map(function(i){var t=i.title||'',src=i.author||'';var k=t.lastIndexOf(' - ');if(k>0){src=src||t.slice(k+3);t=t.slice(0,k)}
+      return {title:t,link:i.link||'',date:new Date((i.pubDate||'').replace(' ','T')+'Z'),source:src}});
+  }catch(e){return []}
+}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
 // ══ MAP SETUP ══
 var currentView='2d';
 var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
 var tileLayers={
-  dark:L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}),
+  dark:L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,maxNativeZoom:16}),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,maxNativeZoom:16})
+  ]),
   satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18}),
-  night:L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',{maxZoom:8})
+  night:L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png',{maxZoom:18,maxNativeZoom:8})
 };
 var currentTile='dark';
 tileLayers.dark.addTo(map);
@@ -244,15 +261,26 @@ function setTile(t){
   document.getElementById('btn-sat').classList.toggle('active',t==='satellite');
   document.getElementById('btn-night').classList.toggle('active',t==='night');
   if(myGlobe&&currentView==='3d'){
-    var imgs={dark:'//unpkg.com/three-globe/example/img/earth-dark.jpg',satellite:'//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',night:'//unpkg.com/three-globe/example/img/earth-night.jpg'};
+    var imgs={dark:'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg',satellite:'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',night:'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg'};
     try{myGlobe.globeImageUrl(imgs[t])}catch(e){}
   }
 }
 
 // ══ GLOBE 3D ══
-var myGlobe=null;var globePoints=[];
-function initGlobe(){
+var myGlobe=null;var globePoints=[];var allQuakes=[];
+var globeLib=null;
+function loadGlobeLib(){
+  if(!globeLib)globeLib=new Promise(function(res){var sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/globe.gl';sc.onload=res;sc.onerror=function(){globeLib=null;res()};document.head.appendChild(sc)});
+  return globeLib;
+}
+async function initGlobe(){
   if(myGlobe)return;
+  if(typeof Globe==='undefined'){
+    document.getElementById('globe-container').innerHTML='<div class="loading-sm" style="padding-top:40px">▋ CARREGANDO GLOBO 3D...</div>';
+    await loadGlobeLib();
+    if(currentView!=='3d')return;
+    document.getElementById('globe-container').innerHTML='';
+  }
   if(typeof Globe==='undefined'){
     document.getElementById('globe-container').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px"><div style="font-size:32px">⚠️</div><div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--amber);text-align:center;padding:0 20px">Biblioteca Globe.gl não carregou.<br>Verifique sua conexão ou tente recarregar a página.</div></div>';
     return;
@@ -260,9 +288,9 @@ function initGlobe(){
   try{
     var container=document.getElementById('globe-container');
     myGlobe=Globe()(container)
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
-      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .globeImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
+      .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png')
       .atmosphereColor('#00ff88')
       .atmosphereAltitude(0.15)
       .pointAltitude(function(d){return d.alt||0.01})
@@ -312,6 +340,7 @@ function setView(v){
   if(v==='3d'){
     document.getElementById('map').style.display='none';
     document.getElementById('globe-container').style.display='block';
+    toggleGroup(null);
     document.getElementById('globe-container').innerHTML='';
     myGlobe=null;
     setTimeout(initGlobe,100);
@@ -336,20 +365,23 @@ function togL(name,el){
     if(name==='satellites'){loadSatellites()}
     if(name==='daynight'){updateDayNight()}
   }
-  updateLayerCount();
+  updateLayerCount();syncGroupButtons();
 }
 function toggleGroup(name){
-  var allSubs=document.querySelectorAll('.sb-sub');
-  var clicked=document.getElementById('sb-'+name).parentElement.querySelector('.sb-sub');
-  var isOpen=clicked.classList.contains('open');
-  // Close all
-  allSubs.forEach(function(s){s.classList.remove('open')});
-  // Toggle clicked
-  if(!isOpen){clicked.classList.add('open')}
+  var clicked=name?document.getElementById('tb-'+name).parentElement.querySelector('.tb-drop'):null;
+  var isOpen=clicked&&clicked.classList.contains('open');
+  document.querySelectorAll('.tb-drop').forEach(function(s){s.classList.remove('open')});
+  if(clicked&&!isOpen)clicked.classList.add('open');
 }
-// Close submenus when clicking on map
+// Group button lights up while any of its layers is on
+function syncGroupButtons(){
+  document.querySelectorAll('.tb-group').forEach(function(g){
+    g.querySelector('.tb-btn').classList.toggle('active',!!g.querySelector('.tb-item.active'));
+  });
+}
+// Close dropdowns when clicking outside the toolbar
 document.addEventListener('click',function(e){
-  if(!e.target.closest('.sidebar')){document.querySelectorAll('.sb-sub').forEach(function(s){s.classList.remove('open')})}
+  if(!e.target.closest('.map-toolbar'))toggleGroup(null);
 });
 function updateLayerCount(){var c=0;for(var k in layers){if(map.hasLayer(layers[k]))c++}document.getElementById('stat-layers').textContent=c}
 function quakeColor(m){return m>=5?'#ff3333':m>=4?'#ffb300':'#00cc6a'}
@@ -739,7 +771,7 @@ var solarThreat=0;
 async function loadSolar(){
   try{
     var r=await pFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
-    if(r){var d=await r.json();if(d.length>1){var kp=parseFloat(d[d.length-1][1]);
+    if(r){var d=await r.json();var last=d[d.length-1];if(last){var kp=parseFloat(Array.isArray(last)?last[1]:last.Kp);
       document.getElementById('s-kp').textContent=kp.toFixed(1);
       document.getElementById('s-kp').style.color=kp>=7?'var(--red)':kp>=5?'var(--amber)':kp>=4?'#ff6600':'var(--green)';
       document.getElementById('kp-marker').style.left=Math.min(kp/9*100,100)+'%';
@@ -754,20 +786,20 @@ async function loadSolar(){
       if(cls.startsWith('X'))solarThreat=Math.max(solarThreat,4);else if(cls.startsWith('M'))solarThreat=Math.max(solarThreat,2);
     }}
     var r3=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json');
-    if(r3){var d3=await r3.json();if(d3.WindSpeed){var ws=parseFloat(d3.WindSpeed);
+    if(r3){var d3=await r3.json();d3=Array.isArray(d3)?d3[0]||{}:d3;var ws=parseFloat(d3.proton_speed!=null?d3.proton_speed:d3.WindSpeed);if(!isNaN(ws)){
       document.getElementById('s-wind').textContent=ws.toFixed(0);
       document.getElementById('s-wind').style.color=ws>700?'var(--red)':ws>500?'var(--amber)':'var(--green)';
       if(ws>700)solarThreat=Math.max(solarThreat,3);
     }}
     var r4=await pFetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json');
-    if(r4){var d4=await r4.json();if(d4.Bz){var bz=parseFloat(d4.Bz);
+    if(r4){var d4=await r4.json();d4=Array.isArray(d4)?d4[0]||{}:d4;var bz=parseFloat(d4.bz_gsm!=null?d4.bz_gsm:d4.Bz);if(!isNaN(bz)){
       document.getElementById('s-bz').textContent=bz.toFixed(1);
       document.getElementById('s-bz').style.color=bz<-10?'var(--red)':bz<-5?'var(--amber)':'var(--green)';
     }}
-    var r5=await pFetch('https://services.swpc.noaa.gov/products/summary/10mev-protons-24hr.json');
-    if(r5){var d5=await r5.json();if(d5.Flux){
-      document.getElementById('s-proton').textContent=parseFloat(d5.Flux).toFixed(1);
-      document.getElementById('s-proton').style.color=parseFloat(d5.Flux)>100?'var(--red)':parseFloat(d5.Flux)>10?'var(--amber)':'var(--green)';
+    var r5=await pFetch('https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json');
+    if(r5){var d5=await r5.json();var p10=d5.filter(function(x){return x.energy==='>=10 MeV'}).pop();if(p10){var flux=parseFloat(p10.flux);
+      document.getElementById('s-proton').textContent=flux.toFixed(1);
+      document.getElementById('s-proton').style.color=flux>100?'var(--red)':flux>10?'var(--amber)':'var(--green)';
     }}
     setThreat('solar',solarThreat>=4?'#ff3333':solarThreat>=3?'#ff6600':solarThreat>=2?'var(--amber)':'var(--green)');
     document.getElementById('solar-status').textContent=solarThreat>=3?'ALERTA':solarThreat>=2?'ELEVADO':'NORMAL';
@@ -791,29 +823,21 @@ var threatLabels={critical:'CRÍTICO',high:'ALTO',medium:'MÉDIO',low:'BAIXO',in
 async function loadNews(){
   var feeds=['https://news.google.com/rss/search?q=desastre+OR+terremoto+OR+guerra+OR+crise+OR+emergencia&hl=pt-BR&gl=BR','https://news.google.com/rss/search?q=earthquake+OR+tsunami+OR+war+OR+nuclear+OR+disaster&hl=en'];
   var allNews=[];
-  for(var i=0;i<feeds.length;i++){
-    try{var r=await pFetch(feeds[i],8000);if(!r)continue;
-      var txt=await r.text();var doc=new DOMParser().parseFromString(txt,'text/xml');
-      doc.querySelectorAll('item').forEach(function(item){
-        var title=item.querySelector('title')?.textContent||'';
-        var link=item.querySelector('link')?.textContent||'';
-        var pubDate=item.querySelector('pubDate')?.textContent||'';
-        var source=item.querySelector('source')?.textContent||'';
-        if(title)allNews.push({title:title,link:link,date:new Date(pubDate),source:source,threat:classifyThreat(title)});
-      });
-    }catch(e){}
-  }
+  var results=await Promise.all(feeds.map(fetchRss));
+  results.forEach(function(items){items.forEach(function(n){
+    if(n.title){n.threat=classifyThreat(n.title);allNews.push(n)}
+  })});
   var order={critical:0,high:1,medium:2,low:3,info:4};
   allNews.sort(function(a,b){var d=order[a.threat]-order[b.threat];return d!==0?d:b.date-a.date});
   allNews=allNews.slice(0,25);
   var el=document.getElementById('news-list');
-  if(!allNews.length){el.innerHTML='<div class="loading-sm">Sem dados</div>';return}
+  if(!allNews.length){el.innerHTML='<div class="loading-sm">Notícias indisponíveis — tentando de novo em 10 min</div>';return}
   var critCount=allNews.filter(function(n){return n.threat==='critical'||n.threat==='high'}).length;
   document.getElementById('news-count').textContent=critCount>0?critCount+' ALERTAS':'MONITORANDO';
   var h='';allNews.forEach(function(n){
-    var ago=Math.round((Date.now()-n.date.getTime())/60000);
-    var agoStr=ago<60?ago+'MIN':Math.round(ago/60)+'H';
-    h+='<a href="'+n.link+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level tl-'+n.threat+'">'+threatLabels[n.threat]+'</span></div><div class="news-threat-title">'+n.title+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS'+(n.source?' • '+n.source:'')+'</div></div></a>';
+    var ago=Math.max(0,Math.round((Date.now()-n.date.getTime())/60000));
+    var agoStr=isNaN(ago)?'—':ago<60?ago+'MIN':ago<1440?Math.round(ago/60)+'H':Math.round(ago/1440)+'D';
+    h+='<a href="'+esc(n.link)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level tl-'+n.threat+'">'+threatLabels[n.threat]+'</span></div><div class="news-threat-title">'+esc(n.title)+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS'+(n.source?' • '+esc(n.source):'')+'</div></div></a>';
   });el.innerHTML=h;
   if(allNews.filter(function(n){return n.threat==='critical'}).length>=3)setThreat('geo','#ff3333');
   else if(critCount>=2)setThreat('geo','var(--amber)');
@@ -826,20 +850,36 @@ async function loadNews(){
 // ══════════════════════════════════
 function loadWebcams(){
   var cams=[
-    {name:'NYC — TIMES SQUARE 24/7',url:'https://www.youtube.com/embed/z-jYdOIKcTQ?autoplay=1&mute=1'},
-    {name:'NYC — SKYLINE MULTI-CAM',url:'https://www.youtube.com/embed/83VPsAPWiME?autoplay=1&mute=1'},
-    {name:'TÓQUIO, SHIBUYA',url:'https://www.youtube.com/embed/DjdUEyjx8GM?autoplay=1&mute=1'},
-    {name:'SEUL, COREIA DO SUL',url:'https://www.youtube.com/embed/gFRtAAmiFbE?autoplay=1&mute=1'},
-    {name:'JERUSALÉM — MURO OCIDENTAL',url:'https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1'},
-    {name:'ISRAEL — MULTI-CAM AO VIVO',url:'https://www.youtube.com/embed/KSwPNkzEgxg?autoplay=1&mute=1'},
-    {name:'JERUSALÉM — ORAÇÃO 24/7',url:'https://www.youtube.com/embed/FGUKbzulB_Y?autoplay=1&mute=1'},
-    {name:'KIEV, UCRÂNIA',url:'https://www.youtube.com/embed/2cyQPN5xQSs?autoplay=1&mute=1'},
-    {name:'TAIPEI, TAIWAN (OFICIAL)',url:'https://www.youtube.com/embed/live_stream?channel=UCzAMwTIGOSR41jRcdOt_SGA&autoplay=1&mute=1'},
-    {name:'ISS — TERRA AO VIVO',url:'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1'},
+    {name:'NYC — TIMES SQUARE 24/7',id:'z-jYdOIKcTQ'},
+    {name:'NYC — SKYLINE MULTI-CAM',id:'83VPsAPWiME'},
+    {name:'UCRÂNIA — MULTI-CAM (KIEV, KHARKIV)',id:'IcZ-7sFi1HM'},
+    {name:'ISRAEL — MULTI-CAM AO VIVO',id:'KSwPNkzEgxg'},
+    {name:'JERUSALÉM — MURO OCIDENTAL',id:'77akujLn4k8'},
+    {name:'TAIPEI, TAIWAN',id:'z_fY1pj1VBw'},
+    {name:'SEUL — RIO HAN',id:'vk5BHoDxXf0'},
+    {name:'TÓQUIO — SHINJUKU',id:'DjdUEyjx8GM'},
+    {name:'ISS — TERRA AO VIVO (NASA)',id:'M3HKLzjvKPc'},
+    {name:'RIO DE JANEIRO — COPACABANA',id:'Hr7c0XuEgm0'},
+    {name:'VULCÃO — ISLÂNDIA',id:'BgimbZHOICU'},
+    {name:'VULCÃO SEMERU — INDONÉSIA',id:'3nAgms-Xtms'},
   ];
   var el=document.getElementById('webcam-grid');
-  var h='';cams.forEach(function(c){h+='<div class="webcam-item"><iframe src="'+c.url+'" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe><div class="webcam-label">'+c.name+'</div></div>'});
-  el.innerHTML=h;
+  el.innerHTML=cams.map(function(c,i){return '<div class="webcam-item" id="cam-'+i+'"><div class="loading-sm">▋</div><div class="webcam-label">'+c.name+'</div></div>'}).join('');
+  cams.forEach(function(c,i){
+    var img=new Image();
+    function show(offline){
+      var box=document.getElementById('cam-'+i);
+      if(offline){
+        box.innerHTML='<div class="webcam-offline">📵 CÂMERA OFFLINE<a href="https://www.youtube.com/results?search_query='+encodeURIComponent(c.name+' live cam')+'&sp=EgJAAQ%253D%253D" target="_blank" rel="noopener">buscar outra →</a></div><div class="webcam-label">'+c.name+'</div>';
+      }else{
+        box.innerHTML='<iframe src="https://www.youtube.com/embed/'+c.id+'?autoplay=1&mute=1&playsinline=1" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen loading="lazy" title="'+c.name+'"></iframe><div class="webcam-label">'+c.name+'</div>';
+      }
+    }
+    // YouTube serves a 120px grey placeholder thumbnail for removed videos
+    img.onload=function(){show(img.naturalWidth<=120)};
+    img.onerror=function(){show(false)};
+    img.src='https://i.ytimg.com/vi/'+c.id+'/mqdefault.jpg';
+  });
 }
 
 // ══════════════════════════════════
@@ -856,21 +896,20 @@ async function loadOutages(){
     })}}
   }catch(e){}}
   try{var now=Math.floor(Date.now()/1000),ago=now-86400;
-    var r2=await pFetch('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts?from='+ago+'&until='+now+'&limit=20',8000);
+    var r2=await pFetch('https://api.ioda.inetintel.cc.gatech.edu/v2/outages/alerts?from='+ago+'&until='+now+'&limit=50',10000);
     if(r2){var d2=await r2.json();if(d2&&d2.data){d2.data.forEach(function(a){
+      if(a.level==='normal')return;
       var name=(a.entity||{}).name||'Desconhecido';var code=(a.entity||{}).code||'';
       var isDup=outages.some(function(o){return o.name.indexOf(name)!==-1});
       if(!isDup)outages.push({name:name+(code?' ('+code+')':''),severity:a.level==='critical'?'critical':a.level==='warning'?'high':'medium',time:new Date(a.time*1000),source:'IODA',link:'https://ioda.inetintel.cc.gatech.edu/'});
     })}}
   }catch(e){}
-  try{var r3=await pFetch('https://news.google.com/rss/search?q=internet+outage+OR+apagão+internet+OR+internet+shutdown&hl=en',8000);
-    if(r3){var txt=await r3.text();var doc=new DOMParser().parseFromString(txt,'text/xml');var ct=0;
-      doc.querySelectorAll('item').forEach(function(item){if(ct>=6)return;
-        var title=item.querySelector('title')?.textContent||'';
-        if(title.toLowerCase().match(/outage|apagão|shutdown|disruption|blackout/)){
-          var isDup=outages.some(function(o){return o.name.indexOf(title.substring(0,25))!==-1});
-          if(!isDup){outages.push({name:title,severity:'medium',time:new Date(item.querySelector('pubDate')?.textContent),source:'News',link:item.querySelector('link')?.textContent});ct++}
-    }})}}catch(e){}
+  try{var items=await fetchRss('https://news.google.com/rss/search?q=internet+outage+OR+apagão+internet+OR+internet+shutdown&hl=en');var ct=0;
+    items.forEach(function(n){if(ct>=6)return;
+      if(n.title.toLowerCase().match(/outage|apagão|shutdown|disruption|blackout/)){
+        var isDup=outages.some(function(o){return o.name.indexOf(n.title.substring(0,25))!==-1});
+        if(!isDup){outages.push({name:n.title,severity:'medium',time:n.date,source:'News',link:n.link});ct++}
+    }})}catch(e){}
   outages.sort(function(a,b){var s={critical:0,high:1,medium:2};return(s[a.severity]||2)-(s[b.severity]||2)||b.time-a.time});
   outages=outages.slice(0,12);
   document.getElementById('outage-count').textContent=outages.length>0?outages.length+' EVENTOS':'ESTÁVEL';
@@ -879,7 +918,7 @@ async function loadOutages(){
     var cls=o.severity==='critical'?'tl-critical':o.severity==='high'?'tl-high':'tl-medium';
     var label=o.severity==='critical'?'CRÍTICO':o.severity==='high'?'ALTO':'MÉDIO';
     var ago=Math.round((Date.now()-o.time.getTime())/60000);var agoStr=ago<60?ago+'MIN':ago<1440?Math.round(ago/60)+'H':Math.round(ago/1440)+'D';
-    h+='<a href="'+(o.link||'#')+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level '+cls+'">'+label+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:var(--muted);background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:2px;margin-left:4px">'+o.source+'</span></div><div class="news-threat-title">'+o.name+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS</div></div></a>';
+    h+='<a href="'+esc(o.link||'#')+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="news-threat"><div class="news-threat-bar"><span class="threat-level '+cls+'">'+label+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:var(--muted);background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:2px;margin-left:4px">'+o.source+'</span></div><div class="news-threat-title">'+esc(o.name)+'</div><div class="news-threat-meta">'+agoStr+' ATRÁS</div></div></a>';
   });el.innerHTML=h;
   var critCount=outages.filter(function(o){return o.severity==='critical'&&!o.endTime}).length;
   if(critCount>=3)setThreat('clima','#ff3333');else if(critCount>=1)setThreat('clima','var(--amber)');else setThreat('clima','var(--green)');
