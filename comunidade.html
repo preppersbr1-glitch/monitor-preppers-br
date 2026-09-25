@@ -80,9 +80,16 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .cm:hover .cd{display:inline-block}
 .cm .cd:hover{border-color:rgba(255,51,51,0.4);color:var(--red)}
 .cm-sys{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:6px 0}
-.chat-send{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
+.chat-send{display:flex;gap:8px;padding:10px;background:rgba(0,255,136,0.02)}
 .chat-send input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:10px 12px;border-radius:3px;outline:none}
 .chat-send input:focus{border-color:var(--green3)}
+.chat-to{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 10px 0;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
+.chat-to select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;padding:5px 8px;border-radius:3px;max-width:180px}
+.chat-to label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.chat-to input[type=checkbox]{accent-color:#bb66ff;width:16px;height:16px}
+.cm.pm{background:rgba(170,0,255,0.08);border-left:2px solid #bb66ff;padding-left:6px}
+.cm .pmtag{font-family:'Share Tech Mono',monospace;font-size:10px;color:#bb66ff;margin-right:4px}
+.chat-send.priv input{border-color:#bb66ff}
 .chat-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);padding:0 12px 8px;min-height:14px}
 .who{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(26,61,42,0.5);font-size:14px;font-weight:600;cursor:pointer}
 .who:hover{background:rgba(0,255,136,0.04)}
@@ -219,11 +226,15 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
     <div class="card chat-box">
       <div class="card-header"><span class="card-title" id="chat-room-title">—</span><span class="card-badge badge-ok" id="chat-conn">CONECTANDO...</span></div>
       <div class="chat-msgs" id="chat-msgs"></div>
-      <div class="chat-send">
+      <div class="chat-to">
+        <label>FALAR COM <select id="chat-to" onchange="setChatTo(this.value)"><option value="">Todos</option></select></label>
+        <label title="Só você e a pessoa veem a mensagem"><input type="checkbox" id="chat-priv" onchange="updPrivUI()" disabled> 🔒 RESERVADAMENTE</label>
+      </div>
+      <div class="chat-send" id="chat-send">
         <input id="chat-input" maxlength="300" placeholder="Digite sua mensagem..." autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()">
         <button class="btn btn-primary" onclick="sendChat()">ENVIAR</button>
       </div>
-      <div class="chat-hint" id="chat-hint">Toque no nome de alguém para falar com a pessoa (@NOME). As mensagens somem após 5 minutos.</div>
+      <div class="chat-hint" id="chat-hint">Escolha alguém em FALAR COM (ou toque no nome) e marque 🔒 para falar só com a pessoa. As mensagens somem após 5 minutos.</div>
     </div>
     <div class="card" id="chat-who-card"><div class="card-header"><span class="card-title">NA SALA</span><span class="card-badge badge-ok" id="chat-who-count">0</span></div><div id="chat-who"></div></div>
   </div>
@@ -514,7 +525,11 @@ var rtdb=null,chatRoom=null,chatQuery=null,chatPresRef=null,chatOnline={},chatUn
 // Mensagens valem 5 minutos: a página só busca e mostra as recentes e quem está no bate-papo apaga as vencidas
 // (as regras deixam qualquer membro apagar mensagem com mais de 5 min). Relógio do servidor via serverTimeOffset.
 var CHAT_TTL=300000,chatOffset=0,chatHiddenAt=0;
+// Mensagem privada ("reservadamente"): cada pessoa tem uma caixa chatPm/<uid> que só ela lê; o remetente grava
+// uma cópia na própria caixa e outra na do destinatário. Aparece no meio da conversa, em qualquer sala.
+var chatToUid='',chatToName='',pmCache={},pmQuery=null;
 function serverNow(){return Date.now()+chatOffset}
+var HINT='Escolha alguém em FALAR COM (ou toque no nome) e marque 🔒 para falar só com a pessoa. As mensagens somem após 5 minutos.';
 var EMPTY_MSG='<div class="cm-sys">Nenhuma mensagem nos últimos 5 minutos. Comece a conversa!</div>';
 function loadChatLib(){
   if(!chatLib)chatLib=new Promise(function(res,rej){var sc=document.createElement('script');sc.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js';sc.onload=res;sc.onerror=function(){chatLib=null;rej(new Error('não carregou'))};document.head.appendChild(sc)});
@@ -538,6 +553,9 @@ async function setMode(m){
         if(on&&chatRoom)joinPresence(chatRoom);   // depois de cair, marca presença de novo
       });
       // as regras liberam a leitura sala por sala (chatOnline/<sala>), não a lista inteira de uma vez
+      pmQuery=rtdb.ref('chatPm/'+MY_UID).orderByChild('ts').startAt(serverNow()-CHAT_TTL);
+      pmQuery.on('child_added',function(s){pmCache[s.key]=s.val();addChatMsg('pm-'+s.key,s.val(),true)},function(){});
+      pmQuery.on('child_removed',function(s){delete pmCache[s.key];var e=document.getElementById('cm-pm-'+s.key);if(e)e.remove()});
       CHAT_ROOMS.forEach(function(r){rtdb.ref('chatOnline/'+r[0]).on('value',function(s){chatOnline[r[0]]=s.val()||{};renderRooms();renderWho()},function(){})});
     }
     enterRoom(chatRoom||'geral');cleanExpired();
@@ -557,6 +575,10 @@ function chatTick(){
 }
 function cleanExpired(){
   if(!rtdb)return;
+  rtdb.ref('chatPm/'+MY_UID).orderByChild('ts').endAt(serverNow()-CHAT_TTL-5000).limitToFirst(50).once('value',function(s){
+    var up={};s.forEach(function(c){up['chatPm/'+MY_UID+'/'+c.key]=null});
+    if(Object.keys(up).length)rtdb.ref().update(up).catch(function(){});
+  },function(){});
   CHAT_ROOMS.forEach(function(r){
     rtdb.ref('chat/'+r[0]).orderByChild('ts').endAt(serverNow()-CHAT_TTL-5000).limitToFirst(50).once('value',function(s){
       var up={};s.forEach(function(c){up['chat/'+r[0]+'/'+c.key]=null});
@@ -577,10 +599,11 @@ function renderRooms(){
     return '<div class="room'+(r[0]===chatRoom?' on':'')+'" onclick="enterRoom(\''+r[0]+'\')"><span>'+r[1]+'</span>'+r[2]+'<span class="rc">'+(n?n+' on':'')+'</span></div>'}).join('');
 }
 function renderWho(){
+  if(document.getElementById('chat-to'))renderToSelect();
   var list=liveUsers(chatRoom);var ids=Object.keys(list).sort(function(a,b){return (list[a].name||'').localeCompare(list[b].name||'')});
   document.getElementById('chat-who-count').textContent=ids.length;
   document.getElementById('chat-who').innerHTML=ids.length?ids.map(function(u){var n=list[u].name||'?';
-    return '<div class="who" onclick="mention(\''+esc(n).replace(/'/g,'')+'\')"><span class="wd"></span><span style="color:'+nameColor(n)+'">'+esc(n)+(u===MY_UID?' (você)':'')+'</span></div>'}).join(''):'<div class="cm-sys" style="padding:14px">Ninguém nesta sala.</div>';
+    return '<div class="who" onclick="'+(u===MY_UID?'':'selectTo(\''+u+'\',\''+esc(n).replace(/'/g,'')+'\')')+'"><span class="wd"></span><span style="color:'+nameColor(n)+'">'+esc(n)+(u===MY_UID?' (você)':'')+'</span></div>'}).join(''):'<div class="cm-sys" style="padding:14px">Ninguém nesta sala.</div>';
 }
 function joinPresence(room){
   if(!rtdb||!MY_UID)return;
@@ -596,9 +619,10 @@ function enterRoom(room){
   var r=CHAT_ROOMS.filter(function(x){return x[0]===room})[0];
   document.getElementById('chat-room-title').textContent=r[1]+' '+r[2].toUpperCase();
   var box=document.getElementById('chat-msgs');box.innerHTML='<div class="cm-sys">Carregando as últimas mensagens...</div>';
+  for(var pk in pmCache)addChatMsg('pm-'+pk,pmCache[pk],true,true);
   var first=true;
   chatQuery=rtdb.ref('chat/'+room).orderByChild('ts').startAt(serverNow()-CHAT_TTL).limitToLast(100);
-  chatQuery.once('value',function(s){if(first){first=false;if(!s.exists())box.innerHTML=EMPTY_MSG;else{var sys=box.querySelector('.cm-sys');if(sys&&!box.querySelector('.cm'))sys.remove()}box.scrollTop=box.scrollHeight}},
+  chatQuery.once('value',function(s){if(first){first=false;if(!s.exists()){if(!box.querySelector('.cm'))box.innerHTML=EMPTY_MSG}else{var sys=box.querySelector('.cm-sys');if(sys&&!box.querySelector('.cm'))sys.remove()}box.scrollTop=box.scrollHeight}},
     function(e){chatReadError(room,e)});
   chatQuery.on('child_added',function(s){addChatMsg(s.key,s.val())});
   chatQuery.on('child_removed',function(s){var e=document.getElementById('cm-'+s.key);if(e)e.remove()});
@@ -613,22 +637,55 @@ function chatReadError(room,e){
   var info='Código: '+((e&&(e.code||e.message))||'?')+' · logado: '+(u?'sim ('+esc(u.email||'')+')':'NÃO')+' · e-mail verificado: '+(u&&u.emailVerified?'sim':'não');
   box.innerHTML='<div class="cm-sys" style="color:var(--red)">Sem permissão para ler o bate-papo.<br>Confira no Firebase (Realtime Database → Regras) se o bloco "chat" está publicado.<br><span style="color:var(--muted)">'+info+'</span></div>';
 }
-function addChatMsg(key,m){
+function addChatMsg(key,m,isPm,quiet){
   var box=document.getElementById('chat-msgs');if(document.getElementById('cm-'+key))return;
   if(m.ts&&m.ts<serverNow()-CHAT_TTL)return;
   var sys=box.querySelector('.cm-sys');if(sys)sys.remove();
   var near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
-  var mine=m.uid===MY_UID,men=!mine&&USERNAME&&new RegExp('@'+USERNAME.replace(/[^A-Z0-9_]/gi,'')+'\\b','i').test(m.text||'');
-  var d=document.createElement('div');d.className='cm'+(mine?' me':'')+(men?' mention':'');d.id='cm-'+key;d.dataset.ts=m.ts||serverNow();
-  d.innerHTML='<span class="ct">'+hhmm(m.ts)+'</span><span class="cn" style="color:'+nameColor(m.name||'?')+'">'+esc(m.name||'?')+'</span>: <span class="cx">'+esc(m.text||'').replace(/@([A-Za-z0-9_]+)/g,'<b style="color:var(--amber)">@$1</b>')+'</span>'
-    +((mine||IS_ADMIN)?'<button class="cd" title="Apagar">✕</button>':'');
-  d.querySelector('.cn').onclick=function(){mention(m.name||'')};
-  var del=d.querySelector('.cd');if(del)del.onclick=function(){if(confirm('Apagar esta mensagem?'))rtdb.ref('chat/'+chatRoom+'/'+key).remove().catch(function(){alert('Não foi possível apagar.')})};
-  box.appendChild(d);
+  var uid=isPm?m.from:m.uid,name=isPm?m.fromName:m.name;
+  var mine=uid===MY_UID,men=!mine&&!isPm&&USERNAME&&new RegExp('@'+USERNAME.replace(/[^A-Z0-9_]/gi,'')+'\\b','i').test(m.text||'');
+  var d=document.createElement('div');d.className='cm'+(mine?' me':'')+(men?' mention':'')+(isPm?' pm':'');d.id='cm-'+key;d.dataset.ts=m.ts||serverNow();
+  d.innerHTML='<span class="ct">'+hhmm(m.ts)+'</span>'+(isPm?'<span class="pmtag">🔒</span>':'')
+    +'<span class="cn" style="color:'+nameColor(name||'?')+'">'+esc(name||'?')+'</span>'
+    +(isPm?' <span class="pmtag">→</span><span class="cn2" style="color:'+nameColor(m.toName||'?')+';font-weight:700">'+esc(m.toName||'?')+'</span> <span class="pmtag">(reservado)</span>':'')
+    +': <span class="cx">'+esc(m.text||'').replace(/@([A-Za-z0-9_]+)/g,'<b style="color:var(--amber)">@$1</b>')+'</span>'
+    +((mine||isPm||IS_ADMIN)?'<button class="cd" title="'+(isPm?'Apagar para mim':'Apagar')+'">✕</button>':'');
+  // tocar no nome: responder para a pessoa (na privada, já marca reservadamente)
+  var other=isPm?(mine?[m.to,m.toName]:[m.from,m.fromName]):[uid,name];
+  d.querySelector('.cn').onclick=function(){if(other[0]!==MY_UID)selectTo(other[0],other[1],isPm)};
+  var del=d.querySelector('.cd');if(del)del.onclick=function(){if(!confirm(isPm?'Apagar esta mensagem privada da sua tela? (a outra pessoa continua com a cópia dela)':'Apagar esta mensagem?'))return;
+    (isPm?rtdb.ref('chatPm/'+MY_UID+'/'+key.slice(3)):rtdb.ref('chat/'+chatRoom+'/'+key)).remove().catch(function(){alert('Não foi possível apagar.')})};
+  // mantém a ordem por horário (as privadas entram no meio das mensagens da sala)
+  var ts=+d.dataset.ts,after=null,list=box.querySelectorAll('.cm');
+  for(var i=list.length-1;i>=0;i--){if(+list[i].dataset.ts<=ts){after=list[i];break}}
+  if(after)after.after(d);else if(list.length)box.insertBefore(d,list[0]);else box.appendChild(d);
   if(near||mine)box.scrollTop=box.scrollHeight;
-  if(!mine&&(document.hidden||chatMode!=='chat')){chatUnread++;updateTitle()}
+  if(!mine&&!quiet&&(document.hidden||chatMode!=='chat')){chatUnread++;updateTitle()}
 }
-function mention(n){var i=document.getElementById('chat-input');if(!n)return;i.value='@'+n+' '+i.value.replace(/^@\S+\s*/,'');i.focus()}
+// "Falar com": lista quem está na sala; privada só com alguém escolhido
+function renderToSelect(){
+  var sel=document.getElementById('chat-to'),list=liveUsers(chatRoom),opts=[['','Todos']];
+  for(var u in list)if(u!==MY_UID)opts.push([u,list[u].name||'?']);
+  if(chatToUid&&!opts.some(function(o){return o[0]===chatToUid}))opts.push([chatToUid,chatToName+' (fora da sala)']);
+  var h=opts.map(function(o){return '<option value="'+esc(o[0])+'"'+(o[0]===chatToUid?' selected':'')+'>'+esc(o[1])+'</option>'}).join('');
+  if(sel.dataset.h!==h){sel.dataset.h=h;sel.innerHTML=h}   // só redesenha se alguém entrou/saiu (não fecha o menu aberto)
+  updPrivUI();
+}
+function setChatTo(uid){
+  var list=liveUsers(chatRoom);chatToUid=uid;
+  chatToName=uid?((list[uid]&&list[uid].name)||(chatToUid===uid?chatToName:'')||'?'):'';
+  if(!uid)document.getElementById('chat-priv').checked=false;
+  updPrivUI();document.getElementById('chat-input').focus();
+}
+function selectTo(uid,name,priv){
+  if(!uid)return;chatToUid=uid;chatToName=(name||'?').replace(/ \(fora da sala\)$/,'');
+  renderToSelect();if(priv)document.getElementById('chat-priv').checked=true;updPrivUI();document.getElementById('chat-input').focus();
+}
+function updPrivUI(){
+  var cb=document.getElementById('chat-priv');cb.disabled=!chatToUid;if(!chatToUid)cb.checked=false;
+  var priv=cb.checked;document.getElementById('chat-send').classList.toggle('priv',priv);
+  document.getElementById('chat-input').placeholder=priv?'Mensagem reservada para '+chatToName+'...':chatToUid?'Mensagem para '+chatToName+' (todos veem)...':'Digite sua mensagem...';
+}
 function updateTitle(){document.title=(chatUnread?'('+chatUnread+') ':'')+'Comunidade — PREPPERS BR'}
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&chatMode==='chat'){chatUnread=0;updateTitle()}});
 var chatSending=false;
@@ -636,16 +693,24 @@ function sendChat(){
   var inp=document.getElementById('chat-input'),hint=document.getElementById('chat-hint');var t=inp.value.trim();
   if(!t||!rtdb||!chatRoom||chatSending)return;
   if(t.length>300){hint.textContent='Máximo de 300 caracteres.';return}
+  var priv=document.getElementById('chat-priv').checked&&chatToUid;
   chatSending=true;
-  var key=rtdb.ref('chat/'+chatRoom).push().key,TS=firebase.database.ServerValue.TIMESTAMP,up={};
+  var TS=firebase.database.ServerValue.TIMESTAMP,up={};
+  if(priv){
+    // uma cópia na caixa de cada um, com a mesma chave
+    var pk=rtdb.ref('chatPm/'+MY_UID).push().key,pm={from:MY_UID,fromName:USERNAME.slice(0,24),to:chatToUid,toName:chatToName.slice(0,24),text:t,ts:TS};
+    up['chatPm/'+MY_UID+'/'+pk]=pm;up['chatPm/'+chatToUid+'/'+pk]=pm;
+  } else {
+    if(chatToUid&&t.indexOf('@'+chatToName)!==0)t=('@'+chatToName+' '+t).slice(0,300);   // "fala para" em público
+    var key=rtdb.ref('chat/'+chatRoom).push().key;
+    up['chat/'+chatRoom+'/'+key]={uid:MY_UID,name:USERNAME.slice(0,24),text:t,ts:TS};
+  }
   // a mensagem e o "último envio" vão juntos: as regras do banco exigem 2 s entre mensagens
-  up['chat/'+chatRoom+'/'+key]={uid:MY_UID,name:USERNAME.slice(0,24),text:t,ts:TS};
   up['chatLast/'+MY_UID]=TS;
-  rtdb.ref().update(up).then(function(){inp.value='';hint.textContent='Toque no nome de alguém para falar com a pessoa (@NOME). As mensagens somem após 5 minutos.';hint.style.color=''})
-    .catch(function(){hint.textContent='Calma! Espere 2 segundos entre mensagens (ou verifique a conexão).';hint.style.color='var(--amber)'})
+  rtdb.ref().update(up).then(function(){inp.value='';hint.textContent=HINT;hint.style.color=''})
+    .catch(function(){hint.textContent=priv?'Não foi possível enviar a privada: espere 2 s entre mensagens (ou o administrador precisa atualizar as regras do banco).':'Calma! Espere 2 segundos entre mensagens (ou verifique a conexão).';hint.style.color='var(--amber)'})
     .then(function(){chatSending=false});
 }
-
 // ── NEW TOPIC ──
 function showNewTopicModal(){document.getElementById('new-topic-modal').classList.add('show')}
 function closeModal(){document.getElementById('new-topic-modal').classList.remove('show')}

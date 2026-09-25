@@ -84,6 +84,39 @@
         }
       }
     },
+    "chatPm": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".indexOn": [
+          "ts"
+        ],
+        "$mid": {
+          ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('from').val() == auth.uid && ($uid == auth.uid || $uid == newData.child('to').val()) && newData.child('to').val() != auth.uid && newData.parent().parent().child(auth.uid).child($mid).exists() && newData.parent().parent().child(newData.child('to').val()).child($mid).exists() && root.child('users').child(newData.child('to').val()).exists() && newData.parent().parent().parent().child('chatLast').child(auth.uid).val() == now) || (data.exists() && !newData.exists() && $uid == auth.uid))",
+          ".validate": "newData.hasChildren(['from','fromName','to','toName','text','ts'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "to": {
+            ".validate": "newData.isString()"
+          },
+          "fromName": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+          },
+          "toName": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+          },
+          "ts": {
+            ".validate": "newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
     "chatLast": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
