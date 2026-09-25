@@ -1,5 +1,5 @@
 // ============================================================
-//  PreppersBR V2 — Heltec WiFi LoRa 32 V4.3 (ESP32-S3)
+//  PreppersBR V2 — Heltec WiFi LoRa 32 V4.2 / V4.3 (ESP32-S3)
 //  GPS: GPIO45=VCC, RX=39, TX=38 (corrigido para V4.3)
 //  SX1262 · OLED 128x64 · L76K GNSS · Web AP · BLE · LoRa Mesh AES
 // ============================================================
@@ -168,6 +168,9 @@ NimBLECharacteristic* bleCharSend=nullptr;
 NimBLECharacteristic* bleCharSos=nullptr;
 NimBLECharacteristic* bleCharDms=nullptr;
 bool bleConnected=false;
+QueueHandle_t bleCmdQ=nullptr;   // comandos recebidos por BLE, executados no loop()
+#define BLE_CMD_LEN 128
+#define BLE_JSON_MAX 500          // limite do ATT: valor de característica BLE tem no máximo 512 bytes
 unsigned long ble_notify_last=0;
 int  ble_msg_ver=-1;
 int  ble_dm_ver=-1;
@@ -804,14 +807,34 @@ void webHandle204(){ webServer.send(204,"text/plain",""); }
 // BLE
 // ============================================================
 class BLESrvCB : public NimBLEServerCallbacks {
-    void onConnect(NimBLEServer*,NimBLEConnInfo&){ bleConnected=true; dirty=true; }
+    // ao conectar, força o envio do estado atual (status, mensagens e privadas) no próximo loop()
+    void onConnect(NimBLEServer*,NimBLEConnInfo&){ bleConnected=true; ble_msg_ver=-1; ble_dm_ver=-1; ble_notify_last=0; dirty=true; }
     void onDisconnect(NimBLEServer*,NimBLEConnInfo&,int){ bleConnected=false; NimBLEDevice::startAdvertising(); }
 };
+// Callbacks do NimBLE rodam em outra tarefa: só enfileiram; o loop() executa (bleProcessCmds)
+static void bleQueue(char kind,const std::string& v){
+    char b[BLE_CMD_LEN]; b[0]=kind; scopy(b+1,v.c_str(),sizeof(b)-1);
+    if(bleCmdQ) xQueueSend(bleCmdQ,b,0);
+}
 class BLESendCB : public NimBLECharacteristicCallbacks {
-    void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){
-        String v=c->getValue().c_str(); v.trim();
-        if(v.length()<1||!l_ok) return;
-        if(v.startsWith("D[")){
+    void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){ bleQueue('M',c->getValue()); }
+};
+class BLESosCB : public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){ bleQueue('S',c->getValue()); }
+};
+void bleProcessCmds(){
+    char b[BLE_CMD_LEN];
+    while(bleCmdQ && xQueueReceive(bleCmdQ,b,0)==pdTRUE){
+        String v=String(b+1); v.trim();
+        if(b[0]=='S'){
+            if(v=="1"&&!sos_on){ sos_on=true; sos_last=millis(); if(l_ok) loraTxSOS(); dirty=true; }
+            else if(v=="0"&&sos_on){ sos_on=false; if(l_ok) loraTxBeacon(); dirty=true; }
+            bleCharSos->setValue(sos_on?"1":"0");
+            if(bleConnected) bleCharSos->notify();
+            continue;
+        }
+        if(v.length()<1||!l_ok) continue;
+        if(v.startsWith("D[")){                 // mensagem privada: D[DESTINO]texto
             int cb=v.indexOf(']');
             if(cb>2){
                 String to=v.substring(2,cb);
@@ -819,21 +842,12 @@ class BLESendCB : public NimBLECharacteristicCallbacks {
                 if(validId(to)&&msg.length()>0&&(int)msg.length()<DM_LEN)
                     loraTxDM(to.c_str(),msg.c_str());
             }
-        } else if((int)v.length()<MSG_LEN){
+        } else {
             v=cleanMsg(v);
-            loraTxChat(v.c_str());
+            if((int)v.length()<MSG_LEN) loraTxChat(v.c_str());
         }
     }
-};
-class BLESosCB : public NimBLECharacteristicCallbacks {
-    void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){
-        String v=c->getValue().c_str();
-        if(v=="1"&&!sos_on){ sos_on=true; sos_last=millis(); if(l_ok) loraTxSOS(); dirty=true; }
-        else if(v=="0"&&sos_on){ sos_on=false; if(l_ok) loraTxBeacon(); dirty=true; }
-        bleCharSos->setValue(sos_on?"1":"0");
-        if(bleConnected) bleCharSos->notify();
-    }
-};
+}
 static float hav(float lat1,float lon1,float lat2,float lon2){
     float R=6371000.0f;
     float dr=(lat2-lat1)*PI/180.0f, dl=(lon2-lon1)*PI/180.0f;
@@ -855,41 +869,48 @@ String bleBuildStatus(){
     j+=",\"lora\":"; j+=(l_ok?"true":"false");
     j+=",\"nodes\":"; j+=n_nodes;
     j+=",\"nlist\":[";
-    for(int i=0;i<n_nodes;i++){
-        if(i) j+=",";
-        String nid=jsonEsc(nodes[i].id);
-        j+="{\"id\":\""+nid+"\"";
+    // nós mais recentes primeiro, até caber no limite do BLE
+    int order[MAX_NODES]; for(int i=0;i<n_nodes;i++) order[i]=i;
+    for(int i=1;i<n_nodes;i++) for(int k=i;k>0&&nodes[order[k]].last_ms>nodes[order[k-1]].last_ms;k--){ int t=order[k]; order[k]=order[k-1]; order[k-1]=t; }
+    bool first=true;
+    for(int n=0;n<n_nodes;n++){
+        int i=order[n];
+        String e="{\"id\":\""+jsonEsc(nodes[i].id)+"\"";
         if(nodes[i].lat!=0.0f||nodes[i].lon!=0.0f){
-            j+=",\"lat\":"; j+=String(nodes[i].lat,4);
-            j+=",\"lon\":"; j+=String(nodes[i].lon,4);
-            if(g_fix) { j+=",\"d\":"; j+=(int)hav(g_lat,g_lon,nodes[i].lat,nodes[i].lon); }
+            e+=",\"lat\":"; e+=String(nodes[i].lat,4);
+            e+=",\"lon\":"; e+=String(nodes[i].lon,4);
+            if(g_fix) { e+=",\"d\":"; e+=(int)hav(g_lat,g_lon,nodes[i].lat,nodes[i].lon); }
         }
-        j+="}";
+        if(nodes[i].sos) e+=",\"sos\":true";
+        e+=",\"age\":"; e+=(unsigned long)((millis()-nodes[i].last_ms)/1000); e+="}";
+        if(j.length()+e.length()+16>BLE_JSON_MAX) break;
+        if(!first) j+=","; j+=e; first=false;
     }
     j+="],\"ble\":true}";
     return j;
 }
+// Listas para o BLE: do fim para o começo (mais novas), até BLE_JSON_MAX bytes.
+// Cada item leva "v" (versão) para o app não duplicar ao juntar com o que já recebeu.
 String bleBuildMsgs(){
-    String j="[";
-    for(int i=0;i<n_msgs;i++){
-        if(i) j+=",";
-        String fr=jsonEsc(msgs[i].from),tx=jsonEsc(msgs[i].text);
-        j+="{\"from\":\""+fr+"\",\"text\":\""+tx+"\",\"mine\":";
-        j+=msgs[i].mine?"true":"false"; j+="}";
+    String body="";
+    for(int i=n_msgs-1;i>=0;i--){
+        String e="{\"v\":"+String(msg_ver-(n_msgs-1-i))+",\"from\":\""+jsonEsc(msgs[i].from)+"\",\"text\":\""+jsonEsc(msgs[i].text)+"\",\"mine\":"+(msgs[i].mine?"true":"false")+"}";
+        if(body.length()+e.length()+3>BLE_JSON_MAX) break;
+        body=body.length()?e+","+body:e;
     }
-    return j+"]";
+    return "["+body+"]";
 }
 String bleBuildDms(){
-    String j="[";
-    for(int i=0;i<n_dms;i++){
-        if(i) j+=",";
-        String peer=jsonEsc(dms[i].peer),fr=jsonEsc(dms[i].from),tx=jsonEsc(dms[i].text);
-        j+="{\"peer\":\""+peer+"\",\"from\":\""+fr+"\",\"text\":\""+tx+"\",\"mine\":";
-        j+=dms[i].mine?"true":"false"; j+="}";
+    String body="";
+    for(int i=n_dms-1;i>=0;i--){
+        String e="{\"v\":"+String(dm_ver-(n_dms-1-i))+",\"peer\":\""+jsonEsc(dms[i].peer)+"\",\"from\":\""+jsonEsc(dms[i].from)+"\",\"text\":\""+jsonEsc(dms[i].text)+"\",\"mine\":"+(dms[i].mine?"true":"false")+"}";
+        if(body.length()+e.length()+3>BLE_JSON_MAX) break;
+        body=body.length()?e+","+body:e;
     }
-    return j+"]";
+    return "["+body+"]";
 }
 void bleBegin(){
+    bleCmdQ=xQueueCreate(6,BLE_CMD_LEN);
     char nm[24]; snprintf(nm,sizeof(nm),"%s",cfg.callsign[0]?cfg.callsign:"PreppersBR");
     NimBLEDevice::init(nm); NimBLEDevice::setPower(9);
     NimBLEDevice::setMTU(517);   // JSON de status passa de 20 bytes: sem MTU maior a notificação chega cortada
@@ -898,13 +919,13 @@ void bleBegin(){
     bleCharStatus=svc->createCharacteristic(BLE_STAT,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::NOTIFY);
     bleCharStatus->setValue(bleBuildStatus().c_str());
     bleCharMsgs=svc->createCharacteristic(BLE_MSGS,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::NOTIFY);
-    bleCharMsgs->setValue("[]");
+    bleCharMsgs->setValue(bleBuildMsgs().c_str());
     bleCharSend=svc->createCharacteristic(BLE_SEND,NIMBLE_PROPERTY::WRITE);
     bleCharSend->setCallbacks(new BLESendCB());
     bleCharSos=svc->createCharacteristic(BLE_SOS,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::WRITE|NIMBLE_PROPERTY::NOTIFY);
     bleCharSos->setValue("0"); bleCharSos->setCallbacks(new BLESosCB());
     bleCharDms=svc->createCharacteristic(BLE_DMS,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::NOTIFY);
-    bleCharDms->setValue("[]");
+    bleCharDms->setValue(bleBuildDms().c_str());
     svc->start();
     NimBLEAdvertising* adv=NimBLEDevice::getAdvertising();
     adv->addServiceUUID(BLE_SVC);
@@ -988,7 +1009,7 @@ void handleButton(){
 void setup(){
     Serial.begin(115200);
     { unsigned long t=millis(); while(!Serial&&millis()-t<3000); }
-    Serial.println("\n[BOOT] PreppersBR V2 — Heltec V4.3");
+    Serial.println("\n[BOOT] PreppersBR V2 — Heltec V4");
 
     pinMode(LED_PIN,OUTPUT);
     for(int i=0;i<6;i++){ digitalWrite(LED_PIN,HIGH); delay(100); digitalWrite(LED_PIN,LOW); delay(100); }
@@ -1026,7 +1047,7 @@ void setup(){
     u8g2.clearBuffer(); u8g2.setFont(u8g2_font_7x13B_tr);
     u8g2.setCursor(10,20); u8g2.print("PreppersBR V2");
     u8g2.setFont(u8g2_font_5x7_tr);
-    u8g2.setCursor(20,34); u8g2.print("Heltec V4.3");
+    u8g2.setCursor(20,34); u8g2.print("Heltec V4");
     u8g2.setCursor(5,46);  u8g2.print("Iniciando GPS...");
     u8g2.sendBuffer();
 
@@ -1057,7 +1078,7 @@ void setup(){
 
     bleBegin();
     wifiBegin();
-    readBat();
+    readBat(); delay(100); readBat();   // a 1ª leitura do ADC após o boot sai baixa (~1,7 V): descarta
 
     tx_last=millis()-(unsigned long)cfg.beacon_s*1000UL+5000UL;
     updateDisplay();
@@ -1076,6 +1097,7 @@ void loop(){
     if(now-bat_last>15000){ readBat(); bat_last=now; }
     dnsServer.processNextRequest();
     webServer.handleClient();
+    bleProcessCmds();
     bleUpdate();
     handleButton();
     if(cfg_restart && now-cfg_restart_ms>800) ESP.restart();

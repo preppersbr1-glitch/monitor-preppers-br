@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rádio Bluetooth — PREPPERS BR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--blue:#00aaff;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+header{position:sticky;top:0;z-index:1000;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px}
+nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
+main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
+.page-title{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:4px}
+.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:14px;overflow:hidden}
+.mono{font-family:'Share Tech Mono',monospace}
+.btn{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:12px 18px;border-radius:4px;border:1px solid var(--green2);background:rgba(0,255,136,0.1);color:var(--green);cursor:pointer}
+.btn:hover{background:rgba(0,255,136,0.18)}.btn:disabled{opacity:0.4;cursor:default}
+.btn-ghost{border-color:var(--border);background:none;color:var(--muted)}
+.btn-red{border-color:var(--red);background:rgba(255,51,51,0.12);color:var(--red)}
+.hidden{display:none!important}
+/* conexão */
+#connect{padding:24px 20px;text-align:center}
+#connect p{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8;margin:10px auto 18px;max-width:520px}
+#conn-err{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);margin-top:12px;min-height:14px}
+.note{border:1px solid rgba(255,179,0,0.3);background:rgba(255,179,0,0.06);border-radius:4px;padding:12px 14px;text-align:left;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text);line-height:1.7;margin-top:16px}
+.note b{color:var(--amber)}
+/* status */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border)}
+.stat{background:var(--card);padding:10px 6px;text-align:center}
+.stat-v{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:var(--green)}
+.stat-l{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-top:3px}
+.devbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
+.devname{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:2px;color:var(--green)}
+.live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-right:6px;animation:p 2s infinite}
+.live.off{background:var(--red);box-shadow:0 0 8px var(--red);animation:none}
+@keyframes p{50%{opacity:0.3}}
+/* abas */
+.tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{flex:1;min-width:80px;padding:12px 6px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.tab .bdg{background:var(--red);color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:4px}
+.pane{min-height:360px}
+/* chat */
+.msgs{height:340px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:85%;padding:6px 10px;border-radius:8px;font-size:15px;line-height:1.35;word-wrap:break-word}
+.m .who{display:block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-bottom:2px;color:var(--muted)}
+.m.in{align-self:flex-start;background:#0a1a0f;border:1px solid var(--border)}
+.m.out{align-self:flex-end;background:#1a1a05;border:1px solid #3a3a10;color:#fff7a0}
+.m.sos{border-color:var(--red);background:rgba(255,51,51,0.1);color:#ffb0b0}
+.empty{margin:auto;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
+.compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
+.compose input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:10px 12px;border-radius:4px;outline:none}
+.compose input:focus{border-color:var(--green3)}
+.count{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);padding:0 12px 8px;text-align:right}
+/* contatos */
+.node{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(26,61,42,0.5)}
+.node .nid{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:1px;color:var(--green)}
+.node .meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px}
+.node.sos .nid{color:var(--red)}
+.node .grow{flex:1;min-width:0}
+.dmhdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)}
+/* mapa */
+#map{height:420px;background:#030806}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--card)!important;color:var(--text)!important}
+/* sos */
+.sos-wrap{padding:24px 16px;text-align:center}
+.sos-btn{width:180px;height:180px;border-radius:50%;border:4px solid var(--red);background:#600;color:#fff;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:3px;cursor:pointer;box-shadow:0 0 30px rgba(255,51,51,0.3)}
+.sos-btn.on{background:var(--red);box-shadow:0 0 50px var(--red);animation:p 1s infinite}
+.sos-st{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin:16px 0}
+.toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:6px;align-items:center;width:max-content;max-width:90%}
+.toast{background:var(--card);border:1px solid var(--amber);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px 16px;border-radius:4px}
+@media(max-width:700px){
+  header{flex-wrap:wrap;height:auto;padding:8px 12px;gap:6px}
+  nav{order:3;width:100%;justify-content:center;border-top:1px solid var(--border);padding-top:4px}
+  nav a{font-size:9px;padding:3px 7px}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  main{padding:14px 10px 30px}
+  .msgs{height:calc(100vh - 430px);min-height:260px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><div class="logo-icon">📻</div><div><div class="logo-text">PREPPERS BR</div><div class="logo-sub">RÁDIO MESH · BLUETOOTH</div></div></a>
+  <nav>
+    <a href="index.html">MONITOR</a><a href="defesa-civil.html">DEFESA CIVIL</a><a href="solar.html">SOLAR</a>
+    <a href="monitor-global.html">GLOBAL</a><a href="comunidade.html">COMUNIDADE</a><a href="cursos.html">CURSOS</a>
+    <a href="membros.html">MEMBROS</a><a href="dispositivo.html" class="active">DISPOSITIVO</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-title">📻 RÁDIO VIA BLUETOOTH</div>
+  <div class="page-subtitle">CONECTE-SE À SUA HELTEC SEM SAIR DA INTERNET DO CELULAR</div>
+
+  <!-- CONECTAR -->
+  <div class="card" id="connect">
+    <div style="font-size:42px">🔵</div>
+    <p>Ligue a placa, deixe o Bluetooth do aparelho ativado e toque em <b style="color:var(--text)">CONECTAR</b>. Na lista, escolha a sua placa (o nome é o call sign dela, ex.: <b style="color:var(--text)">H12FC</b>).</p>
+    <button class="btn" id="btn-connect" onclick="connectBle()">🔵 CONECTAR À PLACA</button>
+    <div id="conn-err"></div>
+    <div class="note hidden" id="unsupported">
+      <b>Este navegador não tem Bluetooth.</b><br>
+      Funciona no <b>Chrome</b> (Android, Windows, Mac, Linux) e no <b>Edge</b>.<br>
+      <b>iPhone/iPad:</b> o Safari não permite Bluetooth em sites. Instale o app gratuito <b>Bluefy</b> na App Store e abra este endereço nele — ou use o WiFi da placa pela página <a href="dispositivo.html" style="color:var(--green)">Dispositivo</a>.
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <div class="card">
+      <div class="devbar">
+        <div><span class="live" id="live"></span><span class="devname" id="dev-name">—</span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="padding:8px 12px" id="btn-reconnect" onclick="reconnect()">↻ RECONECTAR</button>
+          <button class="btn btn-ghost" style="padding:8px 12px" onclick="disconnectBle()">✕ DESCONECTAR</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-v" id="s-bat">—</div><div class="stat-l">BATERIA</div></div>
+        <div class="stat"><div class="stat-v" id="s-gps">—</div><div class="stat-l">GPS</div></div>
+        <div class="stat"><div class="stat-v" id="s-lora">—</div><div class="stat-l">LORA</div></div>
+        <div class="stat"><div class="stat-v" id="s-nodes">—</div><div class="stat-l">NÓS</div></div>
+        <div class="stat"><div class="stat-v" id="s-rssi">—</div><div class="stat-l">RSSI dBm</div></div>
+        <div class="stat"><div class="stat-v" id="s-txrx">—</div><div class="stat-l">TX / RX</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab on" data-tab="chat" onclick="showTab('chat')">📡 RÁDIO</button>
+        <button class="tab" data-tab="contatos" onclick="showTab('contatos')">👥 CONTATOS<span class="bdg hidden" id="dm-badge">!</span></button>
+        <button class="tab" data-tab="mapa" onclick="showTab('mapa')">🗺️ MAPA</button>
+        <button class="tab" data-tab="sos" onclick="showTab('sos')" id="tab-sos">🆘 SOS</button>
+      </div>
+
+      <!-- CHAT ABERTO -->
+      <div class="pane" id="pane-chat">
+        <div class="msgs" id="chat"></div>
+        <div class="compose">
+          <input id="chat-in" maxlength="55" placeholder="Mensagem para toda a rede..." autocomplete="off" oninput="countBytes(this,'chat-count',55)" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn" onclick="sendChat()">ENVIAR</button>
+        </div>
+        <div class="count" id="chat-count">0/55</div>
+      </div>
+
+      <!-- CONTATOS / PRIVADO -->
+      <div class="pane hidden" id="pane-contatos">
+        <div id="nodes"></div>
+        <div id="dm" class="hidden">
+          <div class="dmhdr">
+            <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeDm()">← VOLTAR</button>
+            <span class="devname" id="dm-peer"></span><span class="mono" id="dm-dist" style="margin-left:auto;font-size:11px;color:var(--muted)"></span>
+          </div>
+          <div class="msgs" id="dm-msgs"></div>
+          <div class="compose">
+            <input id="dm-in" maxlength="87" placeholder="Mensagem privada..." autocomplete="off" oninput="countBytes(this,'dm-count',87)" onkeydown="if(event.key==='Enter')sendDm()">
+            <button class="btn" onclick="sendDm()">ENVIAR</button>
+          </div>
+          <div class="count" id="dm-count">0/87</div>
+        </div>
+      </div>
+
+      <!-- MAPA -->
+      <div class="pane hidden" id="pane-mapa">
+        <div id="map"></div>
+        <div class="mono" style="padding:8px 12px;font-size:10px;color:var(--muted)">🟢 sua placa · 🔵 seu celular · 🟡 outros nós · 🔴 SOS</div>
+      </div>
+
+      <!-- SOS -->
+      <div class="pane hidden" id="pane-sos">
+        <div class="sos-wrap">
+          <button class="sos-btn" id="sos-btn" onclick="toggleSos()">SOS</button>
+          <div class="sos-st" id="sos-st">Nenhuma emergência ativa</div>
+          <div class="mono" style="font-size:11px;color:var(--muted);line-height:1.7;max-width:460px;margin:0 auto">O SOS é transmitido pela rede LoRa a cada 10 s, com a posição GPS da placa, para todos os nós. Use apenas em emergência real.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// UUIDs do serviço BLE do firmware PreppersBR (firmware/HeltecV4PreppersV2)
+var SVC ='4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+var UUID={stat:'beb5483e-36e1-4688-b7f5-ea07361b26a8',msgs:'beb5483f-36e1-4688-b7f5-ea07361b26a8',send:'beb54840-36e1-4688-b7f5-ea07361b26a8',sos:'beb54841-36e1-4688-b7f5-ea07361b26a8',dms:'beb54842-36e1-4688-b7f5-ea07361b26a8'};
+var MSG_MAX=55, DM_MAX=87;   // bytes (MSG_LEN-1 e DM_LEN-1 no firmware)
+
+var dev=null, ch={}, st={}, chat=[], dms=[], dmPeer=null, seenDmV=0, map=null, mk={}, phone=null, wantConnected=false;
+var enc=new TextEncoder(), dec=new TextDecoder();
+// O Chrome só aceita uma operação GATT por vez ("GATT operation already in progress"): tudo passa por esta fila
+var gattQ=Promise.resolve();
+function gatt(fn){var p=gattQ.then(fn,fn);gattQ=p.catch(function(){});return p}
+
+function $(id){return document.getElementById(id)}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function toast(t){var box=$('toasts');if(!box){box=document.createElement('div');box.id='toasts';box.className='toasts';document.body.appendChild(box)}
+  var d=document.createElement('div');d.className='toast';d.textContent=t;box.appendChild(d);setTimeout(function(){d.remove()},3500)}
+function fmtDist(m){return m==null?'':m>=1000?(m/1000).toFixed(1)+' km':Math.round(m)+' m'}
+function hav(a,b,c,d){var R=6371000,p=Math.PI/180,x=Math.sin((c-a)*p/2),y=Math.sin((d-b)*p/2);var h=x*x+Math.cos(a*p)*Math.cos(c*p)*y*y;return 2*R*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))}
+function ago(s){return s==null?'':s<60?'agora':s<3600?Math.round(s/60)+' min':Math.round(s/3600)+' h'}
+
+if(!navigator.bluetooth){$('unsupported').classList.remove('hidden');$('btn-connect').disabled=true}
+
+// ── Conexão ──
+async function connectBle(){
+  $('conn-err').textContent='';
+  try{
+    dev=await navigator.bluetooth.requestDevice({filters:[{services:[SVC]}],optionalServices:[SVC]});
+    dev.addEventListener('gattserverdisconnected',onDisconnected);
+    wantConnected=true;
+    await setup();
+  }catch(e){
+    if(e.name==='NotFoundError')return;   // usuário fechou a lista
+    $('conn-err').textContent='Não foi possível conectar: '+e.message;
+  }
+}
+async function setup(){
+  $('btn-connect').disabled=true;$('btn-connect').textContent='CONECTANDO...';
+  var server=await dev.gatt.connect();
+  var svc=await server.getPrimaryService(SVC);
+  for(var k in UUID)ch[k]=await svc.getCharacteristic(UUID[k]);
+  for(var n of ['stat','msgs','dms','sos']){
+    (function(name){ch[name].addEventListener('characteristicvaluechanged',function(){refresh(name)})})(n);
+    await gatt(function(){return ch[n].startNotifications()});
+  }
+  chat=[];dms=[];
+  $('dev-name').textContent=dev.name||'PLACA';
+  $('connect').classList.add('hidden');$('app').classList.remove('hidden');
+  $('live').classList.remove('off');$('btn-reconnect').classList.add('hidden');
+  $('btn-connect').disabled=false;$('btn-connect').textContent='🔵 CONECTAR À PLACA';
+  for(var n2 of ['stat','msgs','dms','sos'])await refresh(n2);
+}
+// A notificação pode chegar cortada (tamanho do pacote BLE); por isso sempre relê o valor completo
+async function refresh(name){
+  try{
+    var v=dec.decode(await gatt(function(){return ch[name].readValue()}));
+    if(name==='sos'){st.sos=(v==='1');renderSos();return}
+    var d=JSON.parse(v);
+    if(name==='stat'){st=d;renderStatus()}
+    else if(name==='msgs'){chat=merge(chat,d);renderChat()}
+    else if(name==='dms'){var before=dms.length;dms=merge(dms,d);renderNodes();if(dmPeer)renderDm();notifyDm(before)}
+  }catch(e){console.warn('BLE',name,e)}
+}
+// Junta o que já foi recebido com a lista nova (a placa só manda as mais recentes que cabem em 500 bytes)
+function merge(old,neu){
+  if(neu.length&&old.length&&neu[neu.length-1].v<old[old.length-1].v)return neu.slice();  // placa reiniciou
+  var map={};old.forEach(function(x){map[x.v]=x});neu.forEach(function(x){map[x.v]=x});
+  return Object.keys(map).map(Number).sort(function(a,b){return a-b}).slice(-200).map(function(k){return map[k]});
+}
+function onDisconnected(){
+  $('live').classList.add('off');$('btn-reconnect').classList.remove('hidden');
+  if(wantConnected){toast('Conexão Bluetooth perdida — tentando reconectar...');setTimeout(reconnect,1500)}
+}
+async function reconnect(){
+  if(!dev)return;
+  try{await setup();toast('Reconectado')}catch(e){toast('Não reconectou. Aproxime-se da placa e toque em RECONECTAR.')}
+}
+function disconnectBle(){
+  wantConnected=false;
+  if(dev&&dev.gatt.connected)dev.gatt.disconnect();
+  $('app').classList.add('hidden');$('connect').classList.remove('hidden');
+}
+
+// ── Envio (a placa aceita texto simples = chat aberto; "D[ID]texto" = privada) ──
+async function write(uuid,text){
+  if(!dev||!dev.gatt.connected){toast('Placa desconectada');return false}
+  try{await gatt(function(){return ch[uuid].writeValueWithResponse(enc.encode(text))});return true}
+  catch(e){toast('Falha ao enviar: '+e.message);return false}
+}
+function countBytes(inp,id,max){var n=enc.encode(inp.value).length;$(id).textContent=n+'/'+max;$(id).style.color=n>max?'var(--red)':''}
+async function sendChat(){
+  var v=$('chat-in').value.trim();if(!v)return;
+  if(enc.encode(v).length>MSG_MAX){toast('Mensagem longa demais (acentos contam 2)');return}
+  if(await write('send',v)){$('chat-in').value='';countBytes($('chat-in'),'chat-count',MSG_MAX)}
+}
+async function sendDm(){
+  var v=$('dm-in').value.trim();if(!v||!dmPeer)return;
+  if(enc.encode(v).length>DM_MAX){toast('Mensagem longa demais (acentos contam 2)');return}
+  if(await write('send','D['+dmPeer+']'+v)){$('dm-in').value='';countBytes($('dm-in'),'dm-count',DM_MAX)}
+}
+async function toggleSos(){
+  if(!st.sos){if(!confirm('CONFIRMAR ENVIO DE SOS?\n\nTodos os nós da rede serão alertados.'))return;await write('sos','1')}
+  else await write('sos','0');
+}
+
+// ── Telas ──
+function showTab(t){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===t)});
+  ['chat','contatos','mapa','sos'].forEach(function(p){$('pane-'+p).classList.toggle('hidden',p!==t)});
+  if(t==='mapa')initMap();
+  if(t==='contatos'){$('dm-badge').classList.add('hidden');if(!dmPeer)renderNodes()}
+}
+function renderStatus(){
+  $('dev-name').textContent=st.id||dev.name||'PLACA';
+  $('s-bat').textContent=(st.bat!=null?st.bat+'%':'—');
+  $('s-gps').textContent=st.fix?st.sat+' SAT':'SEM';$('s-gps').style.color=st.fix?'':'var(--amber)';
+  $('s-lora').textContent=st.lora?'OK':'ERRO';$('s-lora').style.color=st.lora?'':'var(--red)';
+  $('s-nodes').textContent=st.nodes||0;
+  $('s-rssi').textContent=st.rx?st.rssi:'—';
+  $('s-txrx').textContent=(st.tx||0)+'/'+(st.rx||0);
+  renderSos();renderNodes();updMap();
+}
+function renderChat(){
+  var el=$('chat');
+  if(!chat.length){el.innerHTML='<div class="empty">Nenhuma mensagem ainda.<br>O que você enviar aqui chega a todos os nós da rede.</div>';return}
+  var atBottom=el.scrollHeight-el.scrollTop-el.clientHeight<40;
+  el.innerHTML=chat.map(function(m){var sos=/^!SOS!/.test(m.text);return '<div class="m '+(m.mine?'out':'in')+(sos?' sos':'')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+'</div>'}).join('');
+  if(atBottom||chat[chat.length-1].mine)el.scrollTop=el.scrollHeight;
+}
+function myPos(){if(st.fix)return [st.lat,st.lon];if(phone)return phone;return null}
+function nodeDist(n){if(n.d!=null)return n.d;var p=myPos();return (p&&n.lat!=null)?hav(p[0],p[1],n.lat,n.lon):null}
+function renderNodes(){
+  if(dmPeer)return;
+  var list=(st.nlist||[]);var el=$('nodes');
+  if(!list.length){el.innerHTML='<div class="empty" style="padding:40px 16px">Nenhum nó ouvido ainda.<br>Os outros rádios aparecem aqui quando o beacon deles chegar.</div>';return}
+  el.innerHTML=list.map(function(n){
+    var unread=dms.filter(function(d){return d.peer===n.id&&!d.mine&&d.v>seenDmV}).length;
+    return '<div class="node'+(n.sos?' sos':'')+'"><div class="grow"><div class="nid">'+esc(n.id)+(n.sos?' 🆘':'')+'</div><div class="meta">'+(nodeDist(n)!=null?'📍 '+fmtDist(nodeDist(n))+' · ':'sem posição · ')+'visto há '+ago(n.age)+'</div></div>'+
+      (unread?'<span class="bdg" style="background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:10px">'+unread+'</span>':'')+
+      '<button class="btn btn-ghost" style="padding:8px 12px" data-peer="'+esc(n.id)+'" onclick="openDm(this.dataset.peer)">💬 PRIVADO</button></div>';
+  }).join('');
+}
+function openDm(peer){
+  dmPeer=peer;$('nodes').classList.add('hidden');$('dm').classList.remove('hidden');
+  $('dm-peer').textContent='💬 '+peer;
+  var n=(st.nlist||[]).filter(function(x){return x.id===peer})[0];
+  $('dm-dist').textContent=n&&nodeDist(n)!=null?fmtDist(nodeDist(n)):'';
+  renderDm();$('dm-in').focus();
+}
+function closeDm(){dmPeer=null;$('dm').classList.add('hidden');$('nodes').classList.remove('hidden');renderNodes()}
+function renderDm(){
+  var el=$('dm-msgs'),list=dms.filter(function(d){return d.peer===dmPeer});
+  list.forEach(function(d){if(d.v>seenDmV)seenDmV=d.v});
+  el.innerHTML=list.length?list.map(function(m){return '<div class="m '+(m.mine?'out':'in')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem com '+esc(dmPeer)+'.</div>';
+  el.scrollTop=el.scrollHeight;
+}
+function notifyDm(before){
+  var novas=dms.slice(before).filter(function(d){return !d.mine&&d.v>seenDmV});
+  if(!novas.length)return;
+  var onContacts=!$('pane-contatos').classList.contains('hidden');
+  if(!(onContacts&&dmPeer===novas[novas.length-1].peer)){$('dm-badge').classList.remove('hidden');toast('💬 Mensagem privada de '+novas[novas.length-1].from)}
+}
+function renderSos(){
+  var on=!!st.sos;
+  $('sos-btn').classList.toggle('on',on);$('sos-btn').textContent=on?'CANCELAR':'SOS';
+  $('sos-st').textContent=on?'SOS ATIVO — transmitindo a cada 10 s':'Nenhuma emergência ativa';
+  $('sos-st').style.color=on?'var(--red)':'';
+  $('tab-sos').style.color=on?'var(--red)':'';
+}
+
+// ── Mapa (o celular continua com internet, então os mapas carregam) ──
+function dot(c,s){return L.divIcon({className:'',html:'<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 0 6px '+c+'"></div>',iconSize:[s,s],iconAnchor:[s/2,s/2]})}
+function initMap(){
+  if(typeof L==='undefined'){$('map').innerHTML='<div class="empty" style="padding:40px">Mapa indisponível sem internet.</div>';return}
+  if(!map){
+    var p=myPos();
+    map=L.map('map',{attributionControl:false}).setView(p||[-15.78,-47.93],p?13:4);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:16}).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:16}).addTo(map);
+  }
+  setTimeout(function(){map.invalidateSize()},50);updMap();
+}
+function put(key,pos,color,size,label){
+  if(!pos){if(mk[key]){map.removeLayer(mk[key]);delete mk[key]}return}
+  if(!mk[key])mk[key]=L.marker(pos,{icon:dot(color,size)}).addTo(map).bindPopup(label);
+  else{mk[key].setLatLng(pos);mk[key].setIcon(dot(color,size));mk[key].getPopup().setContent(label)}
+}
+function updMap(){
+  if(!map)return;
+  put('me',st.fix?[st.lat,st.lon]:null,'#00ff88',16,'<b>'+esc(st.id||'Sua placa')+'</b><br>sua placa');
+  put('phone',phone,'#00aaff',12,'Seu celular');
+  var seen={};
+  (st.nlist||[]).forEach(function(n){if(n.lat==null)return;seen['n'+n.id]=1;put('n'+n.id,[n.lat,n.lon],n.sos?'#ff3333':'#ffd000',12,'<b>'+esc(n.id)+'</b>'+(n.sos?' 🆘':'')+'<br>'+(nodeDist(n)!=null?fmtDist(nodeDist(n))+' · ':'')+'visto há '+ago(n.age))});
+  Object.keys(mk).forEach(function(k){if(k[0]==='n'&&!seen[k]){map.removeLayer(mk[k]);delete mk[k]}});
+}
+if(navigator.geolocation)navigator.geolocation.watchPosition(function(p){phone=[p.coords.latitude,p.coords.longitude];updMap();if(!dmPeer)renderNodes()},function(){},{enableHighAccuracy:true,maximumAge:30000});
+</script>
+</body>
+</html>
