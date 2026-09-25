@@ -131,7 +131,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 28</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 29</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -417,11 +417,18 @@ function disconnectBle(){
 }
 
 // ── Envio (a placa aceita texto simples = chat aberto; "D[ID]texto" = privada) ──
+// Depois de um tempo parado (ou logo após reconectar) a primeira gravação às vezes falha no Chrome
+// e no Bluefy — e a segunda passa. Por isso tenta até 3 vezes e, se a conexão caiu, reconecta antes.
 async function write(uuid,text){
-  if(!dev||!dev.gatt.connected){toast('Placa desconectada');return false}
-  var c=ch[uuid],data=enc.encode(text);
-  try{await gatt(function(){return c.writeValueWithResponse?c.writeValueWithResponse(data):c.writeValue(data)});return true}
-  catch(e){toast('Falha ao enviar: '+e.message);return false}
+  if(!dev){toast('Placa desconectada');return false}
+  var data=enc.encode(text),last=null;
+  for(var i=0;i<3;i++){
+    if(!dev.gatt.connected){try{await setup()}catch(e){last=e;await new Promise(function(r){setTimeout(r,800)});continue}}
+    var c=ch[uuid];
+    try{await gatt(function(){return c.writeValueWithResponse?c.writeValueWithResponse(data):c.writeValue(data)});return true}
+    catch(e){last=e;console.warn('BLE write tentativa',i+1,e);await new Promise(function(r){setTimeout(r,400)})}
+  }
+  toast('Falha ao enviar: '+(last&&last.message||'sem conexão'));return false
 }
 function countBytes(inp,id,max){var n=enc.encode(inp.value).length;$(id).textContent=n+'/'+max;$(id).style.color=n>max?'var(--red)':''}
 async function sendChat(){

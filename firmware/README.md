@@ -66,3 +66,10 @@ a senha do WiFi — como o app WiFi. Característica `beb54843-…`: leitura dev
 Nos dois apps (Bluetooth e WiFi), a aba **REDE** lista todas as placas que a sua já ouviu:
 online (ouvida nos últimos 3 beacons), direto ou via repetidor (quantos saltos o último pacote deu),
 sinal (RSSI/SNR do último pacote direto), bateria (do beacon), distância e quando foi vista.
+
+## Reenvio automático (v4.4+)
+
+Se a confirmação ✓✓ não chega, a placa reenvia sozinha com o mesmo id de pacote (quem já recebeu
+descarta a cópia): privada até 2 vezes (a cada 3,5 s), chat 1 vez (após 5 s). Quem recebe um reenvio
+de privada que já tinha confirmado manda a confirmação de novo. Os apps também repetem o envio para
+a placa (até 3 tentativas) quando a primeira falha depois de um tempo parado.

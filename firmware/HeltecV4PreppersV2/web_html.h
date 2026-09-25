@@ -297,6 +297,13 @@ function closeDM(){
   document.getElementById('lora-dm-view').style.display='none';
   document.getElementById('lora-nodes-view').style.display='flex';
 }
+// O celular pode deixar o WiFi da placa "dormindo": a primeira requisição depois de um tempo parado
+// falha e a segunda passa. Tenta até 3 vezes antes de avisar.
+function postRetry(url,body,n){
+  n=n||3;
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+    .catch(function(e){if(n<=1)throw e;return new Promise(function(r){setTimeout(r,700);}).then(function(){return postRetry(url,body,n-1);});});
+}
 function renderDM(){
   if(!dmPeer)return;
   var el=document.getElementById('lora-dm-msgs');
@@ -318,8 +325,7 @@ function sendDM(){
   var inp=document.getElementById('lora-dm-txf');
   var v=inp.value.trim();
   if(!v||!dmPeer)return;
-  fetch('/senddm',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'to='+encodeURIComponent(dmPeer)+'&m='+encodeURIComponent(v)})
+  postRetry('/senddm','to='+encodeURIComponent(dmPeer)+'&m='+encodeURIComponent(v))
   .then(function(r){
     if(r.ok){
       inp.value='';
@@ -676,8 +682,7 @@ function upd(){
 function snd(){
   var t=document.getElementById('txf'),v=t.value.trim();
   if(!v)return;
-  fetch('/send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'m='+encodeURIComponent(v)}).then(function(r){
+  postRetry('/send','m='+encodeURIComponent(v)).then(function(r){
       if(r.ok){t.value='';setTimeout(upd,600);setTimeout(upd,1500);return;}
       r.text().then(function(e){alert('Nao enviado: '+e);});
     }).catch(function(){alert('Sem conexao com a placa');});
