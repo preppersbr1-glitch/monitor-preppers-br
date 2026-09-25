@@ -6,7 +6,7 @@
 
 // Versão do firmware mostrada na abertura, na tela HOME e no Serial
 // v4.x = ajustes e recursos menores (sobe o número depois do ponto); v5 só em mudança grande
-#define FW_VERSION "v4.3"
+#define FW_VERSION "v4.4"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -110,8 +110,9 @@
 // bat = bateria informada no beacon (-1 = ainda não sabe)
 struct Node { char id[8]; float lat,lon,alt; bool sos; unsigned long last_ms; int8_t hops; int16_t rssi; int8_t snr; int8_t bat; };
 // pid = id do pacote LoRa (só nas enviadas) · acks = quantas placas confirmaram o recebimento (✓✓)
-struct Msg  { char from[8]; char text[MSG_LEN]; bool mine; uint32_t pid; uint8_t acks; };
-struct DMsg { char peer[8]; char from[8]; char text[DM_LEN]; bool mine; uint32_t pid; uint8_t acks; };
+// tries/tx_ms = reenvios automáticos quando a confirmação não chega (só nas enviadas)
+struct Msg  { char from[8]; char text[MSG_LEN]; bool mine; uint32_t pid; uint8_t acks; uint8_t tries; unsigned long tx_ms; };
+struct DMsg { char peer[8]; char from[8]; char text[DM_LEN]; bool mine; uint32_t pid; uint8_t acks; uint8_t tries; unsigned long tx_ms; };
 struct Cfg  { char callsign[8]; float lora_freq,lora_bw; uint8_t lora_sf;
               uint32_t beacon_s; char wifi_pass[32]; };
 
@@ -159,6 +160,10 @@ int ack_ver=0, ble_ack_ver=-1;
 struct PendAck { char to[8]; uint32_t pid; unsigned long due; };
 #define MAX_PEND_ACK 6
 PendAck pend_acks[MAX_PEND_ACK]; int n_pend_acks=0;
+// Privadas que esta placa já confirmou: se chegar reenvio (mesmo pid) é porque a confirmação se perdeu
+#define MAX_ACKED 8
+struct AckedPid { uint32_t pid; char to[8]; unsigned long ms; };
+AckedPid acked[MAX_ACKED]; int acked_head=0;
 // Aviso de mensagem nova: tela cheia por alguns segundos + LED + bip
 #define NOTIF_MS   6000
 unsigned long notif_until=0;
@@ -330,8 +335,10 @@ bool dedupSeen(uint32_t id){
     dedupBuf[dedupHead]={id,now}; dedupHead=(dedupHead+1)%DEDUP_SZ;
     return false;
 }
-uint32_t meshTx(const char* pt){
-    uint32_t pid=esp_random();
+uint32_t meshTxPid(const char* pt,uint32_t pid);
+uint32_t meshTx(const char* pt){ return meshTxPid(pt,esp_random()); }
+// Reenvio usa o MESMO pid: quem já recebeu descarta a cópia (dedup) e não duplica a mensagem
+uint32_t meshTxPid(const char* pt,uint32_t pid){
     size_t n=strlen(pt); if(n>115) n=115;
     uint8_t buf[120];
     buf[0]=pid&0xFF; buf[1]=(pid>>8)&0xFF; buf[2]=(pid>>16)&0xFF; buf[3]=(pid>>24)&0xFF;
@@ -541,8 +548,9 @@ void loraParse(String &raw,uint32_t pid){
             scopy(dms[n_dms].peer,dm_from.c_str(),sizeof(dms[n_dms].peer));
             scopy(dms[n_dms].from,dm_from.c_str(),sizeof(dms[n_dms].from));
             scopy(dms[n_dms].text,pay.c_str(),DM_LEN);
-            dms[n_dms].mine=false; dms[n_dms].pid=0; dms[n_dms].acks=0; n_dms++; dm_ver++; page=4; dirty=true;
+            dms[n_dms].mine=false; dms[n_dms].pid=0; dms[n_dms].acks=0; dms[n_dms].tries=0; n_dms++; dm_ver++; page=4; dirty=true;
             queueAck(dm_from.c_str(),pid,random(150,700));
+            acked[acked_head].pid=pid; acked[acked_head].ms=millis(); scopy(acked[acked_head].to,dm_from.c_str(),sizeof(acked[0].to)); acked_head=(acked_head+1)%MAX_ACKED;
             newMsgAlert("MSG PRIVADA",dm_from.c_str(),pay.c_str(),2,120);
             Serial.printf("[DM] de %s: %s\n",dm_from.c_str(),pay.c_str());
         }
@@ -564,7 +572,7 @@ void loraParse(String &raw,uint32_t pid){
         if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         scopy(msgs[n_msgs].text,pay.c_str(),MSG_LEN);
-        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; page=3; dirty=true;
+        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; msgs[n_msgs].tries=0; n_msgs++; msg_ver++; page=3; dirty=true;
         queueAck(sid.c_str(),pid,random(300,2500));   // atraso aleatório: várias placas respondendo não colidem
         newMsgAlert("NOVA MENSAGEM",sid.c_str(),pay.c_str(),1,150);
     } else if(type=='S'){
@@ -574,7 +582,7 @@ void loraParse(String &raw,uint32_t pid){
         if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         snprintf(msgs[n_msgs].text,MSG_LEN,"!SOS! %s",sid.c_str());
-        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; page=3; dirty=true;
+        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; msgs[n_msgs].tries=0; n_msgs++; msg_ver++; page=3; dirty=true;
         newMsgAlert("!!  SOS  !!",sid.c_str(),"Pedido de socorro na rede",5,350);
     }
 }
@@ -588,7 +596,13 @@ void loraRX(){
     l_rssi=radio.getRSSI();
     uint32_t pid=(uint32_t)rxBuf[0]|((uint32_t)rxBuf[1]<<8)|
                  ((uint32_t)rxBuf[2]<<16)|((uint32_t)rxBuf[3]<<24);
-    if(dedupSeen(pid)){ radio.startReceive(); return; }
+    if(dedupSeen(pid)){
+        // reenvio de uma privada que já confirmamos: confirma de novo (a primeira confirmação se perdeu).
+        // Cópias repassadas por outras placas chegam em menos de 2 s e não contam.
+        for(int i=0;i<MAX_ACKED;i++) if(acked[i].pid==pid&&pid&&millis()-acked[i].ms>2000){
+            queueAck(acked[i].to,pid,random(150,700)); acked[i].ms=millis(); break; }
+        radio.startReceive(); return;
+    }
     size_t encLen=rxLen-4;
     uint8_t plain[116]={0};
     meshCrypt(rxBuf+4,plain,encLen,pid);
@@ -631,7 +645,7 @@ void loraTxChat(const char* msg){
     if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
     scopy(msgs[n_msgs].from,cfg.callsign,sizeof(msgs[n_msgs].from));
     scopy(msgs[n_msgs].text,msg,MSG_LEN);
-    msgs[n_msgs].mine=true; msgs[n_msgs].pid=pid; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; dirty=true;
+    msgs[n_msgs].mine=true; msgs[n_msgs].pid=pid; msgs[n_msgs].acks=0; msgs[n_msgs].tries=0; msgs[n_msgs].tx_ms=millis(); n_msgs++; msg_ver++; dirty=true;
 }
 void loraTxSOS(){
     char buf[80];
@@ -650,7 +664,34 @@ void loraTxDM(const char* to, const char* msg){
     scopy(dms[n_dms].peer,to,sizeof(dms[n_dms].peer));
     scopy(dms[n_dms].from,cfg.callsign,sizeof(dms[n_dms].from));
     scopy(dms[n_dms].text,msg,DM_LEN);
-    dms[n_dms].mine=true; dms[n_dms].pid=pid; dms[n_dms].acks=0; n_dms++; dm_ver++;
+    dms[n_dms].mine=true; dms[n_dms].pid=pid; dms[n_dms].acks=0; dms[n_dms].tries=0; dms[n_dms].tx_ms=millis(); n_dms++; dm_ver++;
+}
+// ── Reenvio automático ────────────────────────────────────────
+// Se a confirmação (✓✓) não chega, a placa transmite de novo com o mesmo pid: a primeira cópia pode
+// ter colidido com o beacon de outra placa ou se perdido. Privada: até 2 reenvios; chat: 1.
+#define RETRY_DM_MS    3500
+#define RETRY_CHAT_MS  5000
+#define MAX_RETRY_DM   2
+#define MAX_RETRY_CHAT 1
+void processRetries(){
+    if(!l_ok) return;
+    unsigned long now=millis(); char buf[128];
+    for(int i=0;i<n_dms;i++){
+        DMsg& d=dms[i];
+        if(!d.mine||d.acks||d.tries>=MAX_RETRY_DM||now-d.tx_ms<RETRY_DM_MS) continue;
+        snprintf(buf,sizeof(buf),"D[%s>%s]%s|H:%d",cfg.callsign,d.peer,d.text,MESH_HOP);
+        meshTxPid(buf,d.pid); d.tries++; d.tx_ms=now;
+        Serial.printf("[RETRY] privada %08X tentativa %d\n",d.pid,d.tries+1);
+        return;   // um reenvio por volta do loop
+    }
+    for(int i=0;i<n_msgs;i++){
+        Msg& m=msgs[i];
+        if(!m.mine||m.acks||m.tries>=MAX_RETRY_CHAT||now-m.tx_ms<RETRY_CHAT_MS) continue;
+        snprintf(buf,sizeof(buf),"C[%s]%s|H:%d",cfg.callsign,m.text,MESH_HOP);
+        meshTxPid(buf,m.pid); m.tries++; m.tx_ms=now;
+        Serial.printf("[RETRY] chat %08X tentativa %d\n",m.pid,m.tries+1);
+        return;
+    }
 }
 
 // ============================================================
@@ -1285,6 +1326,7 @@ void loop(){
     webServer.handleClient();
     processCmds();
     processAcks();
+    processRetries();
     processCfgBle();
     bleUpdate();
     handleButton();
