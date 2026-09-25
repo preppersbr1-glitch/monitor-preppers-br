@@ -12,86 +12,86 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
 body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
-.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo-text{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
-.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:4px;margin-top:1px}
+.logo{display:flex;align-items:center;gap:12px}.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:4px;margin-top:1px}
 .header-status{display:flex;align-items:center;gap:20px}
-.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 nav{display:flex;align-items:center;gap:4px}
-nav a{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
+nav a{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid transparent;border-radius:3px;transition:all 0.2s}
 nav a:hover,nav a.active{color:var(--green);border-color:var(--green3);background:rgba(0,255,136,0.05)}
-.clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green2);letter-spacing:2px}
+.clock{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--green2);letter-spacing:2px}
 main{position:relative;z-index:1;padding:20px 24px;max-width:1600px;margin:0 auto}
-.page-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
-.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
+.page-title{font-family:'Orbitron',sans-serif;font-size:23px;font-weight:900;letter-spacing:4px;color:var(--green);margin-bottom:6px;text-shadow:0 0 30px rgba(0,255,136,0.3)}
+.page-subtitle{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
 footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;margin-top:40px;text-align:center}
-footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
 .card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,255,136,0.03);flex-wrap:wrap;gap:8px}
-.card-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'▮';color:var(--green2);font-size:8px}
-.card-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+.card-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'▮';color:var(--green2);font-size:10px}
+.card-badge{font-family:'Share Tech Mono',monospace;font-size:11px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
 .badge-live{background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)}
 .badge-ok{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
 .badge-warn{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.3)}
 /* LOGIN */
 #login-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.97);z-index:200;display:flex;align-items:center;justify-content:center}
 .login-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:40px;max-width:420px;width:90%;text-align:center}
-.login-box h2{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:4px;color:var(--green);margin-bottom:6px}
-.login-box p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:20px;line-height:1.7;letter-spacing:1px}
-.login-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green);font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:14px;border-radius:3px;outline:none;text-align:center;transition:border 0.2s}
+.login-box h2{font-family:'Orbitron',sans-serif;font-size:17px;letter-spacing:4px;color:var(--green);margin-bottom:6px}
+.login-box p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.7;letter-spacing:1px}
+.login-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green);font-family:'Orbitron',sans-serif;font-size:17px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:14px;border-radius:3px;outline:none;text-align:center;transition:border 0.2s}
 .login-box input:focus{border-color:var(--green3)}
-.login-box input::placeholder{color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:none;font-weight:400;font-family:'Share Tech Mono',monospace}
-.login-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:1px}
-.login-err{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);margin-top:8px;display:none;letter-spacing:1px}
+.login-box input::placeholder{color:var(--muted);font-size:13px;letter-spacing:1px;text-transform:none;font-weight:400;font-family:'Share Tech Mono',monospace}
+.login-hint{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:8px;letter-spacing:1px}
+.login-err{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--red);margin-top:8px;display:none;letter-spacing:1px}
 /* USER BAR */
 .user-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:4px;flex-wrap:wrap;gap:8px}
 .user-info{display:flex;align-items:center;gap:10px}
-.user-avatar{width:32px;height:32px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green)}
-.user-name{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--green)}
-.user-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.user-avatar{width:32px;height:32px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green)}
+.user-name{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:2px;color:var(--green)}
+.user-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px}
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat-box{text-align:center;padding:16px 10px;background:var(--card);border:1px solid var(--border);border-radius:4px}
-.stat-num{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--green);text-shadow:0 0 15px rgba(0,255,136,0.3)}
-.stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.stat-num{font-family:'Orbitron',sans-serif;font-size:25px;font-weight:900;color:var(--green);text-shadow:0 0 15px rgba(0,255,136,0.3)}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:4px}
 /* MODO FÓRUM / BATE-PAPO */
 .mode-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.mode-tab{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;padding:10px 16px;border-radius:3px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer}
+.mode-tab{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;padding:10px 16px;border-radius:3px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer}
 .mode-tab.on{border-color:var(--green2);color:var(--green);background:rgba(0,255,136,0.08)}
 .mode-tab .live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);margin-left:6px;vertical-align:middle}
 /* BATE-PAPO */
 .chat-layout{display:grid;grid-template-columns:200px 1fr 200px;gap:16px}
-.room{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;font-weight:600;color:var(--text)}
+.room{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:16px;font-weight:600;color:var(--text)}
 .room:hover{background:rgba(0,255,136,0.04)}
 .room.on{background:rgba(0,255,136,0.08);color:var(--green);border-left:2px solid var(--green)}
-.room .rc{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)}
+.room .rc{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)}
 .chat-box{display:flex;flex-direction:column;height:62vh;min-height:380px}
-.chat-msgs{flex:1;overflow-y:auto;padding:10px 14px;font-size:15px;line-height:1.5}
+.chat-msgs{flex:1;overflow-y:auto;padding:10px 14px;font-size:16px;line-height:1.5}
 .cm{padding:3px 0;word-wrap:break-word;position:relative}
-.cm .ct{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-right:6px}
+.cm .ct{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-right:6px}
 .cm .cn{font-weight:700;cursor:pointer}
 .cm .cn:hover{text-decoration:underline}
 .cm.me{background:rgba(0,255,136,0.03)}
 .cm.mention{background:rgba(255,179,0,0.08);border-left:2px solid var(--amber);padding-left:6px}
-.cm .cd{display:none;margin-left:6px;background:none;border:1px solid var(--border);color:var(--muted);font-size:9px;padding:1px 6px;border-radius:2px;cursor:pointer}
+.cm .cd{display:none;margin-left:6px;background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:1px 6px;border-radius:2px;cursor:pointer}
 .cm:hover .cd{display:inline-block}
 .cm .cd:hover{border-color:rgba(255,51,51,0.4);color:var(--red)}
-.cm-sys{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:6px 0}
+.cm-sys{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);text-align:center;padding:6px 0}
 .chat-send{display:flex;gap:8px;padding:10px;background:rgba(0,255,136,0.02)}
-.chat-send input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:10px 12px;border-radius:3px;outline:none}
+.chat-send input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:17px;padding:10px 12px;border-radius:3px;outline:none}
 .chat-send input:focus{border-color:var(--green3)}
-.chat-to{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 10px 0;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
-.chat-to select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;padding:5px 8px;border-radius:3px;max-width:180px}
+.chat-to{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 10px 0;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:1px}
+.chat-to select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;padding:5px 8px;border-radius:3px;max-width:180px}
 .chat-to label{display:flex;align-items:center;gap:6px;cursor:pointer}
 .chat-to input[type=checkbox]{accent-color:#bb66ff;width:16px;height:16px}
 .cm.pm{background:rgba(170,0,255,0.08);border-left:2px solid #bb66ff;padding-left:6px}
-.cm .pmtag{font-family:'Share Tech Mono',monospace;font-size:10px;color:#bb66ff;margin-right:4px}
+.cm .pmtag{font-family:'Share Tech Mono',monospace;font-size:12px;color:#bb66ff;margin-right:4px}
 .chat-send.priv input{border-color:#bb66ff}
-.chat-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);padding:0 12px 8px;min-height:14px}
-.who{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(26,61,42,0.5);font-size:14px;font-weight:600;cursor:pointer}
+.chat-hint{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);padding:0 12px 8px;min-height:14px}
+.who{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(26,61,42,0.5);font-size:16px;font-weight:600;cursor:pointer}
 .who:hover{background:rgba(0,255,136,0.04)}
 .who .wd{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);flex:none}
 @media(max-width:900px){.chat-layout{grid-template-columns:1fr}#chat-rooms{display:flex;overflow-x:auto}#chat-rooms .room{border-bottom:none;border-right:1px solid var(--border);white-space:nowrap;flex:none}#chat-rooms .room.on{border-left:none;border-bottom:2px solid var(--green)}.chat-box{height:60vh}#chat-who-card{order:3}}
@@ -101,7 +101,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .topic-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s}
 .topic-item:hover{background:rgba(0,255,136,0.04)}
 .topic-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
-.topic-cat{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:1px;flex-shrink:0}
+.topic-cat{font-family:'Share Tech Mono',monospace;font-size:11px;padding:2px 8px;border-radius:2px;letter-spacing:1px;flex-shrink:0}
 .cat-equipamentos{background:rgba(255,179,0,0.1);color:var(--amber);border:1px solid rgba(255,179,0,0.2)}
 .cat-agua{background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)}
 .cat-abrigo{background:rgba(0,255,136,0.1);color:var(--green2);border:1px solid rgba(0,255,136,0.2)}
@@ -109,61 +109,62 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .cat-saude{background:rgba(255,51,51,0.1);color:var(--red);border:1px solid rgba(255,51,51,0.2)}
 .cat-ameacas{background:rgba(255,136,0,0.1);color:#ff8800;border:1px solid rgba(255,136,0,0.2)}
 .cat-geral{background:rgba(0,255,136,0.06);color:var(--muted);border:1px solid var(--border)}
-.topic-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.4}
-.topic-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;display:flex;gap:12px;flex-wrap:wrap}
+.topic-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.4}
+.topic-meta{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:1px;display:flex;gap:12px;flex-wrap:wrap}
 .topic-stats{display:flex;gap:12px;margin-left:auto}
 /* POST */
 .post-item{padding:16px;border-bottom:1px solid var(--border)}
 .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.post-avatar{width:28px;height:28px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green);flex-shrink:0}
-.post-author{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--green)}
-.post-time{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
-.post-body{font-size:14px;line-height:1.7;color:var(--text);padding-left:38px;white-space:pre-wrap;word-wrap:break-word}
+.post-avatar{width:28px;height:28px;background:var(--green3);border:1px solid var(--green2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--green);flex-shrink:0}
+.post-author{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:var(--green)}
+.post-time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px}
+.post-body{font-size:16px;line-height:1.7;color:var(--text);padding-left:38px;white-space:pre-wrap;word-wrap:break-word}
 .post-actions{padding-left:38px;margin-top:8px}
-.post-action-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
+.post-action-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;padding:3px 10px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
 .post-action-btn.danger:hover{border-color:rgba(255,51,51,0.4);color:var(--red);background:rgba(255,51,51,0.06)}
 .post-actions{display:flex;gap:6px;flex-wrap:wrap}
 .post-edit{padding-left:38px}
-.post-edit input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;text-align:left;padding:10px 12px;margin-bottom:8px}
+.post-edit input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;letter-spacing:0;text-transform:none;text-align:left;padding:10px 12px;margin-bottom:8px}
 .post-edit textarea{margin-bottom:8px}
-.post-edited{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:6px}
+.post-edited{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-left:6px}
 .post-action-btn:hover,.post-action-btn.liked{border-color:var(--green3);color:var(--green);background:rgba(0,255,136,0.06)}
 /* REPLY */
 .reply-box{padding:16px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
-.reply-box textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:12px;border-radius:3px;outline:none;resize:vertical;min-height:80px}
+.reply-box textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:12px;border-radius:3px;outline:none;resize:vertical;min-height:80px}
 .reply-box textarea:focus{border-color:var(--green3)}
 .reply-box textarea::placeholder{color:var(--muted)}
 /* BTNS */
-.btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;border:none}
+.btn{font-family:'Share Tech Mono',monospace;font-size:13px;padding:8px 18px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;border:none}
 .btn-primary{background:var(--green);color:#000;font-weight:bold}.btn-primary:hover{background:var(--green2)}
 .btn-secondary{background:transparent;border:1px solid var(--green3);color:var(--green2)}.btn-secondary:hover{background:rgba(0,255,136,0.1)}
 .btn-back{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-back:hover{color:var(--green2);border-color:var(--green3)}
-.btn-logout{background:transparent;border:1px solid rgba(255,51,51,0.3);color:var(--red);font-size:10px;padding:5px 12px}.btn-logout:hover{background:rgba(255,51,51,0.1)}
+.btn-logout{background:transparent;border:1px solid rgba(255,51,51,0.3);color:var(--red);font-size:12px;padding:5px 12px}.btn-logout:hover{background:rgba(255,51,51,0.1)}
 /* SIDEBAR */
-.cat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.cat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
 .cat-list-item:hover{background:rgba(0,255,136,0.04)}
 .cat-list-item.active{background:rgba(0,255,136,0.06);color:var(--green)}
-.cat-icon{font-size:16px;width:24px;text-align:center}
-.cat-count{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)}
+.cat-icon{font-size:17px;width:24px;text-align:center}
+.cat-count{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)}
 .rule-item{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
-.rule-num{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;color:var(--green);width:24px;flex-shrink:0}
-.rule-text{font-size:12px;color:var(--muted);line-height:1.5}
+.rule-num{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--green);width:24px;flex-shrink:0}
+.rule-text{font-size:14px;color:var(--muted);line-height:1.5}
 /* MODAL */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,8,0.9);z-index:150;display:none;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:24px;max-width:600px;width:90%}
-.modal-box h3{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:3px;color:var(--green);margin-bottom:16px}
-.modal-box label{display:block;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin:14px 0 6px}
-.modal-box input,.modal-box textarea,.modal-box select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:10px 14px;border-radius:3px;outline:none}
+.modal-box h3{font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:3px;color:var(--green);margin-bottom:16px}
+.modal-box label{display:block;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px;margin:14px 0 6px}
+.modal-box input,.modal-box textarea,.modal-box select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:10px 14px;border-radius:3px;outline:none}
 .modal-box select{appearance:none;cursor:pointer}
 .modal-box input:focus,.modal-box textarea:focus,.modal-box select:focus{border-color:var(--green3)}
 .modal-box textarea{resize:vertical;min-height:120px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
-.loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);animation:blink 1.5s infinite}
+.loading{padding:30px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 @media(max-width:900px){header{flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px}nav{flex-wrap:wrap}main{padding:16px}.forum-layout{grid-template-columns:1fr!important}.stats-row{grid-template-columns:repeat(2,1fr)}}
 </style>
 <script src="senha.js" defer></script>
+<link rel="stylesheet" href="ajustes.css">
 </head>
 <body>
 <!-- ══ LOGIN SCREEN ══ -->
@@ -177,8 +178,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <input type="email" id="login-email" placeholder="seu@email.com" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')doLogin()">
       <input type="password" id="login-pass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="login-err" id="login-err"></div>
-      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" id="login-btn" onclick="doLogin()">ENTRAR →</button></div>
-      <div style="margin-top:14px;text-align:center"><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">Não tem conta? </span><button onclick="showRegister()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-decoration:underline;letter-spacing:1px">CADASTRAR</button></div>
+      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" id="login-btn" onclick="doLogin()">ENTRAR →</button></div>
+      <div style="margin-top:14px;text-align:center"><span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)">Não tem conta? </span><button onclick="showRegister()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:12px;cursor:pointer;text-decoration:underline;letter-spacing:1px">CADASTRAR</button></div>
     </div>
     <!-- cadastro -->
     <div id="form-register" style="display:none">
@@ -188,8 +189,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <input type="password" id="reg-pass" placeholder="Senha (mín. 6 caracteres)" style="margin-bottom:10px">
       <input type="password" id="reg-pass2" placeholder="Confirmar senha" onkeydown="if(event.key==='Enter')doRegister()">
       <div class="login-err" id="reg-err"></div>
-      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px" id="reg-btn" onclick="doRegister()">CRIAR CONTA →</button></div>
-      <div style="margin-top:14px;text-align:center"><button onclick="showLogin()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-decoration:underline;letter-spacing:1px">← VOLTAR PARA LOGIN</button></div>
+      <div style="margin-top:18px"><button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" id="reg-btn" onclick="doRegister()">CRIAR CONTA →</button></div>
+      <div style="margin-top:14px;text-align:center"><button onclick="showLogin()" style="background:none;border:none;color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:12px;cursor:pointer;text-decoration:underline;letter-spacing:1px">← VOLTAR PARA LOGIN</button></div>
     </div>
   </div>
 </div>
@@ -243,7 +244,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
   <div class="forum-layout" id="forum-view">
     <div id="topics-view">
       <div class="card">
-        <div class="card-header"><span class="card-title">TÓPICOS <span id="filter-label" style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-left:8px">— TODOS</span></span><span class="card-badge badge-ok" id="topics-count-badge">—</span></div>
+        <div class="card-header"><span class="card-title">TÓPICOS <span id="filter-label" style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;margin-left:8px">— TODOS</span></span><span class="card-badge badge-ok" id="topics-count-badge">—</span></div>
         <div id="topics-list"><div class="loading">▋ CARREGANDO TÓPICOS...</div></div>
       </div>
     </div>
@@ -252,8 +253,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <div class="card-header"><button class="btn btn-back" onclick="backToTopics()">← VOLTAR</button><span class="card-badge badge-ok" id="topic-reply-count">—</span></div>
         <div id="topic-header-area" style="padding:16px;border-bottom:1px solid var(--border)">
           <div id="topic-cat-display"></div>
-          <div id="topic-title-display" style="font-size:18px;font-weight:700;color:var(--text);line-height:1.4;margin:8px 0 6px"></div>
-          <div id="topic-meta-display" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px"></div>
+          <div id="topic-title-display" style="font-size:19px;font-weight:700;color:var(--text);line-height:1.4;margin:8px 0 6px"></div>
+          <div id="topic-meta-display" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:1px"></div>
         </div>
         <div id="posts-list"></div>
         <div class="reply-box">
@@ -435,12 +436,12 @@ async function loadTopics(){
 
 function renderTopics(){
   var c=document.getElementById('topics-list');var entries=Object.entries(allTopics);
-  if(!entries.length){c.innerHTML='<div style="padding:30px;text-align:center;font-family:monospace;font-size:12px;color:var(--muted)">Nenhum tópico ainda. Seja o primeiro a criar!</div>';document.getElementById('topics-count-badge').textContent='0';return}
+  if(!entries.length){c.innerHTML='<div style="padding:30px;text-align:center;font-family:monospace;font-size:14px;color:var(--muted)">Nenhum tópico ainda. Seja o primeiro a criar!</div>';document.getElementById('topics-count-badge').textContent='0';return}
   var filtered=currentFilter==='all'?entries:entries.filter(function(e){return e[1].category===currentFilter});
   filtered.sort(function(a,b){if(a[1].pinned&&!b[1].pinned)return -1;if(!a[1].pinned&&b[1].pinned)return 1;return(b[1].createdAt||0)-(a[1].createdAt||0)});
   document.getElementById('topics-count-badge').textContent=filtered.length+' TÓPICO'+(filtered.length!==1?'S':'');
   var h='';for(var i=0;i<filtered.length;i++){var id=filtered[i][0],t=filtered[i][1];var cat=t.category||'geral';
-    h+='<div class="topic-item" onclick="openTopic(\''+id+'\')"><div class="topic-top"><span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>'+(t.pinned?'<span style="font-family:monospace;font-size:9px;color:var(--amber)">📌 FIXADO</span>':'')+'</div><div class="topic-title">'+esc(t.title)+'</div><div class="topic-meta"><span>por <strong style="color:var(--green2)">'+esc(t.author)+'</strong></span><span>'+timeAgo(t.createdAt)+'</span><div class="topic-stats"><span>💬 '+(t.replyCount||0)+'</span><span>▲ '+(t.likes||0)+'</span></div></div></div>'}
+    h+='<div class="topic-item" onclick="openTopic(\''+id+'\')"><div class="topic-top"><span class="topic-cat cat-'+cat+'">'+(CAT_LABELS[cat]||'💬 GERAL')+'</span>'+(t.pinned?'<span style="font-family:monospace;font-size:11px;color:var(--amber)">📌 FIXADO</span>':'')+'</div><div class="topic-title">'+esc(t.title)+'</div><div class="topic-meta"><span>por <strong style="color:var(--green2)">'+esc(t.author)+'</strong></span><span>'+timeAgo(t.createdAt)+'</span><div class="topic-stats"><span>💬 '+(t.replyCount||0)+'</span><span>▲ '+(t.likes||0)+'</span></div></div></div>'}
   c.innerHTML=h}
 
 function filterCat(cat,el){currentFilter=cat;var label=cat==='all'?'TODOS':cat.toUpperCase();

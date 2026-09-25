@@ -1,0 +1,15 @@
+/* Ajustes comuns a todas as páginas — PREPPERS BR
+   As fontes foram aumentadas para leitura no celular; no computador o cabeçalho (logo + 8 links + relógio)
+   deixou de caber em telas médias: aqui o menu fica mais compacto sem voltar a letra pequena. */
+@media (min-width: 901px) and (max-width: 1500px) {
+  header nav a { padding-left: 8px !important; padding-right: 8px !important; letter-spacing: 1px !important; }
+  header { gap: 12px !important; }
+}
+@media (min-width: 901px) and (max-width: 1320px) {
+  header .clock, header .header-status .clock { display: none !important; }
+}
+/* No celular o menu (rótulos curtos em maiúsculas) mantém o tamanho de antes: o cabeçalho fica fixo no topo
+   e, se crescer, rouba espaço de leitura. O aumento de letra vale para o conteúdo. */
+@media (max-width: 900px) {
+  header nav a { font-size: 11px !important; padding: 4px 7px !important; letter-spacing: 1px !important; }
+}
