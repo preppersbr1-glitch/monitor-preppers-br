@@ -27,6 +27,7 @@ body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-directio
 .mt{color:#444;font-size:10px;display:block}
 .mi .mt{color:#686}.mo .mt{color:#886}
 .mi .tx{color:#0f0}.mo .tx{color:#ff0}
+.ck{margin-left:6px;font-size:10px;color:#886}.ck.ok{color:#0af}
 #inp{background:#111;padding:8px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:2px solid #0f0;display:flex;gap:6px;flex-shrink:0}
 #txf{flex:1;background:#1a1a1a;color:#0f0;border:1px solid #0f0;padding:10px 8px;font:16px monospace;border-radius:6px;outline:none}
 #snd{background:#0f0;color:#000;border:none;padding:10px 14px;font:bold 14px monospace;border-radius:6px;cursor:pointer;flex-shrink:0}
@@ -230,7 +231,11 @@ body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-directio
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── Estado global ──────────────────────────────────────────
-var cnt=-1, dm_ver_seen=-1;
+var cnt=-1, dm_ver_seen=-1, akChat=-1, akDm=-1;
+// ✓ = sua placa transmitiu · ✓✓ = outra placa confirmou (no chat aberto, com o número de placas)
+function ck(m,chat){if(!m.mine)return '';if(m.a===undefined)return '<span class="ck" title="enviando">…</span>';
+  if(!m.a)return '<span class="ck" title="enviada pelo radio">\u2713</span>';
+  return '<span class="ck ok" title="recebida por '+m.a+' placa(s)">\u2713\u2713'+(chat&&m.a>1?' '+m.a:'')+'</span>';}
 var lmap=null, myMk=null, celMk=null, ndMks={};
 var dLat=0, dLon=0, dFix=false;
 var cLat=0, cLon=0, cOk=false;
@@ -279,7 +284,7 @@ function renderDM(){
   msgs.forEach(function(m){
     var dv=document.createElement('div');
     dv.className=m.mine?'mo':'mi';
-    dv.innerHTML='<span class="mt">'+esc(m.from)+'</span><span class="tx">'+esc(m.text)+'</span>';
+    dv.innerHTML='<span class="mt">'+esc(m.from)+'</span><span class="tx">'+esc(m.text)+'</span>'+ck(m,false);
     el.appendChild(dv);
   });
   el.scrollTop=el.scrollHeight;
@@ -545,32 +550,33 @@ function upd(){
     if(d.temp)document.getElementById('wt').textContent=d.temp+'\xb0C';
 
     // ── Mensagens radio (chat aberto) ─────────────────────────
-    if(d.mn!==cnt){
-      cnt=d.mn;
+    var mnChanged=(d.mn!==cnt);
+    if(mnChanged||d.ak!==akChat){
+      cnt=d.mn;akChat=d.ak;
       var el=document.getElementById('msgs');el.innerHTML='';
       var lastIncoming=null;
       (d.msgs||[]).forEach(function(m){
         var dv=document.createElement('div');
         dv.className=m.mine?'mo':'mi';
-        dv.innerHTML='<span class="mt">'+esc(m.from)+'</span><span class="tx">'+esc(m.text)+'</span>';
+        dv.innerHTML='<span class="mt">'+esc(m.from)+'</span><span class="tx">'+esc(m.text)+'</span>'+ck(m,true);
         el.appendChild(dv);
         if(!m.mine)lastIncoming=m;
       });
       el.scrollTop=el.scrollHeight;
       // Auto-abrir aba RADIO quando chega mensagem de outro nó
-      if(lastIncoming) stab(0);
+      if(lastIncoming&&mnChanged) stab(0);
     }
 
     // ── DMs (mensagens privadas) ───────────────────────────────
-    if(d.dmver!==undefined&&d.dmver!==dm_ver_seen){
+    if(d.dmver!==undefined&&(d.dmver!==dm_ver_seen||d.ak!==akDm)){
       var isNew=(dm_ver_seen>=0&&d.dmver>dm_ver_seen);
-      dm_ver_seen=d.dmver;
+      dm_ver_seen=d.dmver;akDm=d.ak;
       // Reconstruir dmStore do servidor (fonte de verdade)
       dmStore={};
       var latestIncomingPeer=null;
       (d.dms||[]).forEach(function(dm){
         if(!dmStore[dm.peer])dmStore[dm.peer]=[];
-        dmStore[dm.peer].push({from:dm.from,text:dm.text,mine:dm.mine});
+        dmStore[dm.peer].push({from:dm.from,text:dm.text,mine:dm.mine,a:dm.a});
         if(!dm.mine)latestIncomingPeer=dm.peer;
       });
       if(isNew&&latestIncomingPeer){

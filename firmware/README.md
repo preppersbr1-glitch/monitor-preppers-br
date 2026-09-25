@@ -44,3 +44,12 @@ quem mandou e o texto (6 s, ou até apertar o botão PRG), pisca o LED branco e 
 **Bip:** a Heltec V4 não tem buzzer de fábrica. Solde um buzzer de 3,3 V (ativo ou passivo)
 entre o **GPIO4** e o **GND**. Para desativar ou trocar o pino, mude `BUZZER_PIN` no `.ino`
 (`-1` desativa).
+
+## Confirmação de entrega (✓ / ✓✓)
+
+- **✓** a sua placa transmitiu a mensagem pelo rádio.
+- **✓✓** outra placa recebeu e respondeu uma confirmação (`K[DE>PARA]PID`, o id do pacote LoRa).
+  No chat aberto aparece quantas placas confirmaram; na privada, só o destinatário confirma.
+
+A confirmação é um pacote pequeno, sem reenvio: se ela se perder (colisão, placa longe), a
+mensagem pode ter chegado e mesmo assim ficar só com ✓. Todas as placas precisam do firmware v5.

@@ -55,6 +55,8 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
 .m .who{display:block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-bottom:2px;color:var(--muted)}
 .m.in{align-self:flex-start;background:#0a1a0f;border:1px solid var(--border)}
 .m.out{align-self:flex-end;background:#1a1a05;border:1px solid #3a3a10;color:#fff7a0}
+.ck{display:block;text-align:right;font-size:13px;font-weight:700;letter-spacing:-1px;color:var(--muted);margin-top:2px}
+.ck.ok{color:var(--blue)}
 .m.sos{border-color:var(--red);background:rgba(255,51,51,0.1);color:#ffb0b0}
 .empty{margin:auto;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8}
 .compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
@@ -110,7 +112,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 24</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 25</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -165,6 +167,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
           <button class="btn" onclick="sendChat()">ENVIAR</button>
         </div>
         <div class="count" id="chat-count">0/55</div>
+        <div class="count" style="text-align:left">✓ enviada pelo rádio · <span style="color:var(--blue)">✓✓</span> recebida (no chat aberto, com o nº de placas)</div>
       </div>
 
       <!-- CONTATOS / PRIVADO -->
@@ -395,11 +398,17 @@ function renderStatus(){
   $('s-txrx').textContent=(st.tx||0)+'/'+(st.rx||0);
   renderSos();renderNodes();updMap();
 }
+// ✓ = a placa transmitiu · ✓✓ = outra placa confirmou (firmware v5+; no firmware antigo não aparece nada)
+function ck(m,chat){
+  if(!m.mine||m.a==null)return '';
+  if(!m.a)return '<span class="ck" title="Enviada pelo rádio">✓</span>';
+  return '<span class="ck ok" title="Recebida por '+m.a+' placa(s)">✓✓'+(chat?' '+m.a+(m.a>1?' placas':' placa'):'')+'</span>';
+}
 function renderChat(){
   var el=$('chat');
   if(!chat.length){el.innerHTML='<div class="empty">Nenhuma mensagem ainda.<br>O que você enviar aqui chega a todos os nós da rede.</div>';return}
   var atBottom=el.scrollHeight-el.scrollTop-el.clientHeight<40;
-  el.innerHTML=chat.map(function(m){var sos=/^!SOS!/.test(m.text);return '<div class="m '+(m.mine?'out':'in')+(sos?' sos':'')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+'</div>'}).join('');
+  el.innerHTML=chat.map(function(m){var sos=/^!SOS!/.test(m.text);return '<div class="m '+(m.mine?'out':'in')+(sos?' sos':'')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+ck(m,true)+'</div>'}).join('');
   if(atBottom||chat[chat.length-1].mine)el.scrollTop=el.scrollHeight;
 }
 function myPos(){if(st.fix)return [st.lat,st.lon];if(phone)return phone;return null}
@@ -444,7 +453,7 @@ function closeDm(){dmPeer=null;$('dm').classList.add('hidden');$('nodes').classL
 function renderDm(){
   var el=$('dm-msgs'),list=dms.filter(function(d){return d.peer===dmPeer});
   list.forEach(function(d){if(d.v>seenDmV)seenDmV=d.v});
-  el.innerHTML=list.length?list.map(function(m){return '<div class="m '+(m.mine?'out':'in')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem com '+esc(dmPeer)+'.</div>';
+  el.innerHTML=list.length?list.map(function(m){return '<div class="m '+(m.mine?'out':'in')+'"><span class="who">'+esc(m.from)+'</span>'+esc(m.text)+ck(m,false)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem com '+esc(dmPeer)+'.</div>';
   el.scrollTop=el.scrollHeight;
 }
 function notifyDm(before){
