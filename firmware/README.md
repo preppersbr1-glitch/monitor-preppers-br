@@ -53,3 +53,10 @@ entre o **GPIO4** e o **GND**. Para desativar ou trocar o pino, mude `BUZZER_PIN
 
 A confirmação é um pacote pequeno, sem reenvio: se ela se perder (colisão, placa longe), a
 mensagem pode ter chegado e mesmo assim ficar só com ✓. Todas as placas precisam do firmware v4.1 ou mais novo.
+
+## Configuração pelo Bluetooth (v4.2+)
+
+A aba **⚙️ CONFIG** do app Bluetooth (radio.html) edita call sign, beacon, frequência, SF, banda e
+a senha do WiFi — como o app WiFi. Característica `beb54843-…`: leitura devolve a config em JSON
+(sem a senha); gravação é texto `chave=valor` por linha e **exige `cur` = senha atual do WiFi**
+(o BLE não tem senha própria). A placa responde em `res`/`rid` e reinicia ~2 s depois.

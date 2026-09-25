@@ -62,6 +62,11 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
 .compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:rgba(0,255,136,0.02)}
 .compose input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:10px 12px;border-radius:4px;outline:none}
 .compose input:focus{border-color:var(--green3)}
+.cfg{padding:16px;display:grid;gap:12px;max-width:520px;margin:0 auto}
+.cfg label{display:grid;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted)}
+.cfg input,.cfg select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:9px 11px;border-radius:4px;outline:none;width:100%}
+.cfg input:focus,.cfg select:focus{border-color:var(--green3)}
+.cfg .hint{font-size:11px;color:var(--muted);line-height:1.5}
 .count{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);padding:0 12px 8px;text-align:right}
 /* contatos */
 .node{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(26,61,42,0.5)}
@@ -112,7 +117,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 25</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 26</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -157,6 +162,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
         <button class="tab" data-tab="contatos" onclick="showTab('contatos')">👥 CONTATOS<span class="bdg hidden" id="dm-badge">!</span></button>
         <button class="tab" data-tab="mapa" onclick="showTab('mapa')">🗺️ MAPA</button>
         <button class="tab" data-tab="sos" onclick="showTab('sos')" id="tab-sos">🆘 SOS</button>
+        <button class="tab" data-tab="config" onclick="showTab('config')">⚙️ CONFIG</button>
       </div>
 
       <!-- CHAT ABERTO -->
@@ -201,6 +207,27 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
           <div class="mono" style="font-size:11px;color:var(--muted);line-height:1.7;max-width:460px;margin:0 auto">O SOS é transmitido pela rede LoRa a cada 10 s, com a posição GPS da placa, para todos os nós. Use apenas em emergência real.</div>
         </div>
       </div>
+
+      <!-- CONFIG -->
+      <div class="pane hidden" id="pane-config">
+        <div class="cfg">
+          <div class="hint hidden" id="cfg-old">Esta placa está com firmware antigo, sem configuração por Bluetooth. Grave o firmware v4.2 ou mais novo — ou configure pelo WiFi da placa (192.168.4.1).</div>
+          <div id="cfg-form" class="cfg" style="padding:0">
+            <label>CALL SIGN (ID DA PLACA)<input id="cf-cs" maxlength="7" autocomplete="off" placeholder="PBR01"></label>
+            <label>BEACON — INTERVALO DE POSIÇÃO (s)<input id="cf-bs" type="number" min="5" max="600" inputmode="numeric"></label>
+            <label>FREQUÊNCIA LoRa<select id="cf-f"><option value="915.0">915 MHz (Brasil)</option><option value="868.0">868 MHz</option></select></label>
+            <label>SF — SPREADING FACTOR<select id="cf-sf"><option value="7">SF7 (rápido)</option><option value="8">SF8</option><option value="9">SF9</option><option value="10">SF10</option><option value="11">SF11</option><option value="12">SF12 (alcance)</option></select></label>
+            <label>LARGURA DE BANDA<select id="cf-bw"><option value="62.5">62,5 kHz</option><option value="125.0">125 kHz</option><option value="250.0">250 kHz</option></select></label>
+            <div class="hint">⚠️ Frequência, SF e banda precisam ser <b>iguais em todas as placas</b> da rede, senão elas deixam de se ouvir.</div>
+            <label>NOVA SENHA DO WIFI DA PLACA (opcional, mín. 8)<input id="cf-np" maxlength="31" autocomplete="off" placeholder="deixe em branco para manter"></label>
+            <label>SENHA ATUAL DO WIFI DA PLACA (obrigatória para salvar)<input id="cf-cur" type="password" maxlength="31" autocomplete="off"></label>
+            <div class="hint">A senha atual protege a placa: sem ela, qualquer pessoa por perto com Bluetooth poderia mudar a configuração.</div>
+            <button class="btn" id="cf-save" onclick="saveCfg()">💾 SALVAR E REINICIAR</button>
+            <div id="cf-msg" class="mono" style="font-size:12px;min-height:16px"></div>
+            <div class="hint mono" id="cf-ver"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -220,6 +247,7 @@ window.addEventListener('unhandledrejection',function(ev){var d=document.getElem
 // UUIDs do serviço BLE do firmware PreppersBR (firmware/HeltecV4PreppersV2)
 var SVC ='4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 var UUID={stat:'beb5483e-36e1-4688-b7f5-ea07361b26a8',msgs:'beb5483f-36e1-4688-b7f5-ea07361b26a8',send:'beb54840-36e1-4688-b7f5-ea07361b26a8',sos:'beb54841-36e1-4688-b7f5-ea07361b26a8',dms:'beb54842-36e1-4688-b7f5-ea07361b26a8'};
+var CFG_UUID='beb54843-36e1-4688-b7f5-ea07361b26a8';
 var MSG_MAX=55, DM_MAX=87;   // bytes (MSG_LEN-1 e DM_LEN-1 no firmware)
 
 var dev=null, ch={}, st={}, chat=[], dms=[], dmPeer=null, seenDmV=0, map=null, mk={}, phone=null, wantConnected=false;
@@ -311,6 +339,8 @@ async function setup(){
   try{svc=await server.getPrimaryService(SVC)}
   catch(e){dev.gatt.disconnect();throw new Error('Esse aparelho não tem o serviço PreppersBR. Escolha a placa pelo call sign (ex.: H12FC).')}
   for(var k in UUID)ch[k]=await svc.getCharacteristic(UUID[k]);
+  // configuração só existe no firmware v4.2+
+  try{ch.cfg=await svc.getCharacteristic(CFG_UUID)}catch(e){ch.cfg=null}
   for(var n of ['stat','msgs','dms','sos']){
     (function(name){ch[name].addEventListener('characteristicvaluechanged',function(){refresh(name)})})(n);
     await gatt(function(){return ch[n].startNotifications()});
@@ -348,9 +378,15 @@ function onDisconnected(){
   $('live').classList.add('off');$('btn-reconnect').classList.remove('hidden');
   if(wantConnected){toast('Conexão Bluetooth perdida — tentando reconectar...');setTimeout(reconnect,1500)}
 }
-async function reconnect(){
+// Tenta algumas vezes: depois de salvar a configuração a placa leva alguns segundos para reiniciar
+async function reconnect(tries){
   if(!dev)return;
-  try{await setup();toast('Reconectado')}catch(e){toast('Não reconectou. Aproxime-se da placa e toque em RECONECTAR.')}
+  tries=tries||4;
+  for(var i=0;i<tries;i++){
+    try{await setup();toast('Reconectado');return}catch(e){}
+    if(i<tries-1)await new Promise(function(r){setTimeout(r,3000)});
+  }
+  toast('Não reconectou. Aproxime-se da placa e toque em RECONECTAR.');
 }
 function disconnectBle(){
   wantConnected=false;
@@ -384,9 +420,47 @@ async function toggleSos(){
 // ── Telas ──
 function showTab(t){
   document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===t)});
-  ['chat','contatos','mapa','sos'].forEach(function(p){$('pane-'+p).classList.toggle('hidden',p!==t)});
+  ['chat','contatos','mapa','sos','config'].forEach(function(p){$('pane-'+p).classList.toggle('hidden',p!==t)});
   if(t==='mapa')initMap();
+  if(t==='config')loadCfg();
   if(t==='contatos'){$('dm-badge').classList.add('hidden');if(!dmPeer)renderNodes()}
+}
+// ── Configuração (característica cfg: lê JSON sem a senha; grava "chave=valor" por linha) ──
+function setSel(id,val){var s=$(id);for(var i=0;i<s.options.length;i++)if(Math.abs(parseFloat(s.options[i].value)-val)<0.6)s.selectedIndex=i}
+async function readCfg(){return JSON.parse(dec.decode(await gatt(function(){return ch.cfg.readValue()})))}
+async function loadCfg(){
+  $('cfg-old').classList.toggle('hidden',!!ch.cfg);$('cfg-form').classList.toggle('hidden',!ch.cfg);
+  if(!ch.cfg)return;
+  try{
+    var d=await readCfg();
+    $('cf-cs').value=d.callsign||'';$('cf-bs').value=d.beacon_s||30;
+    setSel('cf-f',d.lora_freq||915);setSel('cf-sf',d.lora_sf||9);setSel('cf-bw',d.lora_bw||125);
+    $('cf-ver').textContent='Firmware da placa: '+(d.ver||'?');
+  }catch(e){$('cf-msg').style.color='var(--red)';$('cf-msg').textContent='Não consegui ler a configuração: '+e.message}
+}
+async function saveCfg(){
+  var msg=$('cf-msg'),cs=$('cf-cs').value.trim(),np=$('cf-np').value,cur=$('cf-cur').value;
+  function err(t){msg.style.color='var(--red)';msg.textContent=t}
+  if(!/^[A-Za-z0-9_-]{1,7}$/.test(cs))return err('Call sign: 1 a 7 letras, números, _ ou -');
+  var bs=parseInt($('cf-bs').value,10);if(!(bs>=5&&bs<=600))return err('Beacon: de 5 a 600 segundos');
+  if(np&&(np.length<8||np.length>31))return err('Nova senha: de 8 a 31 caracteres');
+  if(!cur)return err('Digite a senha atual do WiFi da placa');
+  if(/\n/.test(np+cur))return err('Senha inválida');
+  var rid=String(Date.now()%1e8);
+  var body=['id='+rid,'callsign='+cs,'beacon_s='+bs,'lora_freq='+$('cf-f').value,'lora_sf='+$('cf-sf').value,'lora_bw='+$('cf-bw').value,'wifi_pass='+np,'cur='+cur].join('\n');
+  msg.style.color='var(--amber)';msg.textContent='Salvando...';$('cf-save').disabled=true;
+  try{
+    var data=enc.encode(body);
+    await gatt(function(){return ch.cfg.writeValueWithResponse?ch.cfg.writeValueWithResponse(data):ch.cfg.writeValue(data)});
+    // a placa responde no próprio valor da característica ("res")
+    var d=null;
+    for(var i=0;i<10;i++){await new Promise(function(r){setTimeout(r,300)});d=await readCfg();if(d.rid===rid)break}
+    if(d&&d.rid===rid&&d.res==='OK'){
+      msg.style.color='var(--green)';msg.textContent='Salvo! A placa está reiniciando — reconectando em alguns segundos...';
+      $('cf-cur').value='';$('cf-np').value='';
+    } else err(d&&d.rid===rid?d.res:'A placa não respondeu. Tente de novo.');
+  }catch(e){err('Falha ao salvar: '+e.message)}
+  $('cf-save').disabled=false;
 }
 function renderStatus(){
   $('dev-name').textContent=st.id||dev.name||'PLACA';
@@ -498,7 +572,7 @@ function updMap(){
 if(navigator.geolocation)navigator.geolocation.watchPosition(function(p){phone=[p.coords.latitude,p.coords.longitude];updMap();if(!dmPeer)renderNodes()},function(){},{enableHighAccuracy:true,maximumAge:30000});
 // Funções chamadas pelos botões da página
 window.connectBle=connectBle;window.copyUrl=copyUrl;window.reconnect=reconnect;window.disconnectBle=disconnectBle;
-window.showTab=showTab;window.sendChat=sendChat;window.sendDm=sendDm;window.closeDm=closeDm;window.toggleSos=toggleSos;window.countBytes=countBytes;
+window.showTab=showTab;window.sendChat=sendChat;window.sendDm=sendDm;window.closeDm=closeDm;window.toggleSos=toggleSos;window.countBytes=countBytes;window.saveCfg=saveCfg;
 })();
 </script>
 </body>
