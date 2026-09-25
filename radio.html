@@ -224,14 +224,23 @@ function ago(s){return s==null?'':s<60?'agora':s<3600?Math.round(s/60)+' min':Ma
 
 // iPhone/iPad (inclui iPad que se apresenta como Mac): WebKit não tem Web Bluetooth — o Bluefy tem
 var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-if(!navigator.bluetooth){$(isIOS?'ios':'unsupported').classList.remove('hidden');$('btn-connect').disabled=true;$('btn-all').disabled=true}
-(function diag(){
-  var t='Bluetooth neste navegador: '+(navigator.bluetooth?'SIM':'NÃO');
-  if(navigator.bluetooth&&navigator.bluetooth.getAvailability){
-    navigator.bluetooth.getAvailability().then(function(a){$('diag').textContent=t+' · adaptador: '+(a?'ligado':'DESLIGADO ou sem permissão')},function(){$('diag').textContent=t});
+// O Bluefy injeta navigator.bluetooth depois que a página carrega: se a checagem fosse feita só uma vez
+// no carregamento, os botões ficavam desativados para sempre. Agora confere por alguns segundos e
+// de novo no toque; os botões nunca são desativados.
+function checkBle(){
+  var ok=!!navigator.bluetooth;
+  $('ios').classList.toggle('hidden',ok||!isIOS);
+  $('unsupported').classList.toggle('hidden',ok||isIOS);
+  var t='Bluetooth neste navegador: '+(ok?'SIM':'NÃO')+(isIOS?' · iOS':'');
+  $('diag').textContent=t;
+  if(ok&&navigator.bluetooth.getAvailability){
+    navigator.bluetooth.getAvailability().then(function(a){$('diag').textContent=t+' · adaptador: '+(a?'ligado':'DESLIGADO ou sem permissão')},function(){});
   }
-  $('diag').textContent=t+' · '+(isIOS?'iOS':'')+' '+navigator.userAgent.replace(/^Mozilla\/5\.0 /,'').slice(0,90);
-})();
+  return ok;
+}
+checkBle();
+[300,1000,2500,5000].forEach(function(ms){setTimeout(checkBle,ms)});
+window.addEventListener('load',checkBle);
 function copyUrl(btn){
   var url=location.href.split('#')[0];
   function done(){btn.textContent='✓ COPIADO'}
@@ -244,6 +253,11 @@ function copyUrl(btn){
 // não abrem a lista com o filtro; aí a placa aparece pelo nome (o call sign, ex.: H12FC)
 async function connectBle(all){
   $('conn-err').textContent='';
+  if(!checkBle()){
+    $('conn-err').style.color='var(--amber)';
+    $('conn-err').innerHTML=isIOS?'Este navegador não tem Bluetooth. No iPhone, abra esta página no app <b>Bluefy</b>.':'Este navegador não tem Bluetooth. Use o Chrome ou o Edge.';
+    return;
+  }
   $('conn-err').style.color='var(--muted)';$('conn-err').textContent='Abrindo a lista de aparelhos...';
   var slow=setTimeout(function(){
     $('conn-err').style.color='var(--amber)';
