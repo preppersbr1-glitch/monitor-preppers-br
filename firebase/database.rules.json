@@ -56,6 +56,49 @@
           ".validate": "newData.isString() && newData.val().matches(/^(sentinela|operador|comando)$/)"
         }
       }
+    },
+    "chat": {
+      "$room": {
+        ".read": "auth != null && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/)",
+        ".indexOn": [
+          "ts"
+        ],
+        "$mid": {
+          ".write": "auth != null && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/) && ((!data.exists() && newData.exists() && newData.child('uid').val() == auth.uid && newData.parent().parent().parent().child('chatLast').child(auth.uid).val() == now) || (data.exists() && !newData.exists() && (data.child('uid').val() == auth.uid || (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true))))",
+          ".validate": "newData.hasChildren(['uid','name','text','ts'])",
+          "uid": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+          },
+          "ts": {
+            ".validate": "newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "chatLast": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.val() == now && (!data.exists() || now - data.val() >= 2000)"
+      }
+    },
+    "chatOnline": {
+      "$room": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.uid == $uid && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/)",
+          ".validate": "!newData.exists() || (newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 24)"
+        }
+      }
     }
   }
 }
