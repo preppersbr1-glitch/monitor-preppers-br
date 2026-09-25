@@ -44,6 +44,10 @@
 #define BAT_ADC    1
 #define ADC_CTRL   37
 #define VEXT_PIN   36   // LOW = liga OLED e outros periféricos
+// Bip de mensagem nova: a Heltec V4 NÃO tem buzzer de fábrica. Solde um buzzer de 3,3 V
+// (ativo ou passivo) entre o GPIO4 e o GND. Sem buzzer ligado nada acontece; -1 desativa.
+#define BUZZER_PIN 4
+#define BUZZER_FREQ 2700 // Hz (ressonância da maioria dos buzzers pequenos)
 
 // ── Amplificador de RF (FEM) — Heltec V4 ─────────────────────
 // A V4 tem um FEM externo entre o SX1262 e a antena (PA na transmissão, LNA na recepção).
@@ -141,6 +145,11 @@ uint8_t dedupHead=0;
 
 // ── UI ───────────────────────────────────────────────────────
 int           page=0;
+// Aviso de mensagem nova: tela cheia por alguns segundos + LED + bip
+#define NOTIF_MS   6000
+unsigned long notif_until=0;
+char notif_title[16]="", notif_from[8]="", notif_text[96]="";
+int beep_left=0, beep_on_ms=120; unsigned long beep_next=0; bool beep_state=false;
 bool          dirty=false;
 unsigned long draw_last=0;
 
@@ -422,6 +431,28 @@ int nodeSlot(const String& id){
     return idx;
 }
 
+// Mostra o aviso em tela cheia, pisca o LED e bipa (beeps vezes, on_ms cada). Não bloqueia:
+// o bip é tocado por beepUpdate() no loop.
+void newMsgAlert(const char* title,const char* from,const char* text,int beeps,int on_ms){
+    scopy(notif_title,title,sizeof(notif_title));
+    scopy(notif_from,from,sizeof(notif_from));
+    scopy(notif_text,text,sizeof(notif_text));
+    notif_until=millis()+NOTIF_MS;
+    beep_left=beeps*2; beep_on_ms=on_ms; beep_next=millis(); beep_state=false;
+    dirty=true;
+}
+void beepOut(bool on){
+    digitalWrite(LED_PIN,on?HIGH:LOW);
+#if BUZZER_PIN >= 0
+    ledcWriteTone(BUZZER_PIN,on?BUZZER_FREQ:0);
+#endif
+}
+void beepUpdate(){
+    if(beep_left<=0||(long)(millis()-beep_next)<0) return;
+    beep_state=!beep_state; beepOut(beep_state); beep_left--;
+    beep_next=millis()+(beep_state?beep_on_ms:120);
+    if(beep_left<=0&&beep_state){ beepOut(false); beep_state=false; }
+}
 void loraParse(String &raw){
     if(raw.length()<4 || raw.charAt(1)!='[') return;
     int ei=raw.indexOf(']'); if(ei<0) return;
@@ -449,6 +480,7 @@ void loraParse(String &raw){
             scopy(dms[n_dms].from,dm_from.c_str(),sizeof(dms[n_dms].from));
             scopy(dms[n_dms].text,pay.c_str(),DM_LEN);
             dms[n_dms].mine=false; n_dms++; dm_ver++; page=4; dirty=true;
+            newMsgAlert("MSG PRIVADA",dm_from.c_str(),pay.c_str(),2,120);
             Serial.printf("[DM] de %s: %s\n",dm_from.c_str(),pay.c_str());
         }
         return; // DMs não entram no bloco genérico abaixo
@@ -470,6 +502,7 @@ void loraParse(String &raw){
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         scopy(msgs[n_msgs].text,pay.c_str(),MSG_LEN);
         msgs[n_msgs].mine=false; n_msgs++; msg_ver++; page=3; dirty=true;
+        newMsgAlert("NOVA MENSAGEM",sid.c_str(),pay.c_str(),1,150);
     } else if(type=='S'){
         float la,lo;
         if(sscanf(pay.c_str(),"%f,%f",&la,&lo)>=2){ nodes[idx].lat=la; nodes[idx].lon=lo; }
@@ -478,6 +511,7 @@ void loraParse(String &raw){
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         snprintf(msgs[n_msgs].text,MSG_LEN,"!SOS! %s",sid.c_str());
         msgs[n_msgs].mine=false; n_msgs++; msg_ver++; page=3; dirty=true;
+        newMsgAlert("!!  SOS  !!",sid.c_str(),"Pedido de socorro na rede",5,350);
     }
 }
 
@@ -658,7 +692,25 @@ void drawSOS(){
         u8g2.setCursor(5,42); u8g2.print("Hold 2s p/ ativar SOS");
     }
 }
+void drawNotif(){
+    u8g2.clearBuffer();
+    u8g2.setDrawColor(1); u8g2.drawBox(0,0,128,15);
+    u8g2.setDrawColor(0); u8g2.setFont(u8g2_font_7x13B_tr);
+    u8g2.setCursor((128-u8g2.getStrWidth(notif_title))/2,12); u8g2.print(notif_title);
+    u8g2.setDrawColor(1); u8g2.setFont(u8g2_font_6x10_tr);
+    u8g2.setCursor(0,26); u8g2.print("de: "); u8g2.print(notif_from);
+    // texto quebrado em até 3 linhas de 25 caracteres
+    u8g2.setFont(u8g2_font_5x7_tr);
+    int len=strlen(notif_text);
+    for(int l=0;l<3&&l*25<len;l++){
+        char ln[26]; scopy(ln,notif_text+l*25,sizeof(ln));
+        u8g2.setCursor(0,37+l*9); u8g2.print(ln);
+    }
+    u8g2.setFont(u8g2_font_4x6_tr); u8g2.setCursor(22,63); u8g2.print("PRG: fechar aviso");
+    u8g2.sendBuffer();
+}
 void updateDisplay(){
+    if(notif_until){ drawNotif(); return; }
     u8g2.clearBuffer(); drawStatusBar();
     switch(page){
         case 0: drawHome();   break;
@@ -1001,7 +1053,8 @@ void handleButton(){
     if(state==LOW&&last==HIGH) pms=now;
     if(state==HIGH&&last==LOW){
         unsigned long held=now-pms;
-        if(held>2000&&page==6){ sos_on=!sos_on; if(!sos_on) loraTxBeacon(); dirty=true; }
+        if(notif_until&&held<500){ notif_until=0; dirty=true; }   // toque curto só fecha o aviso
+        else if(held>2000&&page==6){ sos_on=!sos_on; if(!sos_on) loraTxBeacon(); dirty=true; }
         else if(held<500){ page=(page+1)%N_PAGES; dirty=true; }
     }
     last=state;
@@ -1016,6 +1069,9 @@ void setup(){
     Serial.println("\n[BOOT] PreppersBR V2 — Heltec V4");
 
     pinMode(LED_PIN,OUTPUT);
+#if BUZZER_PIN >= 0
+    ledcAttach(BUZZER_PIN,BUZZER_FREQ,8); ledcWriteTone(BUZZER_PIN,0);
+#endif
     for(int i=0;i<6;i++){ digitalWrite(LED_PIN,HIGH); delay(100); digitalWrite(LED_PIN,LOW); delay(100); }
 
     {
@@ -1104,6 +1160,8 @@ void loop(){
     processCmds();
     bleUpdate();
     handleButton();
+    beepUpdate();
+    if(notif_until&&(long)(now-notif_until)>=0){ notif_until=0; dirty=true; }   // aviso acabou: volta para a tela da mensagem
     if(cfg_restart && now-cfg_restart_ms>800) ESP.restart();
     static unsigned long blink_last=0;
     if(page==6&&sos_on&&now-blink_last>=500){ dirty=true; blink_last=now; }
