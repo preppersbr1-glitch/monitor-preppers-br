@@ -106,8 +106,10 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
   <div class="card" id="connect">
     <div style="font-size:42px">🔵</div>
     <p>Ligue a placa, deixe o Bluetooth do aparelho ativado e toque em <b style="color:var(--text)">CONECTAR</b>. Na lista, escolha a sua placa (o nome é o call sign dela, ex.: <b style="color:var(--text)">H12FC</b>).</p>
-    <button class="btn" id="btn-connect" onclick="connectBle()">🔵 CONECTAR À PLACA</button>
+    <button class="btn" id="btn-connect" onclick="connectBle(false)">🔵 CONECTAR À PLACA</button>
+    <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
+    <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6"></div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -222,7 +224,14 @@ function ago(s){return s==null?'':s<60?'agora':s<3600?Math.round(s/60)+' min':Ma
 
 // iPhone/iPad (inclui iPad que se apresenta como Mac): WebKit não tem Web Bluetooth — o Bluefy tem
 var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-if(!navigator.bluetooth){$(isIOS?'ios':'unsupported').classList.remove('hidden');$('btn-connect').disabled=true}
+if(!navigator.bluetooth){$(isIOS?'ios':'unsupported').classList.remove('hidden');$('btn-connect').disabled=true;$('btn-all').disabled=true}
+(function diag(){
+  var t='Bluetooth neste navegador: '+(navigator.bluetooth?'SIM':'NÃO');
+  if(navigator.bluetooth&&navigator.bluetooth.getAvailability){
+    navigator.bluetooth.getAvailability().then(function(a){$('diag').textContent=t+' · adaptador: '+(a?'ligado':'DESLIGADO ou sem permissão')},function(){$('diag').textContent=t});
+  }
+  $('diag').textContent=t+' · '+(isIOS?'iOS':'')+' '+navigator.userAgent.replace(/^Mozilla\/5\.0 /,'').slice(0,90);
+})();
 function copyUrl(btn){
   var url=location.href.split('#')[0];
   function done(){btn.textContent='✓ COPIADO'}
@@ -231,25 +240,38 @@ function copyUrl(btn){
 }
 
 // ── Conexão ──
-async function connectBle(){
+// all=true: lista todos os aparelhos (sem filtro por serviço) — alguns navegadores, como o Bluefy,
+// não abrem a lista com o filtro; aí a placa aparece pelo nome (o call sign, ex.: H12FC)
+async function connectBle(all){
   $('conn-err').textContent='';
+  $('conn-err').style.color='var(--muted)';$('conn-err').textContent='Abrindo a lista de aparelhos...';
+  var slow=setTimeout(function(){
+    $('conn-err').style.color='var(--amber)';
+    $('conn-err').innerHTML='A lista não abriu. Toque em <b>PROCURAR TODOS OS APARELHOS</b> e escolha a placa pelo nome. No iPhone, confira também Ajustes → Bluefy → Bluetooth.';
+  },8000);
   try{
-    dev=await navigator.bluetooth.requestDevice({filters:[{services:[SVC]}],optionalServices:[SVC]});
+    var opts=all?{acceptAllDevices:true,optionalServices:[SVC]}:{filters:[{services:[SVC]}],optionalServices:[SVC]};
+    dev=await navigator.bluetooth.requestDevice(opts);
+    clearTimeout(slow);$('conn-err').textContent='';
     dev.addEventListener('gattserverdisconnected',onDisconnected);
     wantConnected=true;
     await setup();
   }catch(e){
+    clearTimeout(slow);$('conn-err').style.color='';
     // Antes o NotFoundError era ignorado (lista fechada) — mas o Bluefy também o usa quando não acha
     // nenhuma placa ou não tem permissão de Bluetooth, e aí parecia que "nada acontecia"
     $('btn-connect').disabled=false;$('btn-connect').textContent='🔵 CONECTAR À PLACA';
-    if(e.name==='NotFoundError')$('conn-err').innerHTML='Nenhuma placa selecionada ou encontrada.<br>Confira: placa ligada e perto · nenhum outro aparelho conectado nela (a placa aceita <b>uma</b> conexão Bluetooth por vez) · Bluetooth liberado para este app nos Ajustes.';
+    if(all&&e.message&&/service/i.test(e.message))$('conn-err').textContent='Esse aparelho não é uma placa PreppersBR (ou está com firmware antigo). Escolha a placa pelo call sign, ex.: H12FC.';
+    else if(e.name==='NotFoundError')$('conn-err').innerHTML='Nenhuma placa selecionada ou encontrada.<br>Confira: placa ligada e perto · nenhum outro aparelho conectado nela (a placa aceita <b>uma</b> conexão Bluetooth por vez) · Bluetooth liberado para este app nos Ajustes.';
     else $('conn-err').textContent='Não foi possível conectar: '+e.message;
   }
 }
 async function setup(){
   $('btn-connect').disabled=true;$('btn-connect').textContent='CONECTANDO...';
   var server=await dev.gatt.connect();
-  var svc=await server.getPrimaryService(SVC);
+  var svc;
+  try{svc=await server.getPrimaryService(SVC)}
+  catch(e){dev.gatt.disconnect();throw new Error('Esse aparelho não tem o serviço PreppersBR. Escolha a placa pelo call sign (ex.: H12FC).')}
   for(var k in UUID)ch[k]=await svc.getCharacteristic(UUID[k]);
   for(var n of ['stat','msgs','dms','sos']){
     (function(name){ch[name].addEventListener('characteristicvaluechanged',function(){refresh(name)})})(n);
