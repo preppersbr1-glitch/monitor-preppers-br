@@ -948,7 +948,7 @@ String bleBuildCfg(const char* res,const String& rid=""){
     j+=",\"lora_bw\":";   j+=String(cfg.lora_bw,1);
     j+=",\"beacon_s\":";  j+=cfg.beacon_s;
     j+=",\"ver\":\"" FW_VERSION "\"";
-    if(res){ j+=",\"res\":\""; j+=jsonEsc(res); j+="\",\"rid\":\""; j+=jsonEsc(rid); j+="\""; }
+    if(res){ j+=",\"res\":\""; j+=jsonEsc(res); j+="\",\"rid\":\""; j+=jsonEsc(rid.c_str()); j+="\""; }
     j+="}";
     return j;
 }
