@@ -241,7 +241,25 @@ function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){retur
 
 // ══ MAP SETUP ══
 var currentView='2d';
-var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-10,-50],3);
+// Pontos pequenos (aviões 2,5 px, focos de calor 3 px) eram quase impossíveis de acertar:
+// o canvas com "tolerance" aceita cliques perto do ponto (mais folga no toque)
+var isTouch=window.matchMedia&&matchMedia('(hover: none)').matches;
+var map=L.map('map',{zoomControl:true,attributionControl:false,renderer:L.canvas({tolerance:isTouch?12:6})}).setView([-10,-50],3);
+// Pontos crescem com o zoom (o raio do circleMarker é em pixels: sem isso eles "encolhem" em relação
+// ao mapa ao aproximar) e, no mouse, abrem as informações ao passar por cima
+function zoomScale(){return Math.min(3,Math.max(1,1+(map.getZoom()-3)*0.35))}
+function isDot(l){return l instanceof L.CircleMarker&&!(l instanceof L.Circle)}
+function sizeDot(l){if(l._baseR==null)l._baseR=l.options.radius;l.setRadius(Math.max(3,Math.min(Math.max(l._baseR,24),l._baseR*zoomScale())))}   // teto 24 px (sismo M6: 14 px já nasce grande)
+map.on('layeradd',function(e){
+  var l=e.layer;
+  if(isDot(l))sizeDot(l);
+  // no mouse: abre ao passar por cima, sem arrastar o mapa (autoPan) para não "fugir" do cursor
+  if(!isTouch&&!l._hoverOn&&(isDot(l)||l instanceof L.Marker)&&l.getPopup&&l.getPopup()){
+    l._hoverOn=true;l.getPopup().options.autoPan=false;
+    l.on('mouseover',function(){this.openPopup()});
+  }
+});
+map.on('zoomend',function(){map.eachLayer(function(l){if(isDot(l))sizeDot(l)})});
 var tileLayers={
   dark:L.layerGroup([
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,maxNativeZoom:16}),
