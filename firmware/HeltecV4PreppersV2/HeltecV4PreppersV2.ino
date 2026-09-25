@@ -4,6 +4,9 @@
 //  SX1262 · OLED 128x64 · L76K GNSS · Web AP · BLE · LoRa Mesh AES
 // ============================================================
 
+// Versão do firmware mostrada na abertura, na tela HOME e no Serial
+#define FW_VERSION "v4"
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -617,6 +620,7 @@ void drawHome(){
     u8g2.setCursor(0,32); u8g2.printf("Nos: %d",n_nodes);
     u8g2.setCursor(0,42); u8g2.printf("TX:%d  RX:%d",l_tx,l_rx);
     if(l_rx>0){ u8g2.setCursor(0,52); u8g2.printf("RSSI:%.0fdBm",l_rssi); }
+    u8g2.setFont(u8g2_font_4x6_tr); u8g2.setCursor(128-u8g2.getStrWidth(FW_VERSION),52); u8g2.print(FW_VERSION);
     if(g_fix && gps.time.isValid()){
         u8g2.setFont(u8g2_font_4x6_tr); u8g2.setCursor(80,20);
         u8g2.printf("%02d:%02d",gps.time.hour(),gps.time.minute());
@@ -1066,7 +1070,7 @@ void handleButton(){
 void setup(){
     Serial.begin(115200);
     { unsigned long t=millis(); while(!Serial&&millis()-t<3000); }
-    Serial.println("\n[BOOT] PreppersBR V2 — Heltec V4");
+    Serial.println("\n[BOOT] PreppersBR " FW_VERSION " — Heltec V4");
 
     pinMode(LED_PIN,OUTPUT);
 #if BUZZER_PIN >= 0
@@ -1105,7 +1109,7 @@ void setup(){
     // OLED
     u8g2.setBusClock(400000); u8g2.begin(); u8g2.setContrast(255);
     u8g2.clearBuffer(); u8g2.setFont(u8g2_font_7x13B_tr);
-    u8g2.setCursor(10,20); u8g2.print("PreppersBR V2");
+    u8g2.setCursor(10,20); u8g2.print("PreppersBR " FW_VERSION);
     u8g2.setFont(u8g2_font_5x7_tr);
     u8g2.setCursor(20,34); u8g2.print("Heltec V4");
     u8g2.setCursor(5,46);  u8g2.print("Iniciando GPS...");
