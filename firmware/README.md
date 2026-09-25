@@ -60,3 +60,9 @@ A aba **⚙️ CONFIG** do app Bluetooth (radio.html) edita call sign, beacon, f
 a senha do WiFi — como o app WiFi. Característica `beb54843-…`: leitura devolve a config em JSON
 (sem a senha); gravação é texto `chave=valor` por linha e **exige `cur` = senha atual do WiFi**
 (o BLE não tem senha própria). A placa responde em `res`/`rid` e reinicia ~2 s depois.
+
+## Aba REDE (v4.3+)
+
+Nos dois apps (Bluetooth e WiFi), a aba **REDE** lista todas as placas que a sua já ouviu:
+online (ouvida nos últimos 3 beacons), direto ou via repetidor (quantos saltos o último pacote deu),
+sinal (RSSI/SNR do último pacote direto), bateria (do beacon), distância e quando foi vista.

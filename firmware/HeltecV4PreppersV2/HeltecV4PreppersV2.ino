@@ -6,7 +6,7 @@
 
 // Versão do firmware mostrada na abertura, na tela HOME e no Serial
 // v4.x = ajustes e recursos menores (sobe o número depois do ponto); v5 só em mudança grande
-#define FW_VERSION "v4.2"
+#define FW_VERSION "v4.3"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -106,7 +106,9 @@
 // MESH_PSK fica em secrets.h (fora do GitHub). Todas as placas da rede precisam da mesma chave.
 
 // ── Structs ──────────────────────────────────────────────────
-struct Node { char id[8]; float lat,lon,alt; bool sos; unsigned long last_ms; };
+// hops = repetidores no caminho do último pacote (0 = ouvida direto) · rssi/snr do último pacote direto
+// bat = bateria informada no beacon (-1 = ainda não sabe)
+struct Node { char id[8]; float lat,lon,alt; bool sos; unsigned long last_ms; int8_t hops; int16_t rssi; int8_t snr; int8_t bat; };
 // pid = id do pacote LoRa (só nas enviadas) · acks = quantas placas confirmaram o recebimento (✓✓)
 struct Msg  { char from[8]; char text[MSG_LEN]; bool mine; uint32_t pid; uint8_t acks; };
 struct DMsg { char peer[8]; char from[8]; char text[DM_LEN]; bool mine; uint32_t pid; uint8_t acks; };
@@ -444,7 +446,17 @@ int nodeSlot(const String& id){
     else { idx=0; for(int i=1;i<n_nodes;i++) if(nodes[i].last_ms<nodes[idx].last_ms) idx=i; }
     memset(&nodes[idx],0,sizeof(Node));
     scopy(nodes[idx].id,id.c_str(),sizeof(nodes[idx].id));
+    nodes[idx].hops=-1; nodes[idx].bat=-1;
     return idx;
+}
+// Dados do pacote que está sendo processado (preenchidos no loraRX antes do loraParse)
+int rx_hops=-1; float rx_rssi=0, rx_snr=0;
+// Marca o nó como visto agora e guarda caminho e sinal do pacote
+void nodeSeen(int idx){
+    if(idx<0) return;
+    nodes[idx].last_ms=millis(); nodes[idx].hops=rx_hops;
+    if(rx_hops==0){ nodes[idx].rssi=(int16_t)rx_rssi; nodes[idx].snr=(int8_t)rx_snr; }
+    dirty=true;
 }
 
 // Mostra o aviso em tela cheia, pisca o LED e bipa (beeps vezes, on_ms cada). Não bloqueia:
@@ -503,7 +515,7 @@ void loraParse(String &raw,uint32_t pid){
         String a_to  =sid.substring(gi+1).substring(0,7);
         if(a_from==String(cfg.callsign)) return;
         int idx=nodeSlot(a_from);
-        if(idx>=0){ nodes[idx].last_ms=millis(); dirty=true; }
+        nodeSeen(idx);
         if(a_to!=String(cfg.callsign)) return;       // é de outra placa: só repassa (relay no loraRX)
         uint32_t ap=strtoul(pay.c_str(),nullptr,16);
         for(int i=0;i<n_msgs;i++) if(msgs[i].mine&&msgs[i].pid==ap){ if(msgs[i].acks<255) msgs[i].acks++; ack_ver++; }
@@ -522,7 +534,7 @@ void loraParse(String &raw,uint32_t pid){
         if(dm_from==String(cfg.callsign)) return; // eco do próprio envio
         // Registrar remetente na lista de nós com ID correto
         int idx=nodeSlot(dm_from);
-        if(idx>=0){ nodes[idx].last_ms=millis(); dirty=true; }
+        nodeSeen(idx);
         // Só armazenar se o destinatário sou eu
         if(dm_to==String(cfg.callsign)){
             if(n_dms>=MAX_DMS){ memmove(dms,dms+1,sizeof(DMsg)*(MAX_DMS-1)); n_dms=MAX_DMS-1; }
@@ -541,12 +553,12 @@ void loraParse(String &raw,uint32_t pid){
     if(sid==String(cfg.callsign)) return;
     int idx=nodeSlot(sid);
     if(idx<0) return;
-    nodes[idx].last_ms=millis(); dirty=true;
+    nodeSeen(idx);
     if(type=='B'){
         float la,lo,al,sp; int sa,ba;
-        if(sscanf(pay.c_str(),"%f,%f,%f,%f,%d,%d",&la,&lo,&al,&sp,&sa,&ba)>=2){
-            nodes[idx].lat=la; nodes[idx].lon=lo; nodes[idx].alt=al;
-        }
+        int nf=sscanf(pay.c_str(),"%f,%f,%f,%f,%d,%d",&la,&lo,&al,&sp,&sa,&ba);
+        if(nf>=2){ nodes[idx].lat=la; nodes[idx].lon=lo; nodes[idx].alt=al; }
+        if(nf>=6&&ba>=0&&ba<=100) nodes[idx].bat=ba;
         nodes[idx].sos=false;
     } else if(type=='C'){
         if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
@@ -586,6 +598,7 @@ void loraRX(){
     Serial.printf("[LoRa] RX %08X RSSI=%.0f: %s\n",pid,l_rssi,s.c_str());
     int hi=s.lastIndexOf("|H:"); int hop=0;
     if(hi>=0){ hop=s.substring(hi+3).toInt(); }
+    rx_hops=(hi>=0)?max(0,MESH_HOP-hop):-1; rx_rssi=l_rssi; rx_snr=radio.getSNR();
     loraParse(s,pid);
     if(hop>0){
         int si=s.lastIndexOf("|H:");
@@ -787,9 +800,10 @@ void webHandleData(){
     String nl="[";
     for(int i=0;i<n_nodes;i++){
         if(i) nl+=",";
-        char nb[128];
-        snprintf(nb,sizeof(nb),"{\"id\":\"%s\",\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sos\":%s}",
-            jsonEsc(nodes[i].id).c_str(),(double)nodes[i].lat,(double)nodes[i].lon,(double)nodes[i].alt,nodes[i].sos?"true":"false");
+        char nb[200];
+        snprintf(nb,sizeof(nb),"{\"id\":\"%s\",\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sos\":%s,\"h\":%d,\"r\":%d,\"q\":%d,\"b\":%d,\"age\":%lu}",
+            jsonEsc(nodes[i].id).c_str(),(double)nodes[i].lat,(double)nodes[i].lon,(double)nodes[i].alt,nodes[i].sos?"true":"false",
+            nodes[i].hops,nodes[i].rssi,nodes[i].snr,nodes[i].bat,(unsigned long)((millis()-nodes[i].last_ms)/1000));
         nl+=nb;
     }
     nl+="]";
@@ -828,6 +842,7 @@ void webHandleData(){
     j+=",\"mn\":";     j+=msg_ver;
     j+=",\"dmver\":";  j+=dm_ver;
     j+=",\"ak\":";     j+=ack_ver;
+    j+=",\"bs\":";     j+=cfg.beacon_s;
     j+=",\"time\":\""; j+=tbuf; j+="\"";
     j+=",\"nodeList\":"; j+=nl;
     j+=",\"msgs\":";   j+=ml;
@@ -1028,6 +1043,7 @@ String bleBuildStatus(){
     j+=",\"sos\":"; j+=(sos_on?"true":"false");
     j+=",\"lora\":"; j+=(l_ok?"true":"false");
     j+=",\"nodes\":"; j+=n_nodes;
+    j+=",\"bs\":"; j+=cfg.beacon_s;
     j+=",\"nlist\":[";
     // nós mais recentes primeiro, até caber no limite do BLE
     int order[MAX_NODES]; for(int i=0;i<n_nodes;i++) order[i]=i;
@@ -1042,6 +1058,9 @@ String bleBuildStatus(){
             if(g_fix) { e+=",\"d\":"; e+=(int)hav(g_lat,g_lon,nodes[i].lat,nodes[i].lon); }
         }
         if(nodes[i].sos) e+=",\"sos\":true";
+        if(nodes[i].hops>=0){ e+=",\"h\":"; e+=nodes[i].hops; }
+        if(nodes[i].rssi){ e+=",\"r\":"; e+=nodes[i].rssi; e+=",\"q\":"; e+=nodes[i].snr; }
+        if(nodes[i].bat>=0){ e+=",\"b\":"; e+=nodes[i].bat; }
         e+=",\"age\":"; e+=(unsigned long)((millis()-nodes[i].last_ms)/1000); e+="}";
         if(j.length()+e.length()+16>BLE_JSON_MAX) break;
         if(!first) j+=","; j+=e; first=false;
