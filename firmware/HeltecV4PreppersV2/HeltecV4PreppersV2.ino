@@ -5,7 +5,7 @@
 // ============================================================
 
 // Versão do firmware mostrada na abertura, na tela HOME e no Serial
-#define FW_VERSION "v4"
+#define FW_VERSION "v5"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -105,8 +105,9 @@
 
 // ── Structs ──────────────────────────────────────────────────
 struct Node { char id[8]; float lat,lon,alt; bool sos; unsigned long last_ms; };
-struct Msg  { char from[8]; char text[MSG_LEN]; bool mine; };
-struct DMsg { char peer[8]; char from[8]; char text[DM_LEN]; bool mine; };
+// pid = id do pacote LoRa (só nas enviadas) · acks = quantas placas confirmaram o recebimento (✓✓)
+struct Msg  { char from[8]; char text[MSG_LEN]; bool mine; uint32_t pid; uint8_t acks; };
+struct DMsg { char peer[8]; char from[8]; char text[DM_LEN]; bool mine; uint32_t pid; uint8_t acks; };
 struct Cfg  { char callsign[8]; float lora_freq,lora_bw; uint8_t lora_sf;
               uint32_t beacon_s; char wifi_pass[32]; };
 
@@ -148,6 +149,12 @@ uint8_t dedupHead=0;
 
 // ── UI ───────────────────────────────────────────────────────
 int           page=0;
+// Confirmação de entrega (✓✓): quem recebe uma mensagem responde K[EU>REMETENTE]PID em hexadecimal.
+// ack_ver muda a cada confirmação que chega, para o app atualizar os checks.
+int ack_ver=0, ble_ack_ver=-1;
+struct PendAck { char to[8]; uint32_t pid; unsigned long due; };
+#define MAX_PEND_ACK 6
+PendAck pend_acks[MAX_PEND_ACK]; int n_pend_acks=0;
 // Aviso de mensagem nova: tela cheia por alguns segundos + LED + bip
 #define NOTIF_MS   6000
 unsigned long notif_until=0;
@@ -316,7 +323,7 @@ bool dedupSeen(uint32_t id){
     dedupBuf[dedupHead]={id,now}; dedupHead=(dedupHead+1)%DEDUP_SZ;
     return false;
 }
-void meshTx(const char* pt){
+uint32_t meshTx(const char* pt){
     uint32_t pid=esp_random();
     size_t n=strlen(pt); if(n>115) n=115;
     uint8_t buf[120];
@@ -326,6 +333,7 @@ void meshTx(const char* pt){
     radioSend(buf,(size_t)(4+n));
     l_tx++; dirty=true;
     Serial.printf("[LoRa] TX %08X: %s\n",pid,pt);
+    return pid;
 }
 
 // ============================================================
@@ -436,6 +444,23 @@ int nodeSlot(const String& id){
 
 // Mostra o aviso em tela cheia, pisca o LED e bipa (beeps vezes, on_ms cada). Não bloqueia:
 // o bip é tocado por beepUpdate() no loop.
+void queueAck(const char* to,uint32_t pid,long delay_ms){
+    if(n_pend_acks>=MAX_PEND_ACK) return;
+    scopy(pend_acks[n_pend_acks].to,to,sizeof(pend_acks[0].to));
+    pend_acks[n_pend_acks].pid=pid;
+    pend_acks[n_pend_acks].due=millis()+delay_ms;
+    n_pend_acks++;
+}
+void processAcks(){
+    for(int i=0;i<n_pend_acks;i++){
+        if((long)(millis()-pend_acks[i].due)<0) continue;
+        char buf[48];
+        snprintf(buf,sizeof(buf),"K[%s>%s]%08lX|H:%d",cfg.callsign,pend_acks[i].to,(unsigned long)pend_acks[i].pid,MESH_HOP);
+        if(l_ok) meshTx(buf);
+        pend_acks[i]=pend_acks[--n_pend_acks];
+        return;   // uma por volta do loop
+    }
+}
 void newMsgAlert(const char* title,const char* from,const char* text,int beeps,int on_ms){
     scopy(notif_title,title,sizeof(notif_title));
     scopy(notif_from,from,sizeof(notif_from));
@@ -456,14 +481,31 @@ void beepUpdate(){
     beep_next=millis()+(beep_state?beep_on_ms:120);
     if(beep_left<=0&&beep_state){ beepOut(false); beep_state=false; }
 }
-void loraParse(String &raw){
+void loraParse(String &raw,uint32_t pid){
     if(raw.length()<4 || raw.charAt(1)!='[') return;
     int ei=raw.indexOf(']'); if(ei<0) return;
     int hi=raw.lastIndexOf("|H:"); if(hi>0) raw=raw.substring(0,hi);
     String sid=raw.substring(2,ei);
-    if(raw.charAt(0)!='D' && sid.length()>7) sid=sid.substring(0,7);
+    if(raw.charAt(0)!='D' && raw.charAt(0)!='K' && sid.length()>7) sid=sid.substring(0,7);
     String pay=raw.substring(ei+1);
     char type=raw.charAt(0);
+
+    // ── Confirmação K[FROM>TO]PID — marca ✓✓ na mensagem enviada com esse PID
+    if(type=='K'){
+        int gi=sid.indexOf('>');
+        if(gi<0) return;
+        String a_from=sid.substring(0,gi).substring(0,7);
+        String a_to  =sid.substring(gi+1).substring(0,7);
+        if(a_from==String(cfg.callsign)) return;
+        int idx=nodeSlot(a_from);
+        if(idx>=0){ nodes[idx].last_ms=millis(); dirty=true; }
+        if(a_to!=String(cfg.callsign)) return;       // é de outra placa: só repassa (relay no loraRX)
+        uint32_t ap=strtoul(pay.c_str(),nullptr,16);
+        for(int i=0;i<n_msgs;i++) if(msgs[i].mine&&msgs[i].pid==ap){ if(msgs[i].acks<255) msgs[i].acks++; ack_ver++; }
+        for(int i=0;i<n_dms;i++)  if(dms[i].mine&&dms[i].pid==ap){ dms[i].acks=1; ack_ver++; }
+        Serial.printf("[ACK] %08X confirmado por %s\n",ap,a_from.c_str());
+        return;
+    }
 
     // ── Mensagem direta D[FROM>TO]texto — parsear antes do bloco genérico
     // para evitar escrever "FROM>TO" no campo id[8] do nó
@@ -482,7 +524,8 @@ void loraParse(String &raw){
             scopy(dms[n_dms].peer,dm_from.c_str(),sizeof(dms[n_dms].peer));
             scopy(dms[n_dms].from,dm_from.c_str(),sizeof(dms[n_dms].from));
             scopy(dms[n_dms].text,pay.c_str(),DM_LEN);
-            dms[n_dms].mine=false; n_dms++; dm_ver++; page=4; dirty=true;
+            dms[n_dms].mine=false; dms[n_dms].pid=0; dms[n_dms].acks=0; n_dms++; dm_ver++; page=4; dirty=true;
+            queueAck(dm_from.c_str(),pid,random(150,700));
             newMsgAlert("MSG PRIVADA",dm_from.c_str(),pay.c_str(),2,120);
             Serial.printf("[DM] de %s: %s\n",dm_from.c_str(),pay.c_str());
         }
@@ -504,7 +547,8 @@ void loraParse(String &raw){
         if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         scopy(msgs[n_msgs].text,pay.c_str(),MSG_LEN);
-        msgs[n_msgs].mine=false; n_msgs++; msg_ver++; page=3; dirty=true;
+        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; page=3; dirty=true;
+        queueAck(sid.c_str(),pid,random(300,2500));   // atraso aleatório: várias placas respondendo não colidem
         newMsgAlert("NOVA MENSAGEM",sid.c_str(),pay.c_str(),1,150);
     } else if(type=='S'){
         float la,lo;
@@ -513,7 +557,7 @@ void loraParse(String &raw){
         if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
         scopy(msgs[n_msgs].from,sid.c_str(),sizeof(msgs[n_msgs].from));
         snprintf(msgs[n_msgs].text,MSG_LEN,"!SOS! %s",sid.c_str());
-        msgs[n_msgs].mine=false; n_msgs++; msg_ver++; page=3; dirty=true;
+        msgs[n_msgs].mine=false; msgs[n_msgs].pid=0; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; page=3; dirty=true;
         newMsgAlert("!!  SOS  !!",sid.c_str(),"Pedido de socorro na rede",5,350);
     }
 }
@@ -537,7 +581,7 @@ void loraRX(){
     Serial.printf("[LoRa] RX %08X RSSI=%.0f: %s\n",pid,l_rssi,s.c_str());
     int hi=s.lastIndexOf("|H:"); int hop=0;
     if(hi>=0){ hop=s.substring(hi+3).toInt(); }
-    loraParse(s);
+    loraParse(s,pid);
     if(hop>0){
         int si=s.lastIndexOf("|H:");
         String base=(si>=0)?s.substring(0,si):s;
@@ -565,11 +609,11 @@ void loraTxBeacon(){
 void loraTxChat(const char* msg){
     char buf[MSG_LEN+24];
     snprintf(buf,sizeof(buf),"C[%s]%s|H:%d",cfg.callsign,msg,MESH_HOP);
-    meshTx(buf);
+    uint32_t pid=meshTx(buf);
     if(n_msgs>=MAX_MSGS){ memmove(msgs,msgs+1,sizeof(Msg)*(MAX_MSGS-1)); n_msgs=MAX_MSGS-1; }
     scopy(msgs[n_msgs].from,cfg.callsign,sizeof(msgs[n_msgs].from));
     scopy(msgs[n_msgs].text,msg,MSG_LEN);
-    msgs[n_msgs].mine=true; n_msgs++; msg_ver++; dirty=true;
+    msgs[n_msgs].mine=true; msgs[n_msgs].pid=pid; msgs[n_msgs].acks=0; n_msgs++; msg_ver++; dirty=true;
 }
 void loraTxSOS(){
     char buf[80];
@@ -582,13 +626,13 @@ void loraTxDM(const char* to, const char* msg){
     // Formato: D[FROM>TO]texto|H:N — só TO exibe, todos repetem
     char buf[120];
     snprintf(buf,sizeof(buf),"D[%s>%s]%s|H:%d",cfg.callsign,to,msg,MESH_HOP);
-    meshTx(buf);
+    uint32_t pid=meshTx(buf);
     // Salva cópia local
     if(n_dms>=MAX_DMS){ memmove(dms,dms+1,sizeof(DMsg)*(MAX_DMS-1)); n_dms=MAX_DMS-1; }
     scopy(dms[n_dms].peer,to,sizeof(dms[n_dms].peer));
     scopy(dms[n_dms].from,cfg.callsign,sizeof(dms[n_dms].from));
     scopy(dms[n_dms].text,msg,DM_LEN);
-    dms[n_dms].mine=true; n_dms++; dm_ver++;
+    dms[n_dms].mine=true; dms[n_dms].pid=pid; dms[n_dms].acks=0; n_dms++; dm_ver++;
 }
 
 // ============================================================
@@ -749,7 +793,7 @@ void webHandleData(){
         if(i) ml+=",";
         String fr=jsonEsc(msgs[i].from),tx=jsonEsc(msgs[i].text);
         ml+="{\"from\":\""+fr+"\",\"text\":\""+tx+"\",\"mine\":";
-        ml+=msgs[i].mine?"true":"false"; ml+="}";
+        ml+=msgs[i].mine?"true,\"a\":"+String(msgs[i].acks):"false"; ml+="}";
     }
     ml+="]";
     // DMs (mensagens privadas)
@@ -758,7 +802,7 @@ void webHandleData(){
         if(i) dl+=",";
         String dp=jsonEsc(dms[i].peer),df=jsonEsc(dms[i].from),dt=jsonEsc(dms[i].text);
         dl+="{\"peer\":\""+dp+"\",\"from\":\""+df+"\",\"text\":\""+dt+"\",\"mine\":";
-        dl+=dms[i].mine?"true":"false"; dl+="}";
+        dl+=dms[i].mine?"true,\"a\":"+String(dms[i].acks):"false"; dl+="}";
     }
     dl+="]";
     String j="{";
@@ -778,6 +822,7 @@ void webHandleData(){
     j+=",\"mysos\":";  j+=(sos_on?"true":"false");
     j+=",\"mn\":";     j+=msg_ver;
     j+=",\"dmver\":";  j+=dm_ver;
+    j+=",\"ak\":";     j+=ack_ver;
     j+=",\"time\":\""; j+=tbuf; j+="\"";
     j+=",\"nodeList\":"; j+=nl;
     j+=",\"msgs\":";   j+=ml;
@@ -866,7 +911,7 @@ void webHandle204(){ webServer.send(204,"text/plain",""); }
 // ============================================================
 class BLESrvCB : public NimBLEServerCallbacks {
     // ao conectar, força o envio do estado atual (status, mensagens e privadas) no próximo loop()
-    void onConnect(NimBLEServer*,NimBLEConnInfo&){ bleConnected=true; ble_msg_ver=-1; ble_dm_ver=-1; ble_notify_last=0; dirty=true; }
+    void onConnect(NimBLEServer*,NimBLEConnInfo&){ bleConnected=true; ble_msg_ver=-1; ble_dm_ver=-1; ble_ack_ver=-1; ble_notify_last=0; dirty=true; }
     void onDisconnect(NimBLEServer*,NimBLEConnInfo&,int){ bleConnected=false; NimBLEDevice::startAdvertising(); }
 };
 // Envios entram numa fila e o loop() transmite (processCmds):
@@ -954,7 +999,7 @@ String bleBuildStatus(){
 String bleBuildMsgs(){
     String body="";
     for(int i=n_msgs-1;i>=0;i--){
-        String e="{\"v\":"+String(msg_ver-(n_msgs-1-i))+",\"from\":\""+jsonEsc(msgs[i].from)+"\",\"text\":\""+jsonEsc(msgs[i].text)+"\",\"mine\":"+(msgs[i].mine?"true":"false")+"}";
+        String e="{\"v\":"+String(msg_ver-(n_msgs-1-i))+",\"from\":\""+jsonEsc(msgs[i].from)+"\",\"text\":\""+jsonEsc(msgs[i].text)+"\",\"mine\":"+(msgs[i].mine?"true,\"a\":"+String(msgs[i].acks):"false")+"}";
         if(body.length()+e.length()+3>BLE_JSON_MAX) break;
         body=body.length()?e+","+body:e;
     }
@@ -963,7 +1008,7 @@ String bleBuildMsgs(){
 String bleBuildDms(){
     String body="";
     for(int i=n_dms-1;i>=0;i--){
-        String e="{\"v\":"+String(dm_ver-(n_dms-1-i))+",\"peer\":\""+jsonEsc(dms[i].peer)+"\",\"from\":\""+jsonEsc(dms[i].from)+"\",\"text\":\""+jsonEsc(dms[i].text)+"\",\"mine\":"+(dms[i].mine?"true":"false")+"}";
+        String e="{\"v\":"+String(dm_ver-(n_dms-1-i))+",\"peer\":\""+jsonEsc(dms[i].peer)+"\",\"from\":\""+jsonEsc(dms[i].from)+"\",\"text\":\""+jsonEsc(dms[i].text)+"\",\"mine\":"+(dms[i].mine?"true,\"a\":"+String(dms[i].acks):"false")+"}";
         if(body.length()+e.length()+3>BLE_JSON_MAX) break;
         body=body.length()?e+","+body:e;
     }
@@ -1004,11 +1049,12 @@ void bleUpdate(){
         String st=bleBuildStatus(); bleCharStatus->setValue(st.c_str()); bleCharStatus->notify();
         ble_notify_last=now;
     }
-    if(msg_ver!=ble_msg_ver){
+    bool ackCh=(ack_ver!=ble_ack_ver); ble_ack_ver=ack_ver;   // chegou ✓✓: reenvia as listas
+    if(msg_ver!=ble_msg_ver||ackCh){
         ble_msg_ver=msg_ver;
         String ms=bleBuildMsgs(); bleCharMsgs->setValue(ms.c_str()); bleCharMsgs->notify();
     }
-    if(dm_ver!=ble_dm_ver){
+    if(dm_ver!=ble_dm_ver||ackCh){
         ble_dm_ver=dm_ver;
         String ds=bleBuildDms(); bleCharDms->setValue(ds.c_str()); bleCharDms->notify();
     }
@@ -1162,6 +1208,7 @@ void loop(){
     dnsServer.processNextRequest();
     webServer.handleClient();
     processCmds();
+    processAcks();
     bleUpdate();
     handleButton();
     beepUpdate();
