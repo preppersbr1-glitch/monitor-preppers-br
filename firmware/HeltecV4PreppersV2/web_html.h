@@ -295,7 +295,7 @@ function sendDM(){
       inp.value='';
       if(!dmStore[dmPeer])dmStore[dmPeer]=[];
       dmStore[dmPeer].push({from:myId,text:v,mine:true});
-      renderDM();
+      renderDM();setTimeout(upd,600);setTimeout(upd,1500);
     } else r.text().then(function(e){alert('Nao enviado: '+e);});
   }).catch(function(){alert('Sem conexao com a placa');});
 }
@@ -619,7 +619,7 @@ function snd(){
   if(!v)return;
   fetch('/send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:'m='+encodeURIComponent(v)}).then(function(r){
-      if(r.ok){t.value='';return;}
+      if(r.ok){t.value='';setTimeout(upd,600);setTimeout(upd,1500);return;}
       r.text().then(function(e){alert('Nao enviado: '+e);});
     }).catch(function(){alert('Sem conexao com a placa');});
 }
