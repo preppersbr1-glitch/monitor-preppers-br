@@ -530,7 +530,8 @@ async function setMode(m){
         var on=s.val()===true;var c=document.getElementById('chat-conn');c.textContent=on?'AO VIVO':'RECONECTANDO...';c.className='card-badge '+(on?'badge-ok':'badge-warn');
         if(on&&chatRoom)joinPresence(chatRoom);   // depois de cair, marca presença de novo
       });
-      rtdb.ref('chatOnline').on('value',function(s){chatOnline=s.val()||{};renderRooms();renderWho()});
+      // as regras liberam a leitura sala por sala (chatOnline/<sala>), não a lista inteira de uma vez
+      CHAT_ROOMS.forEach(function(r){rtdb.ref('chatOnline/'+r[0]).on('value',function(s){chatOnline[r[0]]=s.val()||{};renderRooms();renderWho()},function(){})});
     }
     enterRoom(chatRoom||'geral');
     setTimeout(function(){document.getElementById('chat-input').focus()},50);
@@ -564,10 +565,19 @@ function enterRoom(room){
   var first=true;
   chatQuery=rtdb.ref('chat/'+room).orderByChild('ts').limitToLast(100);
   chatQuery.once('value',function(s){if(first){first=false;if(!s.exists())box.innerHTML='<div class="cm-sys">Nenhuma mensagem ainda. Comece a conversa!</div>';else{var sys=box.querySelector('.cm-sys');if(sys&&!box.querySelector('.cm'))sys.remove()}box.scrollTop=box.scrollHeight}},
-    function(e){box.innerHTML='<div class="cm-sys" style="color:var(--red)">Sem permissão para ler o bate-papo. O administrador precisa atualizar as regras do banco (firebase/database.rules.json).</div>'});
+    function(e){chatReadError(room,e)});
   chatQuery.on('child_added',function(s){addChatMsg(s.key,s.val())});
   chatQuery.on('child_removed',function(s){var e=document.getElementById('cm-'+s.key);if(e)e.remove()});
   renderRooms();renderWho();
+}
+// Leitura recusada: renova o login uma vez e tenta de novo; se falhar de novo, mostra o motivo exato
+var chatRetried=false;
+function chatReadError(room,e){
+  var box=document.getElementById('chat-msgs'),u=auth.currentUser;
+  if(!chatRetried&&u){chatRetried=true;box.innerHTML='<div class="cm-sys">Renovando o login...</div>';
+    u.getIdToken(true).then(function(){setTimeout(function(){if(chatRoom===room)enterRoom(room)},800)},function(){chatRetried=false});return}
+  var info='Código: '+((e&&(e.code||e.message))||'?')+' · logado: '+(u?'sim ('+esc(u.email||'')+')':'NÃO')+' · e-mail verificado: '+(u&&u.emailVerified?'sim':'não');
+  box.innerHTML='<div class="cm-sys" style="color:var(--red)">Sem permissão para ler o bate-papo.<br>Confira no Firebase (Realtime Database → Regras) se o bloco "chat" está publicado.<br><span style="color:var(--muted)">'+info+'</span></div>';
 }
 function addChatMsg(key,m){
   var box=document.getElementById('chat-msgs');if(document.getElementById('cm-'+key))return;
