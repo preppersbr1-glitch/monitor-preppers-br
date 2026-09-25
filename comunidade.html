@@ -223,7 +223,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
         <input id="chat-input" maxlength="300" placeholder="Digite sua mensagem..." autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()">
         <button class="btn btn-primary" onclick="sendChat()">ENVIAR</button>
       </div>
-      <div class="chat-hint" id="chat-hint">Toque no nome de alguém para falar com a pessoa (@NOME). Máx. 300 caracteres.</div>
+      <div class="chat-hint" id="chat-hint">Toque no nome de alguém para falar com a pessoa (@NOME). As mensagens somem após 5 minutos.</div>
     </div>
     <div class="card" id="chat-who-card"><div class="card-header"><span class="card-title">NA SALA</span><span class="card-badge badge-ok" id="chat-who-count">0</span></div><div id="chat-who"></div></div>
   </div>
@@ -511,6 +511,11 @@ async function submitReply(){var body=document.getElementById('reply-input').val
 // ── BATE-PAPO AO VIVO (Firebase Realtime Database: mensagens chegam na hora, sem recarregar) ──
 var CHAT_ROOMS=[['geral','💬','Geral'],['equipamentos','🎒','Equipamentos'],['comunicacao','📡','Comunicação / Rádio'],['ameacas','📊','Ameaças'],['offtopic','☕','Off-topic']];
 var rtdb=null,chatRoom=null,chatQuery=null,chatPresRef=null,chatOnline={},chatUnread=0,chatMode='forum',chatLib=null;
+// Mensagens valem 5 minutos: a página só busca e mostra as recentes e quem está no bate-papo apaga as vencidas
+// (as regras deixam qualquer membro apagar mensagem com mais de 5 min). Relógio do servidor via serverTimeOffset.
+var CHAT_TTL=300000,chatOffset=0,chatHiddenAt=0;
+function serverNow(){return Date.now()+chatOffset}
+var EMPTY_MSG='<div class="cm-sys">Nenhuma mensagem nos últimos 5 minutos. Comece a conversa!</div>';
 function loadChatLib(){
   if(!chatLib)chatLib=new Promise(function(res,rej){var sc=document.createElement('script');sc.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js';sc.onload=res;sc.onerror=function(){chatLib=null;rej(new Error('não carregou'))};document.head.appendChild(sc)});
   return chatLib;
@@ -526,6 +531,8 @@ async function setMode(m){
     try{await loadChatLib()}catch(e){document.getElementById('chat-conn').textContent='ERRO';document.getElementById('chat-msgs').innerHTML='<div class="cm-sys">Não foi possível carregar o bate-papo. Verifique a conexão e recarregue a página.</div>';return}
     if(!rtdb){
       rtdb=firebase.app().database(DB_URL);
+      rtdb.ref('.info/serverTimeOffset').on('value',function(s){chatOffset=s.val()||0});
+      setInterval(chatTick,5000);
       rtdb.ref('.info/connected').on('value',function(s){
         var on=s.val()===true;var c=document.getElementById('chat-conn');c.textContent=on?'AO VIVO':'RECONECTANDO...';c.className='card-badge '+(on?'badge-ok':'badge-warn');
         if(on&&chatRoom)joinPresence(chatRoom);   // depois de cair, marca presença de novo
@@ -533,17 +540,44 @@ async function setMode(m){
       // as regras liberam a leitura sala por sala (chatOnline/<sala>), não a lista inteira de uma vez
       CHAT_ROOMS.forEach(function(r){rtdb.ref('chatOnline/'+r[0]).on('value',function(s){chatOnline[r[0]]=s.val()||{};renderRooms();renderWho()},function(){})});
     }
-    enterRoom(chatRoom||'geral');
+    enterRoom(chatRoom||'geral');cleanExpired();
     setTimeout(function(){document.getElementById('chat-input').focus()},50);
   } else leavePresence();
 }
+// Quem não dá sinal há 90 s (página fechada sem sair direito, celular que dormiu) não conta como online
+function liveUsers(room){var all=chatOnline[room]||{},out={},lim=serverNow()-90000;for(var u in all)if(u===MY_UID||!all[u].ts||all[u].ts>lim)out[u]=all[u];return out}
+// A cada 5 s: tira da tela as mensagens vencidas; a cada 30 s: renova a presença e apaga as vencidas do banco
+var chatTicks=0;
+function chatTick(){
+  if(chatMode!=='chat'||!rtdb)return;
+  var lim=serverNow()-CHAT_TTL,box=document.getElementById('chat-msgs');
+  box.querySelectorAll('.cm').forEach(function(e){if(+e.dataset.ts<lim)e.remove()});
+  if(!box.querySelector('.cm')&&!box.querySelector('.cm-sys'))box.innerHTML=EMPTY_MSG;
+  if(++chatTicks%6===0){if(chatPresRef)chatPresRef.update({ts:firebase.database.ServerValue.TIMESTAMP}).catch(function(){});cleanExpired();renderRooms();renderWho()}
+}
+function cleanExpired(){
+  if(!rtdb)return;
+  CHAT_ROOMS.forEach(function(r){
+    rtdb.ref('chat/'+r[0]).orderByChild('ts').endAt(serverNow()-CHAT_TTL-5000).limitToFirst(50).once('value',function(s){
+      var up={};s.forEach(function(c){up['chat/'+r[0]+'/'+c.key]=null});
+      if(Object.keys(up).length)rtdb.ref().update(up).catch(function(){});
+    },function(){});
+  });
+}
+// iPhone: com a página em segundo plano o iOS congela a conexão e a lista de quem está online fica velha.
+// Ao voltar depois de 20 s, reconecta (a presença é marcada de novo pelo .info/connected)
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){chatHiddenAt=Date.now();return}
+  if(rtdb&&chatMode==='chat'&&chatHiddenAt&&Date.now()-chatHiddenAt>20000){rtdb.goOffline();rtdb.goOnline()}
+  chatHiddenAt=0;
+});
 function renderRooms(){
   var el=document.getElementById('chat-rooms');
-  el.innerHTML=CHAT_ROOMS.map(function(r){var n=Object.keys(chatOnline[r[0]]||{}).length;
+  el.innerHTML=CHAT_ROOMS.map(function(r){var n=Object.keys(liveUsers(r[0])).length;
     return '<div class="room'+(r[0]===chatRoom?' on':'')+'" onclick="enterRoom(\''+r[0]+'\')"><span>'+r[1]+'</span>'+r[2]+'<span class="rc">'+(n?n+' on':'')+'</span></div>'}).join('');
 }
 function renderWho(){
-  var list=chatOnline[chatRoom]||{};var ids=Object.keys(list).sort(function(a,b){return (list[a].name||'').localeCompare(list[b].name||'')});
+  var list=liveUsers(chatRoom);var ids=Object.keys(list).sort(function(a,b){return (list[a].name||'').localeCompare(list[b].name||'')});
   document.getElementById('chat-who-count').textContent=ids.length;
   document.getElementById('chat-who').innerHTML=ids.length?ids.map(function(u){var n=list[u].name||'?';
     return '<div class="who" onclick="mention(\''+esc(n).replace(/'/g,'')+'\')"><span class="wd"></span><span style="color:'+nameColor(n)+'">'+esc(n)+(u===MY_UID?' (você)':'')+'</span></div>'}).join(''):'<div class="cm-sys" style="padding:14px">Ninguém nesta sala.</div>';
@@ -563,8 +597,8 @@ function enterRoom(room){
   document.getElementById('chat-room-title').textContent=r[1]+' '+r[2].toUpperCase();
   var box=document.getElementById('chat-msgs');box.innerHTML='<div class="cm-sys">Carregando as últimas mensagens...</div>';
   var first=true;
-  chatQuery=rtdb.ref('chat/'+room).orderByChild('ts').limitToLast(100);
-  chatQuery.once('value',function(s){if(first){first=false;if(!s.exists())box.innerHTML='<div class="cm-sys">Nenhuma mensagem ainda. Comece a conversa!</div>';else{var sys=box.querySelector('.cm-sys');if(sys&&!box.querySelector('.cm'))sys.remove()}box.scrollTop=box.scrollHeight}},
+  chatQuery=rtdb.ref('chat/'+room).orderByChild('ts').startAt(serverNow()-CHAT_TTL).limitToLast(100);
+  chatQuery.once('value',function(s){if(first){first=false;if(!s.exists())box.innerHTML=EMPTY_MSG;else{var sys=box.querySelector('.cm-sys');if(sys&&!box.querySelector('.cm'))sys.remove()}box.scrollTop=box.scrollHeight}},
     function(e){chatReadError(room,e)});
   chatQuery.on('child_added',function(s){addChatMsg(s.key,s.val())});
   chatQuery.on('child_removed',function(s){var e=document.getElementById('cm-'+s.key);if(e)e.remove()});
@@ -581,10 +615,11 @@ function chatReadError(room,e){
 }
 function addChatMsg(key,m){
   var box=document.getElementById('chat-msgs');if(document.getElementById('cm-'+key))return;
+  if(m.ts&&m.ts<serverNow()-CHAT_TTL)return;
   var sys=box.querySelector('.cm-sys');if(sys)sys.remove();
   var near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
   var mine=m.uid===MY_UID,men=!mine&&USERNAME&&new RegExp('@'+USERNAME.replace(/[^A-Z0-9_]/gi,'')+'\\b','i').test(m.text||'');
-  var d=document.createElement('div');d.className='cm'+(mine?' me':'')+(men?' mention':'');d.id='cm-'+key;
+  var d=document.createElement('div');d.className='cm'+(mine?' me':'')+(men?' mention':'');d.id='cm-'+key;d.dataset.ts=m.ts||serverNow();
   d.innerHTML='<span class="ct">'+hhmm(m.ts)+'</span><span class="cn" style="color:'+nameColor(m.name||'?')+'">'+esc(m.name||'?')+'</span>: <span class="cx">'+esc(m.text||'').replace(/@([A-Za-z0-9_]+)/g,'<b style="color:var(--amber)">@$1</b>')+'</span>'
     +((mine||IS_ADMIN)?'<button class="cd" title="Apagar">✕</button>':'');
   d.querySelector('.cn').onclick=function(){mention(m.name||'')};
@@ -606,7 +641,7 @@ function sendChat(){
   // a mensagem e o "último envio" vão juntos: as regras do banco exigem 2 s entre mensagens
   up['chat/'+chatRoom+'/'+key]={uid:MY_UID,name:USERNAME.slice(0,24),text:t,ts:TS};
   up['chatLast/'+MY_UID]=TS;
-  rtdb.ref().update(up).then(function(){inp.value='';hint.textContent='Toque no nome de alguém para falar com a pessoa (@NOME). Máx. 300 caracteres.';hint.style.color=''})
+  rtdb.ref().update(up).then(function(){inp.value='';hint.textContent='Toque no nome de alguém para falar com a pessoa (@NOME). As mensagens somem após 5 minutos.';hint.style.color=''})
     .catch(function(){hint.textContent='Calma! Espere 2 segundos entre mensagens (ou verifique a conexão).';hint.style.color='var(--amber)'})
     .then(function(){chatSending=false});
 }

@@ -64,7 +64,7 @@
           "ts"
         ],
         "$mid": {
-          ".write": "auth != null && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/) && ((!data.exists() && newData.exists() && newData.child('uid').val() == auth.uid && newData.parent().parent().parent().child('chatLast').child(auth.uid).val() == now) || (data.exists() && !newData.exists() && (data.child('uid').val() == auth.uid || (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true))))",
+          ".write": "auth != null && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/) && ((!data.exists() && newData.exists() && newData.child('uid').val() == auth.uid && newData.parent().parent().parent().child('chatLast').child(auth.uid).val() == now) || (data.exists() && !newData.exists() && (data.child('uid').val() == auth.uid || data.child('ts').val() < now - 300000 || (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true))))",
           ".validate": "newData.hasChildren(['uid','name','text','ts'])",
           "uid": {
             ".validate": "newData.isString()"
