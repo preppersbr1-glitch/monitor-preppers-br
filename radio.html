@@ -110,7 +110,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 22</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 23</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -206,9 +206,14 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
      respondia (comum no Bluefy/iPhone) e os botões não faziam nada -->
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-// Qualquer erro de script aparece na tela (no iPhone não há console para ver)
+// Script separado: registra erros mesmo se o script do app nem chegar a rodar (no iPhone não há console)
 window.onerror=function(msg,src,line){var d=document.getElementById('diag');if(d)d.textContent+=' · ERRO: '+msg+' (linha '+line+')'};
 window.addEventListener('unhandledrejection',function(ev){var d=document.getElementById('diag'),r=ev.reason;if(d)d.textContent+=' · ERRO: '+(r&&(r.name+': '+r.message)||r)});
+</script>
+<script>
+// O app roda isolado numa função: o Bluefy injeta o próprio código na página e nomes globais iguais
+// (ex.: uma variável dele chamada como uma nossa) impediam o script inteiro de rodar
+(function(){
 // UUIDs do serviço BLE do firmware PreppersBR (firmware/HeltecV4PreppersV2)
 var SVC ='4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 var UUID={stat:'beb5483e-36e1-4688-b7f5-ea07361b26a8',msgs:'beb5483f-36e1-4688-b7f5-ea07361b26a8',send:'beb54840-36e1-4688-b7f5-ea07361b26a8',sos:'beb54841-36e1-4688-b7f5-ea07361b26a8',dms:'beb54842-36e1-4688-b7f5-ea07361b26a8'};
@@ -477,6 +482,10 @@ function updMap(){
   Object.keys(mk).forEach(function(k){if(k[0]==='n'&&!seen[k]){map.removeLayer(mk[k]);delete mk[k]}});
 }
 if(navigator.geolocation)navigator.geolocation.watchPosition(function(p){phone=[p.coords.latitude,p.coords.longitude];updMap();if(!dmPeer)renderNodes()},function(){},{enableHighAccuracy:true,maximumAge:30000});
+// Funções chamadas pelos botões da página
+window.connectBle=connectBle;window.copyUrl=copyUrl;window.reconnect=reconnect;window.disconnectBle=disconnectBle;
+window.showTab=showTab;window.sendChat=sendChat;window.sendDm=sendDm;window.closeDm=closeDm;window.toggleSos=toggleSos;window.countBytes=countBytes;
+})();
 </script>
 </body>
 </html>
