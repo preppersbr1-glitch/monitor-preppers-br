@@ -68,6 +68,24 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .res-desc{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;line-height:1.5}
 .res-link{display:inline-block;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green2);text-decoration:none;border:1px solid var(--green3);padding:4px 12px;border-radius:2px;letter-spacing:1px;transition:all 0.2s}
 .res-link:hover{background:rgba(0,255,136,0.1)}
+.inmet-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 12px 0}
+.inmet-toolbar select,.tab-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;padding:6px 10px;border-radius:3px;letter-spacing:1px;cursor:pointer}
+.tab-btn.active{border-color:var(--green2);color:var(--green);background:rgba(0,255,136,0.08)}
+.inmet-note{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
+.aviso{border:1px solid var(--border);border-left:4px solid var(--amber);border-radius:4px;padding:12px 14px;background:rgba(0,0,0,0.3)}
+.aviso-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px}
+.aviso-title{font-size:14px;font-weight:700;color:var(--text)}
+.aviso-sev{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:3px 7px;border-radius:2px;white-space:nowrap;color:#000}
+.aviso-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6}
+.aviso details{margin-top:6px}
+.aviso summary{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green2);cursor:pointer;letter-spacing:1px}
+.aviso details p{font-size:13px;line-height:1.5;margin-top:6px;color:var(--text)}
+.aviso a{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue)}
+.sat-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:12px 12px 0}
+.sat-view{padding:12px}
+.sat-view img{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:4px;background:#000;aspect-ratio:5/3;cursor:zoom-in}
+.sat-desc{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:8px;line-height:1.6}
+.sat-desc a{color:var(--green2)}
 
 </style>
 <title>Defesa Civil — PREPPERS BR</title>
@@ -91,8 +109,26 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 <div class="page-title">🛡️ DEFESA CIVIL</div>
 <div class="page-subtitle">MONITORAMENTO DE ALERTAS METEOROLÓGICOS, SÍSMICOS E EMERGÊNCIAS — BRASIL</div>
 <div class="card" style="margin-bottom:16px">
-  <div class="card-header"><span class="card-title">ALERTAS METEOROLÓGICOS — INMET / OPEN-METEO</span><span class="card-badge badge-warn" id="inmet-badge">CARREGANDO</span></div>
-  <div class="grid-3" id="inmet-alerts" style="padding:12px"><div class="loading">▋ BUSCANDO ALERTAS...</div></div>
+  <div class="card-header"><span class="card-title">ALERTAS OFICIAIS — INMET</span><span class="card-badge badge-warn" id="aviso-badge">CARREGANDO</span></div>
+  <div class="inmet-toolbar">
+    <select id="aviso-uf" onchange="renderAvisos()"><option value="">Todos os estados</option></select>
+    <select id="aviso-quando" onchange="renderAvisos()"><option value="hoje">Vigentes hoje</option><option value="futuro">Próximos dias</option><option value="todos">Todos</option></select>
+    <span class="inmet-note">Fonte: INMET — alertas2.inmet.gov.br</span>
+  </div>
+  <div class="grid-3" id="aviso-list" style="padding:12px"><div class="loading">▋ CONSULTANDO INMET...</div></div>
+</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header"><span class="card-title">IMAGENS DE SATÉLITE — GOES-19</span><span class="card-badge badge-ok">ATUALIZA A CADA 10 MIN</span></div>
+  <div class="sat-tabs" id="sat-regions"></div>
+  <div class="sat-tabs" id="sat-products"></div>
+  <div class="sat-view">
+    <a id="sat-link" href="#" target="_blank" rel="noopener"><img id="sat-img" alt="Imagem de satélite GOES-19"></a>
+    <div class="sat-desc" id="sat-desc"></div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header"><span class="card-title">CONDIÇÕES SEVERAS NAS CAPITAIS — OPEN-METEO</span><span class="card-badge badge-warn" id="inmet-badge">CARREGANDO</span></div>
+  <div class="grid-3" id="inmet-alerts" style="padding:12px"><div class="loading">▋ BUSCANDO CONDIÇÕES...</div></div>
 </div>
 <div class="grid-2">
   <div class="card"><div class="card-header"><span class="card-title">SISMOS GLOBAIS (M4.5+) — 24H</span><span class="card-badge badge-live">● USGS</span></div>
@@ -108,6 +144,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
     <div class="res-item"><div class="res-icon">🚑</div><div class="res-name">SAMU</div><div class="res-desc">Emergências médicas</div><a href="tel:192" class="res-link">LIGAR 192</a></div>
     <div class="res-item"><div class="res-icon">🚔</div><div class="res-name">POLÍCIA</div><div class="res-desc">Emergências policiais</div><a href="tel:190" class="res-link">LIGAR 190</a></div>
     <div class="res-item"><div class="res-icon">🌊</div><div class="res-name">CEMADEN</div><div class="res-desc">Monitoramento de desastres</div><a href="https://www.cemaden.gov.br" target="_blank" class="res-link">ACESSAR</a></div>
+    <div class="res-item"><div class="res-icon">🌎</div><div class="res-name">INMET SATÉLITE</div><div class="res-desc">Imagens oficiais do INMET</div><a href="https://satelite.inmet.gov.br" target="_blank" class="res-link">VER IMAGENS</a></div>
     <div class="res-item"><div class="res-icon">🛰️</div><div class="res-name">INMET ALERTAS</div><div class="res-desc">Alertas meteorológicos</div><a href="https://alertas2.inmet.gov.br" target="_blank" class="res-link">VER ALERTAS</a></div>
     <div class="res-item"><div class="res-icon">📡</div><div class="res-name">USGS</div><div class="res-desc">Sismos em tempo real</div><a href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" class="res-link">MAPA AO VIVO</a></div>
     <div class="res-item"><div class="res-icon">⚠️</div><div class="res-name">GDACS</div><div class="res-desc">Alertas globais de desastres</div><a href="https://www.gdacs.org" target="_blank" class="res-link">ACESSAR</a></div>
@@ -126,7 +163,87 @@ setInterval(updateClock,1000);updateClock();
 async function loadQuakes(){try{const r=await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson");const d=await r.json();const c=document.getElementById("quake-list");if(!d.features||!d.features.length){c.innerHTML='<div style="padding:20px;text-align:center;font-family:monospace;font-size:11px;color:var(--green2)">Nenhum sismo M4.5+ nas últimas 24h</div>';return}const s=d.features.sort((a,b)=>b.properties.mag-a.properties.mag);let h="";for(const eq of s.slice(0,15)){const m=eq.properties.mag.toFixed(1);const p=eq.properties.place||"Desconhecido";const dp=(eq.geometry.coordinates[2]||0).toFixed(0);const t=new Date(eq.properties.time);const dh=Math.floor((Date.now()-t)/3600000);const ts=dh<1?"AGORA":dh+"H ATRÁS";const mc=m>=6?"high":m>=5?"mid":"low";h+='<div class="quake-item" onclick="window.open(\''+eq.properties.url+'\',\'_blank\')"><div class="quake-mag '+mc+'">'+m+'</div><div style="flex:1"><div class="quake-place">'+p+'</div><div class="quake-meta">PROF: '+dp+'KM • '+ts+'</div></div></div>'}c.innerHTML=h}catch(e){document.getElementById("quake-list").innerHTML='<div class="loading">ERRO</div>'}}
 async function loadQuakesBR(){try{const r=await fetch("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=-34&maxlatitude=6&minlongitude=-74&maxlongitude=-34&minmagnitude=2&orderby=time&limit=12");const d=await r.json();const c=document.getElementById("quake-br");if(!d.features||!d.features.length){c.innerHTML='<div style="padding:20px;text-align:center;font-family:monospace;font-size:11px;color:var(--green2)">✅ Sem atividade sísmica significativa</div>';return}let h="";for(const eq of d.features){const m=eq.properties.mag.toFixed(1);const p=eq.properties.place||"Brasil";const dp=(eq.geometry.coordinates[2]||0).toFixed(0);const t=new Date(eq.properties.time);const dh=Math.floor((Date.now()-t)/3600000);const ts=dh<1?"AGORA":dh<24?dh+"H ATRÁS":Math.floor(dh/24)+"D ATRÁS";const mc=m>=4?"high":m>=3?"mid":"low";h+='<div class="quake-item" onclick="window.open(\''+eq.properties.url+'\',\'_blank\')"><div class="quake-mag '+mc+'">'+m+'</div><div style="flex:1"><div class="quake-place">'+p+'</div><div class="quake-meta">PROF: '+dp+'KM • '+ts+'</div></div></div>'}c.innerHTML=h}catch(e){document.getElementById("quake-br").innerHTML='<div class="loading">ERRO</div>'}}
 async function loadINMET(){const c=document.getElementById("inmet-alerts");const b=document.getElementById("inmet-badge");let items=[];const cities=[{n:"São Paulo, SP",la:-23.55,lo:-46.63},{n:"Rio de Janeiro, RJ",la:-22.91,lo:-43.17},{n:"Porto Alegre, RS",la:-30.03,lo:-51.23},{n:"Curitiba, PR",la:-25.43,lo:-49.27},{n:"Belo Horizonte, MG",la:-19.92,lo:-43.94},{n:"Salvador, BA",la:-12.97,lo:-38.51},{n:"Manaus, AM",la:-3.12,lo:-60.02},{n:"Recife, PE",la:-8.05,lo:-34.87}];for(const ct of cities){try{const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+ct.la+"&longitude="+ct.lo+"&current=weather_code,wind_speed_10m,precipitation&wind_speed_unit=kmh");const d=await r.json();if(d.current){const wc=d.current.weather_code,w=d.current.wind_speed_10m,p=d.current.precipitation;if(wc>=95)items.push({l:3,t:"⛈️ TEMPESTADE SEVERA",d:"Ventos "+Math.round(w)+" km/h",r:"📍 "+ct.n});else if(wc>=80||p>10)items.push({l:2,t:"🌧️ CHUVA INTENSA",d:"Precip. "+p+"mm",r:"📍 "+ct.n});else if(w>60)items.push({l:2,t:"💨 VENDAVAL",d:"Ventos "+Math.round(w)+" km/h",r:"📍 "+ct.n})}}catch(e){}}if(!items.length)items.push({l:1,t:"✅ SEM ALERTAS ATIVOS",d:"Condições dentro da normalidade",r:"📍 Brasil — Monitoramento contínuo"});const mx=Math.max(...items.map(i=>i.l));if(b){if(mx>=3){b.textContent=items.length+" ALERTAS";b.className="card-badge badge-live"}else if(mx>=2){b.textContent=items.length+" ALERTAS";b.className="card-badge badge-warn"}else{b.textContent="NORMAL";b.className="card-badge badge-ok"}}c.innerHTML=items.map(a=>'<div class="defesa-item level-'+a.l+'"><span class="defesa-level">NÍVEL '+a.l+'</span><div class="defesa-type">'+a.t+'</div><div class="defesa-title">'+a.d+'</div><div class="defesa-region">'+a.r+'</div></div>').join("")}
+// ── ALERTAS OFICIAIS DO INMET ──
+// Chamado direto do navegador do visitante: o INMET recusa acessos de fora do Brasil (servidores nos EUA).
+var AVISOS={hoje:[],futuro:[]};
+var SEV_RANK={'grande perigo':3,'perigo':2,'perigo potencial':1};
+var SEV_COLOR={'grande perigo':'#ff3333','perigo':'#ff8800','perigo potencial':'#ffd000'};
+var AVISO_ICON=[['chuva','🌧️'],['tempestade','⛈️'],['vendaval','💨'],['vento','💨'],['granizo','🧊'],['geada','❄️'],['frio','🥶'],['onda de calor','🌡️'],['baixa umidade','🏜️'],['umidade','🏜️'],['seca','🏜️'],['incêndio','🔥'],['ressaca','🌊'],['ciclone','🌀'],['neve','❄️']];
+function escH(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function listTxt(v,sep){return Array.isArray(v)?v.join(sep||' '):String(v||'')}
+function ufsOf(a){
+  var txt=[a.estados,a.estado,a.uf,a.municipios].map(listTxt).join(' ');
+  var m=txt.match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/g)||[];
+  return m.filter(function(u,i){return m.indexOf(u)===i}).sort();
+}
+function fmtDH(v){if(!v)return '—';var d=new Date(v);return isNaN(d)?escH(v):d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+async function loadAvisos(){
+  var list=document.getElementById('aviso-list'),badge=document.getElementById('aviso-badge');
+  try{
+    var r=await fetch('https://apiprevmet3.inmet.gov.br/avisos/ativos',{signal:AbortSignal.timeout(15000)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    AVISOS={hoje:(d&&d.hoje)||[],futuro:(d&&d.futuro)||[]};
+    var ufs={};AVISOS.hoje.concat(AVISOS.futuro).forEach(function(a){ufsOf(a).forEach(function(u){ufs[u]=1})});
+    var sel=document.getElementById('aviso-uf'),cur=sel.value;
+    sel.innerHTML='<option value="">Todos os estados</option>'+Object.keys(ufs).sort().map(function(u){return '<option'+(u===cur?' selected':'')+'>'+u+'</option>'}).join('');
+    renderAvisos();
+  }catch(e){
+    console.warn('INMET avisos',e);
+    badge.textContent='INDISPONÍVEL';badge.className='card-badge badge-warn';
+    list.innerHTML='<div class="aviso" style="grid-column:1/-1;border-left-color:var(--muted)"><div class="aviso-title">Não foi possível consultar o INMET agora</div><div class="aviso-meta" style="margin-top:6px">O serviço do INMET só responde a acessos feitos do Brasil e às vezes fica fora do ar. Consulte os alertas oficiais direto no site:</div><div style="margin-top:8px"><a href="https://alertas2.inmet.gov.br" target="_blank" rel="noopener">alertas2.inmet.gov.br →</a></div></div>';
+  }
+}
+function renderAvisos(){
+  var list=document.getElementById('aviso-list'),badge=document.getElementById('aviso-badge');
+  var uf=document.getElementById('aviso-uf').value,q=document.getElementById('aviso-quando').value;
+  var items=(q==='hoje'?AVISOS.hoje:q==='futuro'?AVISOS.futuro:AVISOS.hoje.concat(AVISOS.futuro)).filter(function(a){return !a.encerrado&&(!uf||ufsOf(a).indexOf(uf)!==-1)});
+  var seen={};items=items.filter(function(a){var k=a.id||JSON.stringify(a).slice(0,80);if(seen[k])return false;seen[k]=1;return true});
+  items.sort(function(a,b){return (SEV_RANK[String(b.severidade||'').toLowerCase()]||0)-(SEV_RANK[String(a.severidade||'').toLowerCase()]||0)||new Date(a.inicio)-new Date(b.inicio)});
+  var top=items.reduce(function(m,a){return Math.max(m,SEV_RANK[String(a.severidade||'').toLowerCase()]||0)},0);
+  badge.textContent=items.length?items.length+' ALERTA'+(items.length!==1?'S':''):'SEM ALERTAS';
+  badge.className='card-badge '+(top>=2?'badge-live':items.length?'badge-warn':'badge-ok');
+  if(!items.length){list.innerHTML='<div class="aviso" style="grid-column:1/-1;border-left-color:var(--green2)"><div class="aviso-title">✅ Nenhum alerta do INMET '+(q==='futuro'?'previsto':'vigente')+(uf?' para '+uf:'')+'</div></div>';return}
+  list.innerHTML=items.map(function(a){
+    var sev=String(a.severidade||'Aviso'),sk=sev.toLowerCase(),color=a.aviso_cor||SEV_COLOR[sk]||'#ffd000';
+    var desc=String(a.descricao||'Aviso meteorológico'),icon='⚠️';
+    for(var i=0;i<AVISO_ICON.length;i++){if(desc.toLowerCase().indexOf(AVISO_ICON[i][0])!==-1){icon=AVISO_ICON[i][1];break}}
+    var ufs=ufsOf(a),muni=listTxt(a.municipios,', ');
+    var nMun=muni?muni.split(',').length:(a.geocodes?String(a.geocodes).split(/[,\s]+/).filter(Boolean).length:0);
+    var riscos=listTxt(a.riscos,'; '),instr=listTxt(a.instrucoes,' ');
+    return '<div class="aviso" style="border-left-color:'+escH(color)+'"><div class="aviso-top"><div class="aviso-title">'+icon+' '+escH(desc)+'</div><span class="aviso-sev" style="background:'+escH(color)+'">'+escH(sev.toUpperCase())+'</span></div>'+
+      '<div class="aviso-meta">🕒 '+fmtDH(a.inicio)+' → '+fmtDH(a.fim)+'<br>📍 '+(ufs.length?ufs.join(', '):'Brasil')+(nMun?' • '+nMun+' município'+(nMun!==1?'s':''):'')+'</div>'+
+      ((riscos||instr)?'<details><summary>RISCOS E O QUE FAZER</summary>'+(riscos?'<p><strong>Riscos:</strong> '+escH(riscos)+'</p>':'')+(instr?'<p><strong>Instruções:</strong> '+escH(instr)+'</p>':'')+'</details>':'')+
+      (a.id?'<div style="margin-top:8px"><a href="https://alertas2.inmet.gov.br/'+encodeURIComponent(a.id)+'" target="_blank" rel="noopener">Ver no INMET (mapa e municípios) →</a></div>':'')+'</div>';
+  }).join('');
+}
+
+// ── SATÉLITE GOES-19 (mesmo satélite usado nas imagens do INMET; imagens da NOAA/STAR) ──
+var SAT_REGIONS=[{id:'ssa',name:'CENTRO-SUL'},{id:'nsa',name:'NORTE / NORDESTE'}];
+var SAT_PRODUCTS=[
+  {id:'GEOCOLOR',name:'COR REAL',desc:'Cor real de dia; à noite, nuvens em cinza e luzes das cidades.'},
+  {id:'13',name:'INFRAVERMELHO',desc:'Temperatura do topo das nuvens. Cores fortes (vermelho/amarelo) = nuvens muito altas e frias, típicas de tempestades.'},
+  {id:'09',name:'VAPOR D\'ÁGUA',noAnim:true,desc:'Umidade na média atmosfera. Áreas escuras = ar seco; brancas/azuis = ar úmido e sistemas de chuva.'},
+  {id:'Sandwich',name:'TEMPESTADES',desc:'Realça tempestades severas: topos com textura e cores quentes indicam correntes ascendentes fortes.'}];
+var satRegion='ssa',satProduct='GEOCOLOR';
+function satButtons(){
+  document.getElementById('sat-regions').innerHTML=SAT_REGIONS.map(function(r){return '<button class="tab-btn'+(r.id===satRegion?' active':'')+'" onclick="satRegion=\''+r.id+'\';showSat()">'+r.name+'</button>'}).join('');
+  document.getElementById('sat-products').innerHTML=SAT_PRODUCTS.map(function(p){return '<button class="tab-btn'+(p.id===satProduct?' active':'')+'" onclick="satProduct=\''+p.id+'\';showSat()">'+p.name+'</button>'}).join('');
+}
+function showSat(){
+  satButtons();
+  var base='https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/'+satRegion+'/'+satProduct+'/';
+  var t=Math.floor(Date.now()/600000);
+  var small=window.innerWidth<700?'900x540':'1800x1080';
+  document.getElementById('sat-img').src=base+small+'.jpg?t='+t;
+  document.getElementById('sat-link').href=base+'1800x1080.jpg?t='+t;
+  var p=SAT_PRODUCTS.filter(function(x){return x.id===satProduct})[0];
+  document.getElementById('sat-desc').innerHTML=escH(p.desc)+'<br>Data/hora (UTC) na legenda da imagem. Toque para ampliar • '+(p.noAnim?'':'<a href="'+base+'GOES19-'+satRegion.toUpperCase()+'-'+satProduct+'-900x540.gif" target="_blank" rel="noopener">animação das últimas horas (≈10 MB)</a> • ')+'<a href="https://satelite.inmet.gov.br" target="_blank" rel="noopener">imagens no INMET</a>';
+}
+
+loadAvisos();showSat();
 loadQuakes();loadQuakesBR();loadINMET();setInterval(loadQuakes,300000);setInterval(loadQuakesBR,300000);setInterval(loadINMET,600000);
+setInterval(loadAvisos,600000);setInterval(showSat,600000);
 
 </script>
 </body>
