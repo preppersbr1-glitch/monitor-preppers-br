@@ -52,4 +52,4 @@ entre o **GPIO4** e o **GND**. Para desativar ou trocar o pino, mude `BUZZER_PIN
   No chat aberto aparece quantas placas confirmaram; na privada, só o destinatário confirma.
 
 A confirmação é um pacote pequeno, sem reenvio: se ela se perder (colisão, placa longe), a
-mensagem pode ter chegado e mesmo assim ficar só com ✓. Todas as placas precisam do firmware v5.
+mensagem pode ter chegado e mesmo assim ficar só com ✓. Todas as placas precisam do firmware v4.1 ou mais novo.
