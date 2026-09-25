@@ -6,7 +6,7 @@
 
 // Versão do firmware mostrada na abertura, na tela HOME e no Serial
 // v4.x = ajustes e recursos menores (sobe o número depois do ponto); v5 só em mudança grande
-#define FW_VERSION "v4.1"
+#define FW_VERSION "v4.2"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -100,6 +100,7 @@
 #define BLE_SEND "beb54840-36e1-4688-b7f5-ea07361b26a8"
 #define BLE_SOS  "beb54841-36e1-4688-b7f5-ea07361b26a8"
 #define BLE_DMS  "beb54842-36e1-4688-b7f5-ea07361b26a8"
+#define BLE_CFG  "beb54843-36e1-4688-b7f5-ea07361b26a8"   // configuração (ler/gravar; gravar exige a senha do WiFi)
 
 // ── AES-128-CTR PSK ──────────────────────────────────────────
 // MESH_PSK fica em secrets.h (fora do GitHub). Todas as placas da rede precisam da mesma chave.
@@ -187,6 +188,9 @@ NimBLECharacteristic* bleCharStatus=nullptr;
 NimBLECharacteristic* bleCharMsgs=nullptr;
 NimBLECharacteristic* bleCharSend=nullptr;
 NimBLECharacteristic* bleCharSos=nullptr;
+NimBLECharacteristic* bleCharCfg=nullptr;
+// Gravação de config pelo BLE: o callback só copia o texto; o loop() valida e salva (cfgBlePending)
+char cfgBleBuf[200]; volatile bool cfgBlePending=false;
 NimBLECharacteristic* bleCharDms=nullptr;
 bool bleConnected=false;
 QueueHandle_t cmdQ=nullptr;   // envios pedidos pelo app (WiFi ou BLE); o loop() transmite pelo rádio
@@ -874,23 +878,28 @@ void webHandleGetConfig(){
     j+=",\"wifi_pass\":\""; j+=jsonEsc(cfg.wifi_pass); j+="\"}";
     webServer.send(200,"application/json",j);
 }
-void webHandleSetConfig(){
-    if(webServer.method()!=HTTP_POST){ webServer.send(405); return; }
-    String cs=webServer.arg("callsign"),bs=webServer.arg("beacon_s"),wp=webServer.arg("wifi_pass");
-    String fs=webServer.arg("lora_freq"),ss=webServer.arg("lora_sf"),bws=webServer.arg("lora_bw");
+// Valida tudo antes de alterar qualquer valor; salva e agenda o reinício. Devolve "" ou a mensagem de erro.
+// Usada pelo app WiFi e pelo BLE.
+String applyCfg(String cs,String bs,String wp,String fs,String ss,String bws){
     cs.trim();
-    // valida tudo antes de alterar qualquer valor
-    if(!validId(cs)){ webServer.send(400,"text/plain","Call sign: 1-7 letras, numeros, _ ou -"); return; }
-    if(!bs.length()||bs.toInt()<5||bs.toInt()>600){ webServer.send(400,"text/plain","Beacon: 5 a 600 s"); return; }
-    if(wp.length()<8||wp.length()>31){ webServer.send(400,"text/plain","Senha WiFi: 8 a 31 caracteres"); return; }
+    if(!validId(cs)) return "Call sign: 1-7 letras, numeros, _ ou -";
+    if(!bs.length()||bs.toInt()<5||bs.toInt()>600) return "Beacon: 5 a 600 s";
+    if(wp.length()<8||wp.length()>31) return "Senha WiFi: 8 a 31 caracteres";
     float nf=fs.length()?fs.toFloat():cfg.lora_freq, nbw=bws.length()?bws.toFloat():cfg.lora_bw;
     int nsf=ss.length()?ss.toInt():cfg.lora_sf;
-    if(!radioCfgOk(nf,nbw,nsf)){ webServer.send(400,"text/plain","Radio: 863-928 MHz, SF7-12, BW 62.5/125/250"); return; }
+    if(!radioCfgOk(nf,nbw,nsf)) return "Radio: 863-928 MHz, SF7-12, BW 62.5/125/250";
     scopy(cfg.callsign,cs.c_str(),sizeof(cfg.callsign));
     cfg.beacon_s=bs.toInt();
     cfg.lora_freq=nf; cfg.lora_sf=nsf; cfg.lora_bw=nbw;
     scopy(cfg.wifi_pass,wp.c_str(),sizeof(cfg.wifi_pass));
     saveCfg(); cfg_restart=true; cfg_restart_ms=millis();
+    return "";
+}
+void webHandleSetConfig(){
+    if(webServer.method()!=HTTP_POST){ webServer.send(405); return; }
+    String err=applyCfg(webServer.arg("callsign"),webServer.arg("beacon_s"),webServer.arg("wifi_pass"),
+                        webServer.arg("lora_freq"),webServer.arg("lora_sf"),webServer.arg("lora_bw"));
+    if(err.length()){ webServer.send(400,"text/plain",err); return; }
     webServer.send(200,"text/plain","OK");
 }
 void webHandleSendDM(){
@@ -925,6 +934,51 @@ static bool queueCmd(char kind,const std::string& v){
 class BLESendCB : public NimBLECharacteristicCallbacks {
     void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){ queueCmd('M',c->getValue()); }
 };
+class BLECfgCB : public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){
+        if(cfgBlePending) return;
+        scopy(cfgBleBuf,c->getValue().c_str(),sizeof(cfgBleBuf)); cfgBlePending=true;
+    }
+};
+// Config para o app BLE (sem a senha do WiFi). res = resultado da última gravação ("OK" ou o erro).
+String bleBuildCfg(const char* res,const String& rid=""){
+    String j="{\"callsign\":\""; j+=jsonEsc(cfg.callsign); j+="\"";
+    j+=",\"lora_freq\":"; j+=String(cfg.lora_freq,1);
+    j+=",\"lora_sf\":";   j+=cfg.lora_sf;
+    j+=",\"lora_bw\":";   j+=String(cfg.lora_bw,1);
+    j+=",\"beacon_s\":";  j+=cfg.beacon_s;
+    j+=",\"ver\":\"" FW_VERSION "\"";
+    if(res){ j+=",\"res\":\""; j+=jsonEsc(res); j+="\",\"rid\":\""; j+=jsonEsc(rid); j+="\""; }
+    j+="}";
+    return j;
+}
+// Texto recebido: uma linha por campo, "chave=valor" (callsign, beacon_s, lora_freq, lora_sf, lora_bw,
+// wifi_pass = senha nova, opcional, cur = senha atual do WiFi, obrigatória, e id = devolvido em "rid")
+static String cfgField(const String& body,const char* key){
+    String k=String(key)+"=";
+    int st=0;
+    while(st<(int)body.length()){
+        int nl=body.indexOf('\n',st); if(nl<0) nl=body.length();
+        if(body.substring(st,st+k.length())==k) return body.substring(st+k.length(),nl);
+        st=nl+1;
+    }
+    return "";
+}
+void processCfgBle(){
+    if(!cfgBlePending) return;
+    String body=String(cfgBleBuf); cfgBlePending=false;
+    String res;
+    if(cfgField(body,"cur")!=String(cfg.wifi_pass)) res="Senha atual do WiFi incorreta";
+    else {
+        String wp=cfgField(body,"wifi_pass"); if(!wp.length()) wp=String(cfg.wifi_pass);
+        res=applyCfg(cfgField(body,"callsign"),cfgField(body,"beacon_s"),wp,
+                     cfgField(body,"lora_freq"),cfgField(body,"lora_sf"),cfgField(body,"lora_bw"));
+        if(!res.length()){ res="OK"; cfg_restart_ms=millis()+1200; }   // dá tempo do app ler o OK
+    }
+    bleCharCfg->setValue(bleBuildCfg(res.c_str(),cfgField(body,"id")).c_str());
+    if(bleConnected) bleCharCfg->notify();
+    Serial.printf("[CFG] BLE: %s\n",res.c_str());
+}
 class BLESosCB : public NimBLECharacteristicCallbacks {
     void onWrite(NimBLECharacteristic* c,NimBLEConnInfo&){ queueCmd('S',c->getValue()); }
 };
@@ -1032,6 +1086,8 @@ void bleBegin(){
     bleCharSos->setValue("0"); bleCharSos->setCallbacks(new BLESosCB());
     bleCharDms=svc->createCharacteristic(BLE_DMS,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::NOTIFY);
     bleCharDms->setValue(bleBuildDms().c_str());
+    bleCharCfg=svc->createCharacteristic(BLE_CFG,NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::WRITE|NIMBLE_PROPERTY::NOTIFY);
+    bleCharCfg->setValue(bleBuildCfg(nullptr).c_str()); bleCharCfg->setCallbacks(new BLECfgCB());
     svc->start();
     NimBLEAdvertising* adv=NimBLEDevice::getAdvertising();
     adv->addServiceUUID(BLE_SVC);
@@ -1210,11 +1266,12 @@ void loop(){
     webServer.handleClient();
     processCmds();
     processAcks();
+    processCfgBle();
     bleUpdate();
     handleButton();
     beepUpdate();
     if(notif_until&&(long)(now-notif_until)>=0){ notif_until=0; dirty=true; }   // aviso acabou: volta para a tela da mensagem
-    if(cfg_restart && now-cfg_restart_ms>800) ESP.restart();
+    if(cfg_restart && (long)(now-cfg_restart_ms)>800) ESP.restart();   // com sinal: cfg_restart_ms pode estar no futuro (BLE)
     static unsigned long blink_last=0;
     if(page==6&&sos_on&&now-blink_last>=500){ dirty=true; blink_last=now; }
     if(now-draw_last>3000) dirty=true;
