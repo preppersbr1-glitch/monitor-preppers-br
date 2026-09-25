@@ -198,7 +198,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
       <div class="plan-feature">Monitor em tempo real</div>
       <div class="plan-feature">Alertas básicos</div>
       <div class="plan-feature">Fórum da comunidade</div>
-      <div class="plan-feature">3 cursos gratuitos</div>
+      <div class="plan-feature">7 cursos gratuitos</div>
       <div class="plan-feature disabled">Alertas push personalizados</div>
       <div class="plan-feature disabled">Cursos premium</div>
       <div class="plan-feature disabled">Grupo VIP Telegram</div>
@@ -308,7 +308,12 @@ function hideErr(id){document.getElementById(id).style.display='none'}
 if(configured){
   auth.onAuthStateChanged(function(user){
     currentUser=user;
-    if(user){loadProfile()}else{userData=null;renderUI(false)}
+    if(user){
+      // veio de uma página restrita (nivel.js): depois de entrar, volta para ela
+      var volta=new URLSearchParams(location.search).get('volta');
+      if(volta&&/^[a-z0-9-]+\.html([?#].*)?$/i.test(volta)){loadProfile();setTimeout(function(){location.replace(volta)},900);return}
+      loadProfile()
+    }else{userData=null;renderUI(false);if(/[?&]entrar=1/.test(location.search))showAuthScreen()}
   });
 }
 

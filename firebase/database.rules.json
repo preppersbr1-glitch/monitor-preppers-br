@@ -57,6 +57,13 @@
         }
       }
     },
+    "cursos": {
+      ".read": "auth != null && (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true)",
+      "$slug": {
+        ".read": "auth != null && ((auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true) || ((root.child('members').child(auth.uid).child('level').val() == 'operador' || root.child('members').child(auth.uid).child('level').val() == 'comando') && (!root.child('members').child(auth.uid).child('paidUntil').exists() || root.child('members').child(auth.uid).child('paidUntil').val() > now)))",
+        ".write": "(auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true)"
+      }
+    },
     "chat": {
       "$room": {
         ".read": "auth != null && $room.matches(/^(geral|equipamentos|comunicacao|ameacas|offtopic)$/)",

@@ -65,6 +65,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 .yt-embed .yt-ratio iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 </style>
 <title>Segurança Digital & OPSEC — PREPPERS BR</title>
+<script src="nivel.js" data-nivel="operador"></script>
 </head>
 <body>
 <header>
@@ -103,14 +104,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mute
 
           <div style="padding:12px 16px"><a href="cursos.html" class="nav-btn" style="display:block;text-align:center;font-size:10px">← TODOS OS CURSOS</a></div>
         </div>
-        <div class="content-area">
-          <div class="lesson-content" id="lesson-0" style="display:block"><h2>AULA 01 — OPSEC (SEGURANÇA OPERACIONAL)</h2><p>OPSEC é a disciplina de proteger informações sensíveis. Para preppers, isso significa: ninguém precisa saber o que você tem, onde guarda, ou quais são seus planos.</p><h3>PRINCÍPIOS</h3><ul><li>Não poste fotos do seu estoque nas redes sociais</li><li>Não conte para desconhecidos que você é prepper</li><li>Compartilhe informações apenas com seu grupo de confiança</li><li>Varie suas rotas de compra de suprimentos</li></ul><div class='warn-box'><strong>⚠️ REGRA DE OURO</strong><br>Se todo mundo sabe que você tem comida e água para 3 meses, adivinhe para onde vão em uma crise?</div><div class="nav-btns"><span></span><a class="nav-btn" onclick="showLesson(1)">PRÓXIMA →</a></div></div>
-<div class="lesson-content" id="lesson-1" style="display:none"><h2>AULA 02 — MENSAGEIROS SEGUROS</h2><h3>APPS RECOMENDADOS</h3><ul><li><strong>Signal:</strong> Criptografia E2E, código aberto, mensagens que desaparecem. O MELHOR para preppers</li><li><strong>Briar:</strong> Funciona sem internet (Bluetooth, Wi-Fi local, Tor). Ideal para cenários offline</li><li><strong>Session:</strong> Sem número de telefone, descentralizado, baseado em blockchain</li></ul><h3>EVITE</h3><ul><li>WhatsApp: pertence ao Meta, metadados coletados</li><li>Telegram: criptografia E2E não é padrão (só em "chat secreto")</li></ul><div class="nav-btns"><a class="nav-btn" onclick="showLesson(0)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(2)">PRÓXIMA →</a></div></div>
-<div class="lesson-content" id="lesson-2" style="display:none"><h2>AULA 03 — VPN E TOR</h2><h3>VPN</h3><ul><li>Criptografa todo seu tráfego de internet</li><li>Recomendadas: Mullvad (aceita cash), ProtonVPN (grátis), IVPN</li><li>NUNCA use VPN gratuita desconhecida (vendem seus dados)</li></ul><h3>TOR BROWSER</h3><ul><li>Navegação anônima através de múltiplos relays</li><li>Para pesquisas sensíveis sobre preparação</li><li>Mais lento, mas muito mais anônimo que VPN</li></ul><div class="nav-btns"><a class="nav-btn" onclick="showLesson(1)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(3)">PRÓXIMA →</a></div></div>
-<div class="lesson-content" id="lesson-3" style="display:none"><h2>AULA 04 — SENHAS FORTES</h2><h3>BOAS PRÁTICAS</h3><ul><li>Use um gerenciador de senhas (KeePass offline ou Bitwarden)</li><li>Senhas únicas para cada serviço</li><li>Mínimo 16 caracteres ou frase-senha ("cavalo-bateria-grampo-correto")</li><li>2FA (autenticação em dois fatores) em TUDO — prefira app, não SMS</li></ul><div class='tip-box'><strong>💡 BACKUP</strong><br>Guarde o master password do KeePass em papel, em local seguro e separado. Se perder, perde TUDO.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(2)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(4)">PRÓXIMA →</a></div></div>
-<div class="lesson-content" id="lesson-4" style="display:none"><h2>AULA 05 — BACKUP OFFLINE</h2><h3>ESTRATÉGIA 3-2-1</h3><ul><li>3 cópias dos seus dados</li><li>2 tipos de mídia diferentes (HD externo + pendrive)</li><li>1 cópia em local diferente (casa de familiar)</li></ul><h3>O QUE GUARDAR</h3><ul><li>Documentos digitalizados (PDF)</li><li>Mapas offline da região</li><li>Manuais de sobrevivência em PDF</li><li>Contatos de emergência</li><li>Plantas da casa e planos de evacuação</li></ul><div class="nav-btns"><a class="nav-btn" onclick="showLesson(3)">← ANTERIOR</a><a class="nav-btn" onclick="showLesson(5)">PRÓXIMA →</a></div></div>
-<div class="lesson-content" id="lesson-5" style="display:none"><h2>AULA 06 — SEU CHECKLIST OPSEC</h2><ul><li>☐ Signal instalado como mensageiro principal do grupo</li><li>☐ VPN configurada (Mullvad ou ProtonVPN)</li><li>☐ Gerenciador de senhas ativo (KeePass ou Bitwarden)</li><li>☐ 2FA ativado em todas as contas importantes</li><li>☐ Backup 3-2-1 implementado</li><li>☐ Informações sensíveis removidas das redes sociais</li><li>☐ Grupo de preparação usa comunicação criptografada</li></ul><div class='tip-box'><strong>💡 OPSEC É HÁBITO</strong><br>Não adianta ter Signal se você posta no Instagram comprando 50kg de arroz. OPSEC é um estilo de vida.</div><div class="nav-btns"><a class="nav-btn" onclick="showLesson(4)">← ANTERIOR</a><a class="nav-btn" href="cursos.html">VOLTAR AOS CURSOS →</a></div></div>
-
+        <div class="content-area" data-conteudo="seguranca-digital">
+          <!-- aulas: carregadas do Firebase (cursos/seguranca-digital) só para Operador/Comando — ver nivel.js -->
         </div>
       </div>
     </div>
@@ -161,6 +156,7 @@ function placeContent() {
 }
 listMobile.addEventListener('change', placeContent);
 placeContent();
+document.addEventListener('pbr-conteudo',function(){placeContent()});
 
 function toggleCheck(el) {
   el.textContent = el.textContent === '☐' ? '☑' : '☐';
