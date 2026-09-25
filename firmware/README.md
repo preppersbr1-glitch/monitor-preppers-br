@@ -34,3 +34,13 @@ a mensagem "Falta secrets.h".
 ```sh
 arduino-cli compile -b esp32:esp32:heltec_wifi_lora_32_V4:PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc firmware/HeltecV4PreppersV2
 ```
+
+## Aviso de mensagem nova
+
+Quando chega mensagem pelo rádio, privada ou SOS, a tela mostra um aviso em tela cheia com
+quem mandou e o texto (6 s, ou até apertar o botão PRG), pisca o LED branco e bipa:
+1 bip = rádio · 2 bips = privada · 5 bips longos = SOS. Depois fica na tela CHAT ou DM.
+
+**Bip:** a Heltec V4 não tem buzzer de fábrica. Solde um buzzer de 3,3 V (ativo ou passivo)
+entre o **GPIO4** e o **GND**. Para desativar ou trocar o pino, mude `BUZZER_PIN` no `.ino`
+(`-1` desativa).
