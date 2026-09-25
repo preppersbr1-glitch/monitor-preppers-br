@@ -1,6 +1,6 @@
 name: Dados do Monitor Global
 
-# Gera global.json (voos + conflitos GDELT) e publica no branch `data`,
+# Gera global.json (voos + conflitos GDELT + mercados) e publica no branch `data`,
 # lido pelo monitor-global.html via raw.githubusercontent.com.
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Buscar voos e conflitos
+      - name: Buscar voos, conflitos e mercados
         run: |
           mkdir -p out
           python3 scripts/fetch_global.py out/global.json

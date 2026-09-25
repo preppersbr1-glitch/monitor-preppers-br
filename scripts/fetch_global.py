@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Gera global.json para a página Monitor Global (voos + conflitos).
+"""Gera global.json para a página Monitor Global (voos + conflitos + mercados).
 
 Roda no GitHub Actions a cada 30 min: as APIs de voos (OpenSky, adsb.lol) não
 liberam CORS para o navegador e a API geo do GDELT foi desativada, então os dados
 são buscados aqui e publicados no branch `data`, lido pela página via
 raw.githubusercontent.com.
 """
-import csv, io, json, sys, time, urllib.request, zipfile
+import csv, io, json, sys, time, urllib.parse, urllib.request, zipfile
 from datetime import datetime, timedelta, timezone
 
 UA = {'User-Agent': 'monitor-preppers-br (github.com/preppersbr1-glitch/monitor-preppers-br)'}
@@ -23,6 +23,54 @@ def get(url, timeout=60):
 
 def log(*a):
     print(*a, file=sys.stderr)
+
+
+# ── MERCADOS ──
+# Yahoo Finance (gráfico diário de 1 mês): sem chave, mas sem CORS, por isso vem por aqui.
+# Índices e futuros têm atraso de ~15 min na fonte, mais até 30 min deste agendamento.
+MARKETS = [
+    ('brent', 'BZ=F', 'Petróleo Brent', 'US$/barril'),
+    ('wti', 'CL=F', 'Petróleo WTI', 'US$/barril'),
+    ('ibov', '^BVSP', 'Ibovespa', 'pontos'),
+    ('spx', '^GSPC', 'S&P 500', 'pontos'),
+]
+YH = {'User-Agent': 'Mozilla/5.0'}   # com um User-Agent de navegador completo o Yahoo responde 429
+
+
+def fetch_markets():
+    out = []
+    for mid, sym, name, unit in MARKETS:
+        try:
+            q = urllib.parse.quote(sym)
+            last_err = None
+            for host in ('query1', 'query2'):
+                try:
+                    req = urllib.request.Request(f'https://{host}.finance.yahoo.com/v8/finance/chart/{q}?range=1mo&interval=1d', headers=YH)
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        res = json.load(r)['chart']['result'][0]
+                    break
+                except Exception as e:
+                    last_err = e
+            else:
+                raise last_err
+            meta = res['meta']
+            ts = res.get('timestamp') or []
+            closes = res['indicators']['quote'][0].get('close') or []
+            pts = [(t, c) for t, c in zip(ts, closes) if c is not None]
+            price = meta.get('regularMarketPrice') or (pts[-1][1] if pts else None)
+            if price is None:
+                raise ValueError('sem preço')
+            t = meta.get('regularMarketTime') or (pts[-1][0] if pts else 0)
+            # fechamento anterior = último ponto de um dia ANTERIOR ao do preço atual
+            day = datetime.fromtimestamp(t, timezone.utc).date()
+            prev = next((c for tt, c in reversed(pts) if datetime.fromtimestamp(tt, timezone.utc).date() < day), None)
+            out.append({'id': mid, 'name': name, 'unit': unit, 'cur': meta.get('currency'),
+                        'price': round(price, 2), 'prev': round(prev, 2) if prev else None,
+                        'chg': round((price / prev - 1) * 100, 2) if prev else None,
+                        'time': t * 1000, 'spark': [round(c, 2) for _, c in pts[-30:]]})
+        except Exception as e:
+            log('mercado falhou:', sym, e)
+    return out
 
 
 # ── VOOS ──
@@ -136,10 +184,14 @@ def main(out):
         data['conflicts'] = fetch_conflicts()
     except Exception as e:
         log('conflitos falharam:', e)
+    try:
+        data['markets'] = fetch_markets()
+    except Exception as e:
+        log('mercados falharam:', e)
     with open(out, 'w') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
     fl, cf = data.get('flights', {}), data.get('conflicts', {})
-    log(f"voos: {len(fl.get('items', []))} ({fl.get('military', 0)} militares) | conflitos: {len(cf.get('items', []))} locais em {cf.get('hours', 0)}h")
+    log(f"voos: {len(fl.get('items', []))} ({fl.get('military', 0)} militares) | conflitos: {len(cf.get('items', []))} locais em {cf.get('hours', 0)}h | mercados: {len(data.get('markets') or [])}")
     if not fl.get('items') and not cf.get('items'):
         sys.exit(1)
 
