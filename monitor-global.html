@@ -89,6 +89,12 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
 .solar-box{text-align:center;padding:8px 4px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:3px}
 .solar-val{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700}
 .solar-lbl{font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:1.5px;margin-top:3px}
+.mkt{display:grid;grid-template-columns:1fr 64px auto;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(26,61,42,0.5)}
+.mkt-n{font-size:12px;font-weight:700;color:var(--text);line-height:1.2}
+.mkt-u{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
+.mkt-p{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--text);text-align:right;white-space:nowrap}
+.mkt-c{font-family:'Share Tech Mono',monospace;font-size:10px;text-align:right}
+.mkt-foot{padding:6px 14px;font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:1px;line-height:1.6}
 .webcam-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px}
 .webcam-item{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;aspect-ratio:16/9;background:#000}
 .webcam-item iframe{width:100%;height:100%;border:none}
@@ -214,6 +220,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted
       </div>
       <div style="padding:6px 14px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:1px;margin-bottom:3px"><span style="color:var(--green)">G0</span><span style="color:var(--amber)">G2</span><span style="color:var(--red)">G4</span><span style="color:#ff0066">G5</span></div><div style="height:3px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--amber),var(--red),#ff0066);position:relative"><div id="kp-marker" style="position:absolute;top:-3px;width:3px;height:9px;background:#fff;border-radius:1px;left:0%;transition:left 0.5s"></div></div></div>
     </div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">📈 MERCADOS</span><span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)" id="mkt-badge">—</span></div><div id="mkt-list"><div class="loading-sm">▋ CARREGANDO...</div></div></div>
     <div class="panel"><div class="panel-header"><span class="panel-title">🔴 SISMOS 24H</span><span class="panel-badge" style="background:rgba(255,51,51,0.15);color:var(--red);border:1px solid rgba(255,51,51,0.3)" id="quake-count">—</span></div><div id="quake-list"><div class="loading-sm">▋ CARREGANDO...</div></div></div>
     <div class="panel"><div class="panel-header"><span class="panel-title">🌐 APAGÕES INTERNET</span><span class="panel-badge" style="background:rgba(255,102,0,0.12);color:#ff6600;border:1px solid rgba(255,102,0,0.3)" id="outage-count">—</span></div><div id="outage-list"><div class="loading-sm">▋ MONITORANDO...</div></div></div>
     <div class="panel"><div class="panel-header"><span class="panel-title">📹 WEBCAMS</span><span class="panel-badge" style="background:rgba(0,170,255,0.1);color:var(--blue);border:1px solid rgba(0,170,255,0.2)">LIVE</span></div><div class="webcam-grid" id="webcam-grid"></div></div>
@@ -514,6 +521,26 @@ async function loadGlobalData(){
   var r=await pFetch(GLOBAL_DATA_URL,15000);
   if(r){try{globalData=await r.json();globalDataAt=Date.now()}catch(e){}}
   return globalData;
+}
+// ── MERCADOS (petróleo, Ibovespa, S&P 500) — também vêm do global.json (Yahoo Finance, sem CORS) ──
+function fmtNum(v,dec){return v==null?'—':v.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function sparkSvg(pts,color){
+  if(!pts||pts.length<2)return '';
+  var mn=Math.min.apply(null,pts),mx=Math.max.apply(null,pts),w=64,h=22,r=mx-mn||1;
+  var d=pts.map(function(v,i){return (i*(w/(pts.length-1))).toFixed(1)+','+(h-2-(v-mn)/r*(h-4)).toFixed(1)}).join(' ');
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><polyline points="'+d+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+}
+async function loadMarkets(){
+  var d=await loadGlobalData(),m=d&&d.markets,el=document.getElementById('mkt-list');
+  if(!m||!m.length){el.innerHTML='<div class="loading-sm" style="animation:none">Cotações indisponíveis no momento.</div>';document.getElementById('mkt-badge').textContent='—';return}
+  el.innerHTML=m.map(function(q){
+    var up=q.chg==null?null:q.chg>=0,col=up==null?'var(--muted)':up?'var(--green)':'var(--red)';
+    var oil=q.unit.indexOf('US$')===0,price=oil?'US$ '+fmtNum(q.price,2):fmtNum(q.price,q.price>=100000?0:2);
+    var t=new Date(q.time);
+    return '<div class="mkt" title="Cotação de '+t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'"><div><div class="mkt-n">'+esc(q.name)+'</div><div class="mkt-u">'+esc(q.unit.toUpperCase())+' · 30 DIAS</div></div>'
+      +sparkSvg(q.spark,col)+'<div><div class="mkt-p">'+price+'</div><div class="mkt-c" style="color:'+col+'">'+(q.chg==null?'—':(up?'▲ +':'▼ ')+fmtNum(q.chg,2)+'%')+'</div></div></div>';
+  }).join('')+'<div class="mkt-foot">VARIAÇÃO DO DIA · COTAÇÕES COM ATRASO (~15–45 MIN) · FONTE: YAHOO FINANCE<br>ATUALIZADO HÁ '+agoLabel(d.updated).toUpperCase()+'</div>';
+  document.getElementById('mkt-badge').textContent=m.length+' ATIVOS';
 }
 function agoLabel(ms){var m=Math.round((Date.now()-ms)/60000);return m<60?m+' min':Math.round(m/60)+' h'}
 
@@ -931,7 +958,7 @@ new MutationObserver(function(){document.getElementById('stat-quakes2').textCont
 new MutationObserver(function(){document.getElementById('stat-fires2').textContent=_origStatF.textContent}).observe(_origStatF,{childList:true});
 
 // ══ INIT ══
-loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();loadOutages();
+loadQuakes();loadVolcanoes();loadDisasters();loadSolar();loadNews();loadWebcams();loadOutages();loadMarkets();setInterval(loadMarkets,600000);
 setInterval(loadQuakes,300000);setInterval(loadSolar,300000);setInterval(loadNews,600000);setInterval(loadOutages,600000);
 setInterval(function(){if(map.hasLayer(layers.flights))loadFlights();if(map.hasLayer(layers.gdelt))loadGdelt()},600000);
 setInterval(function(){if(map.hasLayer(layers.satellites))loadSatellites()},60000);
