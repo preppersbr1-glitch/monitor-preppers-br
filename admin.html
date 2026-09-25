@@ -127,6 +127,15 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--mut
         <tbody id="rows"><tr><td colspan="5" style="text-align:center;color:var(--muted)">▋ CARREGANDO...</td></tr></tbody>
       </table>
     </div>
+
+    <!-- Conteúdo pago: as aulas dos cursos premium ficam no banco (cursos/<slug>), não no site público -->
+    <div class="title" style="margin-top:24px">CONTEÚDO PAGO</div>
+    <div class="subtitle">AULAS DOS CURSOS PREMIUM — SÓ OPERADOR, COMANDO E ADMIN RECEBEM</div>
+    <div class="card" style="padding:14px">
+      <div id="cursos-list" style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.8;margin-bottom:10px">▋ CARREGANDO...</div>
+      <label class="btn btn-ghost" style="display:inline-block;cursor:pointer">📂 PUBLICAR ARQUIVO DE AULAS (.json)<input type="file" accept=".json,application/json" style="display:none" onchange="publishCourses(this)"></label>
+      <span class="saved" id="cursos-msg"></span>
+    </div>
   </div>
 
   <!-- regras do banco ainda não liberam o admin -->
@@ -220,8 +229,30 @@ function recheckVerify(){
   });
 }
 
+// Lista e publica o conteúdo pago (arquivo {slug:{title,html}} gerado junto com o site)
+function loadCourses(){
+  db.ref('cursos').on('value', function(s){
+    var c = s.val() || {}, k = Object.keys(c);
+    document.getElementById('cursos-list').innerHTML = k.length ? k.map(function(slug){
+      return '✅ <b>' + esc(c[slug].title || slug) + '</b> · ' + esc(slug) + ' · ' + Math.round((c[slug].html || '').length / 1024) + ' KB' + (c[slug].updatedAt ? ' · ' + fmtDate(c[slug].updatedAt) : '');
+    }).join('<br>') : '<span style="color:var(--amber)">Nenhum curso pago publicado ainda: os alunos Operador/Comando veem "Conteúdo ainda não publicado".</span>';
+  }, function(){ document.getElementById('cursos-list').innerHTML = '<span style="color:var(--red)">Sem permissão: publique as regras novas do banco (bloco "cursos").</span>'; });
+}
+function publishCourses(input){
+  var f = input.files[0], msg = document.getElementById('cursos-msg'); if (!f) return;
+  f.text().then(function(t){
+    var data = JSON.parse(t), up = {}, n = 0;
+    Object.keys(data).forEach(function(slug){
+      if (!/^[a-z0-9-]+$/.test(slug) || !data[slug] || typeof data[slug].html !== 'string') throw new Error('arquivo inválido (' + slug + ')');
+      up['cursos/' + slug] = { title: String(data[slug].title || slug), html: data[slug].html, updatedAt: Date.now() }; n++;
+    });
+    if (!n) throw new Error('arquivo vazio');
+    return db.ref().update(up).then(function(){ msg.style.color = 'var(--green)'; msg.textContent = n + ' curso(s) publicado(s)'; });
+  }).catch(function(e){ msg.style.color = 'var(--red)'; msg.textContent = 'Erro: ' + e.message; }).then(function(){ input.value = ''; });
+}
+
 function loadMembers(){
-  show('v-panel');
+  show('v-panel');loadCourses();
   db.ref('members').on('value', function(snap){
     members = snap.val() || {};
     render();
