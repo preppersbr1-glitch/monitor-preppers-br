@@ -77,6 +77,21 @@ body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-directio
 #tbsos{color:#700}
 #tbsos.on{color:#f55;border-bottom-color:#f55}
 #sosi{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+/* REDE */
+#neti{flex:1;overflow-y:auto}
+#netsum{padding:8px 10px;font-size:11px;color:#686;border-bottom:1px solid #1a3a1a}
+#netsum b{color:#0f0}
+.nc{padding:9px 10px;border-bottom:1px solid #112211}
+.nc .tp{display:flex;align-items:center;gap:7px}
+.nc .dt{width:9px;height:9px;border-radius:50%;background:#333;flex:none}
+.nc.on .dt{background:#0f0;box-shadow:0 0 5px #0f0}
+.nc.sos .dt{background:#f33;box-shadow:0 0 5px #f33}
+.nc .id{font-size:14px;font-weight:bold;color:#0f0}
+.nc.off .id{color:#464}
+.nc .sx{margin-left:auto;font-size:10px;color:#464}
+.nc.on .sx{color:#0f0}
+.nc .gd{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:5px;font-size:11px;color:#9c9}
+.nc.me{background:#061006}
 .sosbig{width:160px;height:160px;border-radius:50%;background:#900;color:#fff;font:bold 20px monospace;border:4px solid #f55;cursor:pointer;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:manipulation;line-height:1.4;box-shadow:0 0 24px #9004}
 .sosbig.active{background:#f00;box-shadow:0 0 40px #f00}
 .canbig{width:100%;padding:12px;border-radius:8px;background:#1a0000;color:#f55;font:bold 14px monospace;border:2px solid #f55;cursor:pointer}
@@ -90,6 +105,7 @@ body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-directio
   <button class="tab"     onclick="stab(3)">&#127782; CLIMA</button>
   <button class="tab"     onclick="stab(4)">&#9881; CONF</button>
   <button id="tbsos" class="tab" onclick="stab(5)">&#128682; SOS</button>
+  <button class="tab"     onclick="stab(6)">&#128752; REDE</button>
 </div>
 <div id="st">
   <span id="s0">GPS:--</span>
@@ -228,6 +244,15 @@ body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-directio
   </div>
 </div>
 
+<!-- PG6: REDE (todas as placas ouvidas) -->
+<div id="pg6" class="pg">
+  <div id="neti">
+    <div id="netsum"></div>
+    <div id="netl"></div>
+    <p style="padding:10px;font-size:10px;color:#464;line-height:1.6">online = ouvida nos ultimos 3 beacons &middot; direto = sua placa ouve essa placa sem repetidor &middot; via repetidor = chega passando por outras placas &middot; sinal e bateria do ultimo pacote</p>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── Estado global ──────────────────────────────────────────
@@ -363,6 +388,33 @@ function stab(n){
   if(n===1)initMap();
   if(n===2)renderLoraNodes();
   if(n===4)loadCfg();
+  if(n===6)renderNet();
+}
+
+// ── Rede: todas as placas que esta placa ja ouviu ──────────
+var lastD=null;
+function agoT(s){return s<60?'agora':s<3600?Math.round(s/60)+' min':Math.round(s/3600)+' h';}
+function renderNet(){
+  var d=lastD;if(!d||!document.getElementById('pg6').classList.contains('on'))return;
+  var lim=Math.max(90,3*(d.bs||30));
+  var list=(d.nodeList||[]).slice().sort(function(a,b){return (a.age>lim)-(b.age>lim)||a.age-b.age;});
+  var on=list.filter(function(n){return n.age<=lim;}),dir=on.filter(function(n){return n.h===0;});
+  document.getElementById('netsum').innerHTML='<b>'+list.length+'</b> placa(s) na rede &middot; <b>'+on.length+'</b> online &middot; <b>'+dir.length+'</b> ao alcance direto';
+  var h='<div class="nc me on"><div class="tp"><span class="dt"></span><span class="id">'+esc(d.myid||'')+'</span><span class="sx">SUA PLACA</span></div>'
+    +'<div class="gd"><span>Bateria '+d.bat+'%</span><span>'+(d.fix?'GPS '+d.sat+' sat':'sem GPS')+'</span><span>LoRa '+(d.lora?'ok':'ERRO')+'</span><span>TX/RX '+(d.tx||0)+'/'+(d.rx||0)+'</span></div></div>';
+  list.forEach(function(n){
+    var ok=n.age<=lim,g=[];
+    if(n.h===0)g.push('&#128246; direto');else if(n.h>0)g.push('&#128257; via '+n.h+' repetidor'+(n.h>1?'es':''));
+    if(n.h===0&&n.r)g.push('sinal '+n.r+' dBm &middot; SNR '+n.q);
+    if(n.b>=0)g.push('bateria '+n.b+'%');
+    if(dFix&&(n.lat||n.lon)){var m=haversine(dLat,dLon,n.lat,n.lon);g.push(m>=1000?(m/1000).toFixed(1)+' km':Math.round(m)+' m');}
+    else if(!(n.lat||n.lon))g.push('sem posicao');
+    g.push(n.age<60?'visto agora':'visto ha '+agoT(n.age));
+    h+='<div class="nc '+(n.sos?'sos ':'')+(ok?'on':'off')+'"><div class="tp"><span class="dt"></span><span class="id">'+esc(n.id)+(n.sos?' SOS':'')+'</span><span class="sx">'+(ok?'ONLINE':'sem sinal ha '+agoT(n.age))+'</span></div>'
+      +'<div class="gd"><span>'+g.join('</span><span>')+'</span></div></div>';
+  });
+  if(!list.length)h+='<p style="padding:20px;text-align:center;color:#464;font-size:12px">Nenhuma outra placa ouvida ainda.</p>';
+  document.getElementById('netl').innerHTML=h;
 }
 
 // ── Config ────────────────────────────────────────────────
@@ -529,6 +581,7 @@ function upd(){
     if(d.myid)myId=d.myid;
     dFix=d.fix;dLat=d.lat||0;dLon=d.lon||0;
     nlist=d.nodeList||[];
+    lastD=d;renderNet();
 
     // Status bar
     document.getElementById('s0').textContent='GPS:'+(d.fix?'OK':'SEM');

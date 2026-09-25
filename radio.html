@@ -74,6 +74,20 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
 .node .meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px}
 .node.sos .nid{color:var(--red)}
 .node .grow{flex:1;min-width:0}
+.net-sum{padding:12px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border)}
+.net-sum b{color:var(--green)}
+.nc{padding:12px 14px;border-bottom:1px solid rgba(26,61,42,0.5)}
+.nc .top{display:flex;align-items:center;gap:8px}
+.nc .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.nc.on .dot{background:var(--green);box-shadow:0 0 6px var(--green)}
+.nc.sos .dot{background:var(--red);box-shadow:0 0 6px var(--red)}
+.nc .nid{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:1px;color:var(--green)}
+.nc.off .nid{color:var(--muted)}
+.nc .st{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)}
+.nc.on .st{color:var(--green)}
+.nc .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px 12px;margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text)}
+.nc .grid span{white-space:nowrap}
+.nc.me{background:rgba(0,255,136,0.04)}
 .dmhdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)}
 /* mapa */
 #map{height:420px;background:#030806}
@@ -117,7 +131,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 27</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 28</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -162,6 +176,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
         <button class="tab" data-tab="contatos" onclick="showTab('contatos')">👥 CONTATOS<span class="bdg hidden" id="dm-badge">!</span></button>
         <button class="tab" data-tab="mapa" onclick="showTab('mapa')">🗺️ MAPA</button>
         <button class="tab" data-tab="sos" onclick="showTab('sos')" id="tab-sos">🆘 SOS</button>
+        <button class="tab" data-tab="rede" onclick="showTab('rede')">🛰️ REDE</button>
         <button class="tab" data-tab="config" onclick="showTab('config')">⚙️ CONFIG</button>
       </div>
 
@@ -206,6 +221,13 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
           <div class="sos-st" id="sos-st">Nenhuma emergência ativa</div>
           <div class="mono" style="font-size:11px;color:var(--muted);line-height:1.7;max-width:460px;margin:0 auto">O SOS é transmitido pela rede LoRa a cada 10 s, com a posição GPS da placa, para todos os nós. Use apenas em emergência real.</div>
         </div>
+      </div>
+
+      <!-- REDE: todas as placas ouvidas -->
+      <div class="pane hidden" id="pane-rede">
+        <div class="net-sum" id="net-sum"></div>
+        <div id="net"></div>
+        <div class="mono" style="padding:10px 14px;font-size:10px;color:var(--muted);line-height:1.7">🟢 online = ouvida nos últimos 3 beacons · 📶 direto = sua placa ouve essa placa sem repetidor · 🔁 via repetidor = a mensagem chega passando por outras placas · sinal e bateria vêm do último pacote (firmware v4.3+)</div>
       </div>
 
       <!-- CONFIG -->
@@ -420,7 +442,8 @@ async function toggleSos(){
 // ── Telas ──
 function showTab(t){
   document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===t)});
-  ['chat','contatos','mapa','sos','config'].forEach(function(p){$('pane-'+p).classList.toggle('hidden',p!==t)});
+  ['chat','contatos','mapa','sos','rede','config'].forEach(function(p){$('pane-'+p).classList.toggle('hidden',p!==t)});
+  if(t==='rede')renderNet();
   if(t==='mapa')initMap();
   if(t==='config')loadCfg();
   if(t==='contatos'){$('dm-badge').classList.add('hidden');if(!dmPeer)renderNodes()}
@@ -484,7 +507,7 @@ function renderStatus(){
   $('s-nodes').textContent=st.nodes||0;
   $('s-rssi').textContent=st.rx?st.rssi:'—';
   $('s-txrx').textContent=(st.tx||0)+'/'+(st.rx||0);
-  renderSos();renderNodes();updMap();
+  renderSos();renderNodes();updMap();renderNet();
 }
 // ✓ = a placa transmitiu · ✓✓ = outra placa confirmou (firmware v4.1+; no firmware antigo não aparece nada)
 function ck(m,chat){
@@ -523,13 +546,34 @@ function renderNodes(){
     row.classList.toggle('sos',!!n.sos);
     setText(row.querySelector('.nid'),n.id+(n.sos?' 🆘':''));
     var dist=nodeDist(n);
-    setText(row.querySelector('.meta'),(dist!=null?'📍 '+fmtDist(dist)+' · ':'sem posição · ')+'visto há '+ago(n.age));
+    setText(row.querySelector('.meta'),(dist!=null?'📍 '+fmtDist(dist)+' · ':'sem posição · ')+(n.age<60?'visto agora':'visto há '+ago(n.age)));
     var unread=dms.filter(function(d){return d.peer===n.id&&!d.mine&&d.v>seenDmV}).length;
     var u=row.querySelector('.unread');u.classList.toggle('hidden',!unread);setText(u,String(unread));
   });
   el.querySelectorAll('.node').forEach(function(r){if(!keep[r.dataset.id])r.remove()});
 }
 function setText(e,t){if(e.textContent!==t)e.textContent=t}
+// ── Rede: todas as placas que a sua já ouviu (só informação, sem botões: pode redesenhar à vontade) ──
+function sigBars(r){if(r==null)return '';var n=r>-90?4:r>-105?3:r>-115?2:1;return '▂▄▆█'.slice(0,n)+'<span style="opacity:.25">'+'▂▄▆█'.slice(n)+'</span>'}
+function batIco(b){return b==null||b<0?'':(b<20?'🪫 ':'🔋 ')+b+'%'}
+function renderNet(){
+  if($('pane-rede').classList.contains('hidden'))return;
+  var lim=Math.max(90,3*(st.bs||30));
+  var list=(st.nlist||[]).slice().sort(function(a,b){return (a.age>lim)-(b.age>lim)||a.age-b.age});
+  var on=list.filter(function(n){return n.age<=lim}),dir=on.filter(function(n){return n.h===0});
+  $('net-sum').innerHTML='<b>'+list.length+'</b> placa(s) na rede · <b>'+on.length+'</b> online · <b>'+dir.length+'</b> ao alcance direto';
+  var me='<div class="nc me on"><div class="top"><span class="dot"></span><span class="nid">'+esc(st.id||'SUA PLACA')+'</span><span class="st">SUA PLACA</span></div>'
+    +'<div class="grid"><span>'+batIco(st.bat)+'</span><span>'+(st.fix?'🛰️ GPS '+st.sat+' sat':'🛰️ sem GPS')+'</span><span>📡 LoRa '+(st.lora?'ok':'ERRO')+'</span><span>⇅ '+(st.tx||0)+'/'+(st.rx||0)+'</span></div></div>';
+  var rows=list.map(function(n){
+    var ok=n.age<=lim,dist=nodeDist(n);
+    var path=n.h==null||n.h<0?'':n.h===0?'📶 direto':'🔁 via '+n.h+' repetidor'+(n.h>1?'es':'');
+    var sig=n.h===0&&n.r?sigBars(n.r)+' '+n.r+' dBm'+(n.q!=null?' · SNR '+n.q:''):'';
+    return '<div class="nc '+(n.sos?'sos ':'')+(ok?'on':'off')+'"><div class="top"><span class="dot"></span><span class="nid">'+esc(n.id)+(n.sos?' 🆘':'')+'</span><span class="st">'+(ok?'ONLINE':'sem sinal há '+ago(n.age))+'</span></div>'
+      +'<div class="grid">'+(path?'<span>'+path+'</span>':'')+(sig?'<span>'+sig+'</span>':'')+(n.b!=null?'<span>'+batIco(n.b)+'</span>':'')
+      +'<span>'+(dist!=null?'📍 '+fmtDist(dist):'📍 sem posição')+'</span><span>🕒 '+(n.age<60?'visto agora':'visto há '+ago(n.age))+'</span></div></div>';
+  }).join('');
+  $('net').innerHTML=me+(rows||'<div class="empty" style="padding:30px 16px">Nenhuma outra placa ouvida ainda.<br>Elas aparecem aqui quando o beacon delas chegar.</div>');
+}
 function openDm(peer){
   dmPeer=peer;$('nodes').classList.add('hidden');$('dm').classList.remove('hidden');
   $('dm-peer').textContent='💬 '+peer;
