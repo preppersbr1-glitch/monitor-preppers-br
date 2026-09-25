@@ -110,7 +110,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 23</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 24</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -336,6 +336,11 @@ function merge(old,neu){
   var map={};old.forEach(function(x){map[x.v]=x});neu.forEach(function(x){map[x.v]=x});
   return Object.keys(map).map(Number).sort(function(a,b){return a-b}).slice(-200).map(function(k){return map[k]});
 }
+// Nem sempre o aviso (notificação) da placa chega ao navegador — no Chrome do Mac a mensagem enviada
+// não aparecia. Por isso relê a lista logo depois de enviar (a placa leva ~1 s para transmitir pelo
+// LoRa) e, enquanto conectado, a cada 6 s.
+function refreshSoon(name){[800,2000,4000].forEach(function(ms){setTimeout(function(){if(dev&&dev.gatt.connected)refresh(name)},ms)})}
+setInterval(function(){if(dev&&dev.gatt.connected&&ch.msgs){refresh('msgs');refresh('dms')}},6000);
 function onDisconnected(){
   $('live').classList.add('off');$('btn-reconnect').classList.remove('hidden');
   if(wantConnected){toast('Conexão Bluetooth perdida — tentando reconectar...');setTimeout(reconnect,1500)}
@@ -361,12 +366,12 @@ function countBytes(inp,id,max){var n=enc.encode(inp.value).length;$(id).textCon
 async function sendChat(){
   var v=$('chat-in').value.trim();if(!v)return;
   if(enc.encode(v).length>MSG_MAX){toast('Mensagem longa demais (acentos contam 2)');return}
-  if(await write('send',v)){$('chat-in').value='';countBytes($('chat-in'),'chat-count',MSG_MAX)}
+  if(await write('send',v)){$('chat-in').value='';countBytes($('chat-in'),'chat-count',MSG_MAX);refreshSoon('msgs')}
 }
 async function sendDm(){
   var v=$('dm-in').value.trim();if(!v||!dmPeer)return;
   if(enc.encode(v).length>DM_MAX){toast('Mensagem longa demais (acentos contam 2)');return}
-  if(await write('send','D['+dmPeer+']'+v)){$('dm-in').value='';countBytes($('dm-in'),'dm-count',DM_MAX)}
+  if(await write('send','D['+dmPeer+']'+v)){$('dm-in').value='';countBytes($('dm-in'),'dm-count',DM_MAX);refreshSoon('dms')}
 }
 async function toggleSos(){
   if(!st.sos){if(!confirm('CONFIRMAR ENVIO DE SOS?\n\nTodos os nós da rede serão alertados.'))return;await write('sos','1')}
