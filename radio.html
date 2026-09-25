@@ -117,7 +117,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 26</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 27</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -381,7 +381,7 @@ function onDisconnected(){
 // Tenta algumas vezes: depois de salvar a configuração a placa leva alguns segundos para reiniciar
 async function reconnect(tries){
   if(!dev)return;
-  tries=tries||4;
+  tries=tries||6;
   for(var i=0;i<tries;i++){
     try{await setup();toast('Reconectado');return}catch(e){}
     if(i<tries-1)await new Promise(function(r){setTimeout(r,3000)});
@@ -449,18 +449,32 @@ async function saveCfg(){
   var rid=String(Date.now()%1e8);
   var body=['id='+rid,'callsign='+cs,'beacon_s='+bs,'lora_freq='+$('cf-f').value,'lora_sf='+$('cf-sf').value,'lora_bw='+$('cf-bw').value,'wifi_pass='+np,'cur='+cur].join('\n');
   msg.style.color='var(--amber)';msg.textContent='Salvando...';$('cf-save').disabled=true;
+  var sent={callsign:cs,beacon_s:bs,lora_freq:parseFloat($('cf-f').value),lora_sf:parseInt($('cf-sf').value,10),lora_bw:parseFloat($('cf-bw').value)};
+  function done(){msg.style.color='var(--green)';$('cf-cur').value='';$('cf-np').value='';$('cf-save').disabled=false}
   try{
     var data=enc.encode(body);
     await gatt(function(){return ch.cfg.writeValueWithResponse?ch.cfg.writeValueWithResponse(data):ch.cfg.writeValue(data)});
-    // a placa responde no próprio valor da característica ("res")
+    // a placa responde no próprio valor da característica ("res"); se reiniciar antes de o app ler,
+    // a conexão cai — aí reconecta e confere se os valores ficaram gravados
     var d=null;
-    for(var i=0;i<10;i++){await new Promise(function(r){setTimeout(r,300)});d=await readCfg();if(d.rid===rid)break}
-    if(d&&d.rid===rid&&d.res==='OK'){
-      msg.style.color='var(--green)';msg.textContent='Salvo! A placa está reiniciando — reconectando em alguns segundos...';
-      $('cf-cur').value='';$('cf-np').value='';
-    } else err(d&&d.rid===rid?d.res:'A placa não respondeu. Tente de novo.');
-  }catch(e){err('Falha ao salvar: '+e.message)}
-  $('cf-save').disabled=false;
+    for(var i=0;i<10;i++){
+      await new Promise(function(r){setTimeout(r,300)});
+      if(!dev.gatt.connected)break;
+      try{d=await readCfg()}catch(e){if(!dev.gatt.connected)break;throw e}
+      if(d.rid===rid)break;
+    }
+    if(d&&d.rid===rid&&d.res!=='OK'){err(d.res);$('cf-save').disabled=false;return}
+    if(d&&d.rid===rid){done();msg.textContent='Salvo! A placa está reiniciando — reconectando em alguns segundos...';return}
+    if(dev.gatt.connected){err('A placa não respondeu. Tente de novo.');$('cf-save').disabled=false;return}
+    msg.textContent='A placa reiniciou — reconectando para conferir...';
+    for(var t=0;t<40&&!(dev.gatt.connected&&ch.cfg);t++)await new Promise(function(r){setTimeout(r,500)});
+    if(!(dev.gatt.connected&&ch.cfg)){msg.style.color='var(--amber)';msg.textContent='A placa reiniciou, mas não reconectou ainda. Toque em RECONECTAR e abra esta aba para conferir.';$('cf-save').disabled=false;return}
+    var now=await readCfg();
+    var ok=now.callsign===sent.callsign&&now.beacon_s===sent.beacon_s&&now.lora_sf===sent.lora_sf&&Math.abs(now.lora_freq-sent.lora_freq)<0.2&&Math.abs(now.lora_bw-sent.lora_bw)<0.2;
+    if(ok){done();msg.textContent='Salvo e conferido ✓ — a placa está com a configuração nova.'}
+    else{err('A placa reiniciou, mas a configuração não mudou. Tente de novo.');$('cf-save').disabled=false}
+    loadCfg();
+  }catch(e){err('Falha ao salvar: '+e.message);$('cf-save').disabled=false}
 }
 function renderStatus(){
   $('dev-name').textContent=st.id||dev.name||'PLACA';
