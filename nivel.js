@@ -25,10 +25,10 @@
     'background:#050a08;visibility:visible;font-family:Rajdhani,system-ui,sans-serif;color:#c8fce8}' +
     '.pbr-box{max-width:440px;width:100%;background:#0a1610;border:1px solid #1a3d2a;border-radius:6px;padding:28px 24px;text-align:center}' +
     '.pbr-box .i{font-size:38px;margin-bottom:8px}' +
-    '.pbr-box h2{font-family:Orbitron,sans-serif;font-size:15px;letter-spacing:3px;color:#00ff88;margin:0 0 10px}' +
-    '.pbr-box p{font-size:15px;line-height:1.6;margin:0 0 18px;color:#c8fce8}' +
-    '.pbr-box small{display:block;font-family:"Share Tech Mono",monospace;font-size:10px;color:#4a7a60;letter-spacing:1px;margin-top:14px}' +
-    '.pbr-btn{display:inline-block;margin:4px;padding:11px 18px;border-radius:3px;font-family:"Share Tech Mono",monospace;font-size:12px;letter-spacing:1px;text-decoration:none;cursor:pointer;border:1px solid #00cc6a}' +
+    '.pbr-box h2{font-family:Orbitron,sans-serif;font-size:16px;letter-spacing:3px;color:#00ff88;margin:0 0 10px}' +
+    '.pbr-box p{font-size:16px;line-height:1.6;margin:0 0 18px;color:#c8fce8}' +
+    '.pbr-box small{display:block;font-family:"Share Tech Mono",monospace;font-size:12px;color:#4a7a60;letter-spacing:1px;margin-top:14px}' +
+    '.pbr-btn{display:inline-block;margin:4px;padding:11px 18px;border-radius:3px;font-family:"Share Tech Mono",monospace;font-size:14px;letter-spacing:1px;text-decoration:none;cursor:pointer;border:1px solid #00cc6a}' +
     '.pbr-btn.p{background:#00ff88;color:#000;font-weight:bold}.pbr-btn.g{background:transparent;color:#00ff88}';
   document.head.appendChild(css);
   document.documentElement.classList.add('pbr-wait');
