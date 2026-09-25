@@ -110,7 +110,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 21</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 22</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -208,6 +208,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
 <script>
 // Qualquer erro de script aparece na tela (no iPhone não há console para ver)
 window.onerror=function(msg,src,line){var d=document.getElementById('diag');if(d)d.textContent+=' · ERRO: '+msg+' (linha '+line+')'};
+window.addEventListener('unhandledrejection',function(ev){var d=document.getElementById('diag'),r=ev.reason;if(d)d.textContent+=' · ERRO: '+(r&&(r.name+': '+r.message)||r)});
 // UUIDs do serviço BLE do firmware PreppersBR (firmware/HeltecV4PreppersV2)
 var SVC ='4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 var UUID={stat:'beb5483e-36e1-4688-b7f5-ea07361b26a8',msgs:'beb5483f-36e1-4688-b7f5-ea07361b26a8',send:'beb54840-36e1-4688-b7f5-ea07361b26a8',sos:'beb54841-36e1-4688-b7f5-ea07361b26a8',dms:'beb54842-36e1-4688-b7f5-ea07361b26a8'};
@@ -238,9 +239,11 @@ function checkBle(){
   $('unsupported').classList.toggle('hidden',ok||isIOS);
   var t='Bluetooth neste navegador: '+(ok?'SIM':'NÃO')+(isIOS?' · iOS':'');
   $('diag').textContent=t;
-  if(ok&&navigator.bluetooth.getAvailability){
-    navigator.bluetooth.getAvailability().then(function(a){$('diag').textContent=t+' · adaptador: '+(a?'ligado':'DESLIGADO ou sem permissão')},function(){});
-  }
+  try{
+    if(ok&&navigator.bluetooth.getAvailability){
+      Promise.resolve(navigator.bluetooth.getAvailability()).then(function(a){$('diag').textContent=t+' · adaptador: '+(a?'ligado':'DESLIGADO ou sem permissão')},function(){});
+    }
+  }catch(e){$('diag').textContent=t+' · adaptador: ?'}
   return ok;
 }
 checkBle();
@@ -256,7 +259,15 @@ function copyUrl(btn){
 // ── Conexão ──
 // all=true: lista todos os aparelhos (sem filtro por serviço) — alguns navegadores, como o Bluefy,
 // não abrem a lista com o filtro; aí a placa aparece pelo nome (o call sign, ex.: H12FC)
-async function connectBle(all){
+function connectBle(all){
+  var box=$('conn-err');
+  box.style.color='var(--muted)';box.textContent='Botão tocado. Preparando o Bluetooth...';
+  try{
+    var r=connectBle2(all);
+    if(r&&r.catch)r.catch(function(e){box.style.color='var(--amber)';box.textContent='Erro: '+(e&&(e.name+' — '+e.message)||e)});
+  }catch(e){box.style.color='var(--amber)';box.textContent='Erro: '+(e&&(e.name+' — '+e.message)||e)}
+}
+async function connectBle2(all){
   $('conn-err').textContent='';
   if(!checkBle()){
     $('conn-err').style.color='var(--amber)';
