@@ -5,7 +5,8 @@
 // ============================================================
 
 // Versão do firmware mostrada na abertura, na tela HOME e no Serial
-#define FW_VERSION "v5"
+// v4.x = ajustes e recursos menores (sobe o número depois do ponto); v5 só em mudança grande
+#define FW_VERSION "v4.1"
 
 #include <Arduino.h>
 #include <SPI.h>

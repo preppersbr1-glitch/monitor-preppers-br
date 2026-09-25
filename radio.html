@@ -398,7 +398,7 @@ function renderStatus(){
   $('s-txrx').textContent=(st.tx||0)+'/'+(st.rx||0);
   renderSos();renderNodes();updMap();
 }
-// ✓ = a placa transmitiu · ✓✓ = outra placa confirmou (firmware v5+; no firmware antigo não aparece nada)
+// ✓ = a placa transmitiu · ✓✓ = outra placa confirmou (firmware v4.1+; no firmware antigo não aparece nada)
 function ck(m,chat){
   if(!m.mine||m.a==null)return '';
   if(!m.a)return '<span class="ck" title="Enviada pelo rádio">✓</span>';
