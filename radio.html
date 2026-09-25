@@ -97,6 +97,12 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
 .sos-btn{width:180px;height:180px;border-radius:50%;border:4px solid var(--red);background:#600;color:#fff;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:3px;cursor:pointer;box-shadow:0 0 30px rgba(255,51,51,0.3)}
 .sos-btn.on{background:var(--red);box-shadow:0 0 50px var(--red);animation:p 1s infinite}
 .sos-st{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin:16px 0}
+.ov{position:fixed;inset:0;z-index:1500;background:var(--bg)}
+.ov iframe{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+.ov-back{position:fixed;left:12px;bottom:14px;z-index:2100;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:24px;border:1px solid var(--green2);background:rgba(5,15,10,0.95);color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,0.6)}
+.ov-back .ld{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.ov-back.off .ld{background:var(--red);box-shadow:0 0 6px var(--red)}
+.ov-back .n{background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0}
 .toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:6px;align-items:center;width:max-content;max-width:90%}
 .toast{background:var(--card);border:1px solid var(--amber);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px 16px;border-radius:4px}
 @media(max-width:700px){
@@ -131,7 +137,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
     <div style="margin-top:10px"><button class="btn btn-ghost" id="btn-all" style="padding:8px 12px;font-size:9px" onclick="connectBle(true)">PROCURAR TODOS OS APARELHOS</button></div>
     <div id="conn-err"></div>
     <div class="mono" id="diag" style="font-size:9px;color:var(--muted);margin-top:14px;line-height:1.6">Carregando o app... (se esta frase não mudar, o app não carregou: feche e reabra o navegador)</div>
-    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 29</div>
+    <div class="mono" style="font-size:8px;color:var(--muted);opacity:.6">versão 30</div>
     <div class="note hidden" id="ios" style="border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06)">
       <b style="color:var(--blue)">🍎 iPhone / iPad</b><br>
       A Apple bloqueia o Bluetooth em sites em <b>todos</b> os navegadores do iPhone (Safari, Chrome, Edge).
@@ -254,6 +260,10 @@ main{max-width:900px;margin:0 auto;padding:20px 16px 40px}
   </div>
 </main>
 
+<!-- Outras páginas abertas por cima enquanto a placa está conectada: trocar de página fecharia o Bluetooth -->
+<div class="ov hidden" id="ov"><iframe id="ov-frame" title="Página"></iframe></div>
+<button class="ov-back hidden" id="ov-back" onclick="closeOverlay()"><span class="ld"></span>📻 RÁDIO <span id="ov-name"></span><span class="n hidden" id="ov-n"></span></button>
+
 <!-- O mapa carrega em segundo plano: antes este script travava a página inteira enquanto o CDN não
      respondia (comum no Bluefy/iPhone) e os botões não faziam nada -->
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -370,9 +380,10 @@ async function setup(){
   chat=[];dms=[];
   $('dev-name').textContent=dev.name||'PLACA';
   $('connect').classList.add('hidden');$('app').classList.remove('hidden');
-  $('live').classList.remove('off');$('btn-reconnect').classList.add('hidden');
+  $('live').classList.remove('off');$('btn-reconnect').classList.add('hidden');$('ov-back').classList.remove('off');
   $('btn-connect').disabled=false;$('btn-connect').textContent='🔵 CONECTAR À PLACA';
   for(var n2 of ['stat','msgs','dms','sos'])await refresh(n2);
+  chatReady=true;
 }
 // A notificação pode chegar cortada (tamanho do pacote BLE); por isso sempre relê o valor completo
 async function refresh(name){
@@ -381,7 +392,8 @@ async function refresh(name){
     if(name==='sos'){st.sos=(v==='1');renderSos();return}
     var d=JSON.parse(v);
     if(name==='stat'){st=d;renderStatus()}
-    else if(name==='msgs'){chat=merge(chat,d);renderChat()}
+    else if(name==='msgs'){var pv=chat.length?chat[chat.length-1].v:(chatReady?0:null);chat=merge(chat,d);renderChat();
+      if(ovOpen&&pv!=null)chat.filter(function(m){return m.v>pv&&!m.mine}).forEach(function(m){toast('📡 '+m.from+': '+m.text);ovCount(1)})}
     else if(name==='dms'){var before=dms.length;dms=merge(dms,d);renderNodes();if(dmPeer)renderDm();notifyDm(before)}
   }catch(e){console.warn('BLE',name,e)}
 }
@@ -397,7 +409,7 @@ function merge(old,neu){
 function refreshSoon(name){[800,2000,4000].forEach(function(ms){setTimeout(function(){if(dev&&dev.gatt.connected)refresh(name)},ms)})}
 setInterval(function(){if(dev&&dev.gatt.connected&&ch.msgs){refresh('msgs');refresh('dms')}},6000);
 function onDisconnected(){
-  $('live').classList.add('off');$('btn-reconnect').classList.remove('hidden');
+  $('live').classList.add('off');$('ov-back').classList.add('off');$('btn-reconnect').classList.remove('hidden');
   if(wantConnected){toast('Conexão Bluetooth perdida — tentando reconectar...');setTimeout(reconnect,1500)}
 }
 // Tenta algumas vezes: depois de salvar a configuração a placa leva alguns segundos para reiniciar
@@ -522,6 +534,46 @@ function ck(m,chat){
   if(!m.a)return '<span class="ck" title="Enviada pelo rádio">✓</span>';
   return '<span class="ck ok" title="Recebida por '+m.a+' placa(s)">✓✓'+(chat?' '+m.a+(m.a>1?' placas':' placa'):'')+'</span>';
 }
+// ── Navegar sem desconectar ──
+// Com a placa conectada, os links do site abrem numa camada por cima (iframe) e esta página continua viva por
+// baixo, com o Bluetooth ligado. O botão 📻 RÁDIO (ou o voltar do celular) fecha a camada.
+var ovOpen=false,ovN=0,chatReady=false;   // chatReady: já leu a lista inicial (para não avisar das antigas)
+function bleOn(){return !!(dev&&dev.gatt&&dev.gatt.connected&&wantConnected)}
+function isRadioUrl(u){return /\/radio\.html$/.test(u.pathname)}
+function ovCount(n){ovN+=n;$('ov-n').textContent=ovN;$('ov-n').classList.toggle('hidden',!ovN)}
+function openOverlay(href){
+  ovGo(href);$('ov').classList.remove('hidden');$('ov-back').classList.remove('hidden');
+  $('ov-name').textContent=st.id||(dev&&dev.name)||'';
+  if(!ovOpen){ovOpen=true;try{history.pushState({ov:1},'')}catch(e){}}
+  document.body.style.overflow='hidden';
+}
+// Troca a página da camada SEM criar entrada no histórico: assim o "voltar" do navegador fecha a camada
+function ovGo(href){var f=$('ov-frame');try{f.contentWindow.location.replace(href)}catch(e){f.src=href}}
+function closeOverlay(fromPop){
+  if(!ovOpen)return;ovOpen=false;ovN=0;ovCount(0);
+  $('ov').classList.add('hidden');$('ov-back').classList.add('hidden');ovGo('about:blank');
+  document.body.style.overflow='';document.title=radioTitle;
+  if(!fromPop){try{if(history.state&&history.state.ov)history.back()}catch(e){}}
+}
+var radioTitle=document.title;
+window.addEventListener('popstate',function(){if(ovOpen)closeOverlay(true)});
+function interceptLinks(doc,inFrame){
+  doc.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href]');if(!a||a.target==='_blank'||e.ctrlKey||e.metaKey||e.shiftKey)return;
+    var u;try{u=new URL(a.getAttribute('href'),doc.baseURI)}catch(err){return}
+    if(u.origin!==location.origin)return;
+    if(isRadioUrl(u)){if(inFrame||ovOpen){e.preventDefault();closeOverlay()}return}
+    if(inFrame){e.preventDefault();ovGo(u.href);return}
+    if(bleOn()){e.preventDefault();openOverlay(u.href)}
+  },true);
+}
+interceptLinks(document,false);
+$('ov-frame').addEventListener('load',function(){
+  try{var d=$('ov-frame').contentDocument;if(!d||d.location.href==='about:blank')return;
+    interceptLinks(d,true);document.title=(d.title||'')+' · 📻 conectado'}catch(e){}
+});
+// Sair da página (fechar, digitar outro endereço) desconecta: o navegador pergunta antes
+window.addEventListener('beforeunload',function(e){if(bleOn()){e.preventDefault();e.returnValue='';return ''}});
 function renderChat(){
   var el=$('chat');
   if(!chat.length){el.innerHTML='<div class="empty">Nenhuma mensagem ainda.<br>O que você enviar aqui chega a todos os nós da rede.</div>';return}
@@ -599,7 +651,7 @@ function notifyDm(before){
   var novas=dms.slice(before).filter(function(d){return !d.mine&&d.v>seenDmV});
   if(!novas.length)return;
   var onContacts=!$('pane-contatos').classList.contains('hidden');
-  if(!(onContacts&&dmPeer===novas[novas.length-1].peer)){$('dm-badge').classList.remove('hidden');toast('💬 Mensagem privada de '+novas[novas.length-1].from)}
+  if(!(onContacts&&dmPeer===novas[novas.length-1].peer)){$('dm-badge').classList.remove('hidden');toast('💬 Mensagem privada de '+novas[novas.length-1].from);if(ovOpen)ovCount(novas.length)}
 }
 function renderSos(){
   var on=!!st.sos;
@@ -636,7 +688,7 @@ function updMap(){
 }
 if(navigator.geolocation)navigator.geolocation.watchPosition(function(p){phone=[p.coords.latitude,p.coords.longitude];updMap();if(!dmPeer)renderNodes()},function(){},{enableHighAccuracy:true,maximumAge:30000});
 // Funções chamadas pelos botões da página
-window.connectBle=connectBle;window.copyUrl=copyUrl;window.reconnect=reconnect;window.disconnectBle=disconnectBle;
+window.connectBle=connectBle;window.closeOverlay=closeOverlay;window.copyUrl=copyUrl;window.reconnect=reconnect;window.disconnectBle=disconnectBle;
 window.showTab=showTab;window.sendChat=sendChat;window.sendDm=sendDm;window.closeDm=closeDm;window.toggleSos=toggleSos;window.countBytes=countBytes;window.saveCfg=saveCfg;
 })();
 </script>
