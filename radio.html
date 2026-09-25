@@ -319,17 +319,35 @@ function renderChat(){
 }
 function myPos(){if(st.fix)return [st.lat,st.lon];if(phone)return phone;return null}
 function nodeDist(n){if(n.d!=null)return n.d;var p=myPos();return (p&&n.lat!=null)?hav(p[0],p[1],n.lat,n.lon):null}
+// A placa manda status várias vezes por segundo. Recriar a lista a cada vez trocava o botão PRIVADO
+// entre o apertar e o soltar do mouse e o clique se perdia: agora cada contato é criado uma vez e
+// só os textos são atualizados.
 function renderNodes(){
   if(dmPeer)return;
   var list=(st.nlist||[]);var el=$('nodes');
-  if(!list.length){el.innerHTML='<div class="empty" style="padding:40px 16px">Nenhum nó ouvido ainda.<br>Os outros rádios aparecem aqui quando o beacon deles chegar.</div>';return}
-  el.innerHTML=list.map(function(n){
+  var empty=el.querySelector('.empty');
+  if(!list.length){if(!empty)el.innerHTML='<div class="empty" style="padding:40px 16px">Nenhum nó ouvido ainda.<br>Os outros rádios aparecem aqui quando o beacon deles chegar.</div>';return}
+  if(empty)empty.remove();
+  var keep={};
+  list.forEach(function(n,i){
+    keep[n.id]=1;
+    var row=null;el.querySelectorAll('.node').forEach(function(r){if(r.dataset.id===n.id)row=r});
+    if(!row){
+      row=document.createElement('div');row.className='node';row.dataset.id=n.id;
+      row.innerHTML='<div class="grow"><div class="nid"></div><div class="meta"></div></div><span class="unread hidden" style="background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:10px"></span><button class="btn btn-ghost" style="padding:8px 12px">💬 PRIVADO</button>';
+      row.querySelector('button').addEventListener('click',function(){openDm(row.dataset.id)});
+    }
+    if(el.children[i]!==row)el.insertBefore(row,el.children[i]||null);
+    row.classList.toggle('sos',!!n.sos);
+    setText(row.querySelector('.nid'),n.id+(n.sos?' 🆘':''));
+    var dist=nodeDist(n);
+    setText(row.querySelector('.meta'),(dist!=null?'📍 '+fmtDist(dist)+' · ':'sem posição · ')+'visto há '+ago(n.age));
     var unread=dms.filter(function(d){return d.peer===n.id&&!d.mine&&d.v>seenDmV}).length;
-    return '<div class="node'+(n.sos?' sos':'')+'"><div class="grow"><div class="nid">'+esc(n.id)+(n.sos?' 🆘':'')+'</div><div class="meta">'+(nodeDist(n)!=null?'📍 '+fmtDist(nodeDist(n))+' · ':'sem posição · ')+'visto há '+ago(n.age)+'</div></div>'+
-      (unread?'<span class="bdg" style="background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:10px">'+unread+'</span>':'')+
-      '<button class="btn btn-ghost" style="padding:8px 12px" data-peer="'+esc(n.id)+'" onclick="openDm(this.dataset.peer)">💬 PRIVADO</button></div>';
-  }).join('');
+    var u=row.querySelector('.unread');u.classList.toggle('hidden',!unread);setText(u,String(unread));
+  });
+  el.querySelectorAll('.node').forEach(function(r){if(!keep[r.dataset.id])r.remove()});
 }
+function setText(e,t){if(e.textContent!==t)e.textContent=t}
 function openDm(peer){
   dmPeer=peer;$('nodes').classList.add('hidden');$('dm').classList.remove('hidden');
   $('dm-peer').textContent='💬 '+peer;
