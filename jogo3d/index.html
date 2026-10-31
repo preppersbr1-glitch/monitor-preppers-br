@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Zona Mortal 3D</title>
+<meta name="description" content="Zona Mortal 3D — RPG de sobrevivência pós-apocalíptica em 3D, do canal Preppers BR.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zona Mortal 3D">
+<style>
+:root{--ouro:#e8c060;--verde:#4bd16b;--verm:#ff5a4a;--azul:#7ac8ff;--sat:env(safe-area-inset-top);--sal:env(safe-area-inset-left);--sar:env(safe-area-inset-right);--sab:env(safe-area-inset-bottom)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#ddd;font-family:Verdana,Tahoma,sans-serif;font-size:12px;-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:fixed;z-index:10}
+.cx{background:rgba(10,10,10,.62);border:1px solid rgba(255,255,255,.14);border-radius:6px;backdrop-filter:blur(3px)}
+#stats{top:calc(var(--sat) + 8px);left:calc(var(--sal) + 8px);width:172px;padding:6px;pointer-events:none}
+#stats .nm{color:var(--ouro);font-weight:bold;font-size:12px;margin-bottom:3px;display:flex;justify-content:space-between}
+.barra{height:12px;background:#111;border:1px solid #000;position:relative;margin:2px 0;border-radius:2px;overflow:hidden}
+.barra>i{position:absolute;left:0;top:0;bottom:0;display:block;transition:width .2s}
+.barra>span{position:absolute;inset:0;font-size:9px;line-height:12px;text-align:center;color:#fff;text-shadow:1px 1px 0 #000}
+.barra.fina{height:4px}
+.mini3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px}
+.mini3 .barra{height:9px}.mini3 .barra>span{line-height:9px;font-size:8px}
+#zona{font-size:10px;margin-top:3px;color:var(--verde);min-height:12px}
+#alvo{top:calc(var(--sat) + 8px);left:50%;transform:translateX(-50%);padding:4px 12px;min-width:150px;text-align:center;display:none;pointer-events:none;border-color:#a33;background:rgba(60,0,0,.55)}
+#alvo .barra{height:6px}
+#topoD{top:calc(var(--sat) + 8px);right:calc(var(--sar) + 8px);display:flex;gap:6px;align-items:flex-start}
+#mini{display:block;border-radius:4px;border:1px solid #555;background:#000;image-rendering:pixelated}
+#lugar{font-size:10px;text-align:center;margin-top:2px;text-shadow:1px 1px 0 #000}
+#lugar b{color:var(--ouro)}
+.col{display:flex;flex-direction:column;gap:5px}
+.bM{width:42px;height:42px;border-radius:50%;background:rgba(30,30,30,.65);border:2px solid rgba(220,220,220,.35);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;touch-action:none;font-family:inherit}
+.bM:active,.bM.on{background:rgba(232,192,96,.45)}
+#joy{left:calc(var(--sal) + 18px);bottom:calc(var(--sab) + 18px);width:136px;height:136px;border-radius:50%;background:radial-gradient(rgba(255,255,255,.04),rgba(255,255,255,.12));border:2px solid rgba(255,255,255,.25);touch-action:none}
+#joyK{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#8a8a8a,#3a3a3a);border:2px solid rgba(255,255,255,.45);pointer-events:none}
+#acoes{right:calc(var(--sar) + 12px);bottom:calc(var(--sab) + 12px);width:196px;height:186px;pointer-events:none}
+#acoes .bM{position:absolute;pointer-events:auto}
+#bAtk{width:80px;height:80px;right:0;bottom:0;font-size:34px;background:rgba(130,20,20,.65);border-color:rgba(255,130,130,.6)}
+#bUsar{right:92px;bottom:4px;width:52px;height:52px;font-size:22px}
+#bCura{right:86px;bottom:68px}#bComer{right:44px;bottom:114px}#bBeber{right:0;bottom:94px}#bRad{right:138px;bottom:106px}
+.bM small{position:absolute;bottom:-3px;right:-3px;background:#000;border-radius:7px;font-size:9px;padding:0 3px;color:#fff;border:1px solid #444;min-width:14px;text-align:center}
+#log{left:calc(var(--sal) + 168px);right:224px;bottom:calc(var(--sab) + 14px);pointer-events:none;font-size:11px;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000}
+#log p{margin:1px 0}
+.c-ouro{color:var(--ouro)}.c-verde{color:var(--verde)}.c-verm{color:#ff6a5a}.c-azul{color:var(--azul)}.c-cinza{color:#aaa}
+#fala{left:50%;transform:translateX(-50%);bottom:calc(var(--sab) + 160px);width:min(440px,92vw);padding:10px;display:none;border-color:#4a8ab0;background:rgba(10,25,40,.88)}
+#fala .q{color:var(--azul);font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between}
+#fala .t{line-height:1.45;font-size:13px}
+#fala .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+button.chip{font:inherit;font-size:13px;padding:7px 12px;border-radius:14px;background:rgba(20,50,80,.9);color:#bfe6ff;border:1px solid #4a8ab0;cursor:pointer}
+#mochila{top:50%;left:50%;transform:translate(-50%,-50%);width:min(330px,94vw);max-height:84vh;overflow-y:auto;padding:10px;display:none;z-index:30;background:rgba(30,30,30,.96);border-color:#666}
+#mochila h3{margin:0 0 6px;color:var(--ouro);font-size:13px;display:flex;justify-content:space-between}
+.grade{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.slot{aspect-ratio:1;background:#1b1b1b;border:1px solid;border-color:#0a0a0a #4a4a4a #4a4a4a #0a0a0a;display:flex;align-items:center;justify-content:center;font-size:21px;position:relative;cursor:pointer}
+.slot .q{position:absolute;right:2px;bottom:0;font-size:10px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000}
+.slot .rot{position:absolute;font-size:7px;color:#666;top:1px;left:0;right:0;text-align:center}
+#detalhe{font-size:11px;color:#bbb;min-height:30px;margin:6px 0;line-height:1.4}
+.fx{position:fixed;z-index:9;pointer-events:none;font-weight:bold;font-size:14px;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;transform:translate(-50%,-50%);white-space:nowrap}
+#tag{position:fixed;z-index:11;left:50%;transform:translateX(-50%);bottom:calc(var(--sab) + 4px);font-size:9px;color:#888;letter-spacing:2px;pointer-events:none}
+#cobre{position:fixed;inset:0;z-index:50;background:radial-gradient(rgba(0,0,0,.25),rgba(0,0,0,.8));display:flex;align-items:center;justify-content:center;padding:16px}
+#cobre .caixa{max-width:460px;width:100%;background:linear-gradient(#333,#1f1f1f);border:2px solid;border-color:#5c5c5c #141414 #141414 #5c5c5c;padding:18px;max-height:92vh;overflow-y:auto}
+#cobre h1{color:var(--ouro);font-family:Georgia,serif;letter-spacing:5px;margin:0;text-align:center;font-size:36px;text-shadow:2px 2px 0 #000,0 0 14px rgba(232,192,96,.4)}
+#cobre .sub{text-align:center;color:var(--verde);letter-spacing:3px;font-size:12px;margin:2px 0 12px}
+#cobre p{line-height:1.5;font-size:13px}
+#cobre input{font:inherit;font-size:15px;width:100%;background:#111;color:#fff;border:1px solid #000;padding:8px;margin:4px 0 10px;-webkit-user-select:text;user-select:text}
+#cobre button{font:inherit;font-size:15px;padding:9px 16px;margin:3px 6px 3px 0;background:linear-gradient(#4d4d4d,#363636);color:#eee;border:1px solid;border-color:#6a6a6a #151515 #151515 #6a6a6a;cursor:pointer}
+#cobre .ctl{font-size:11.5px;color:#aaa;line-height:1.55;border-top:1px solid #444;padding-top:8px;margin-top:8px}
+#carregando{position:fixed;inset:0;z-index:60;background:#000;color:var(--ouro);display:flex;align-items:center;justify-content:center;font-size:15px;letter-spacing:2px}
+body.pc #joy{display:none}
+body.inicio .hud,body.inicio #tag{display:none!important}
+@media (orientation:portrait){
+  #log{left:calc(var(--sal) + 10px);right:10px;bottom:calc(var(--sab) + 214px)}
+  #fala{bottom:calc(var(--sab) + 220px)}
+  #topoD .col{display:grid;grid-template-columns:repeat(2,40px);gap:5px}
+  #topoD .bM{width:38px;height:38px;font-size:16px}
+  #stats{width:150px}
+  #mini{width:96px;height:72px}
+  #topoD .col{grid-template-columns:repeat(2,38px)}
+  #alvo{top:calc(var(--sat) + 120px)}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.164.1/build/three.module.js"}}</script>
+</head>
+<body class="inicio">
+<div id="carregando">CARREGANDO A ZONA MORTAL…</div>
+<canvas id="gl"></canvas>
+
+<div id="stats" class="hud cx"></div>
+<div id="alvo" class="hud cx"></div>
+<div id="topoD" class="hud">
+  <div><canvas id="mini" width="120" height="90"></canvas><div id="lugar"></div></div>
+  <div class="col">
+    <button class="bM" id="bBag" title="Mochila (I)">🎒</button>
+    <button class="bM" id="bCam" title="Câmera">🎥</button>
+    <button class="bM" id="bTela" title="Tela cheia">⛶</button>
+    <button class="bM" id="bAjuda" title="Ajuda">?</button>
+  </div>
+</div>
+<div id="joy" class="hud"><div id="joyK"></div></div>
+<div id="acoes" class="hud">
+  <button class="bM" id="bAtk" title="Alvo / atacar (Espaço)">⚔</button>
+  <button class="bM" id="bUsar" title="Usar / falar (E)">✋</button>
+  <button class="bM" id="bCura" title="Curar (1)">❤<small id="nCura">0</small></button>
+  <button class="bM" id="bComer" title="Comer (2)">🍖<small id="nComer">0</small></button>
+  <button class="bM" id="bBeber" title="Beber (3)">💧<small id="nBeber">0</small></button>
+  <button class="bM" id="bRad" title="Iodo (4)">☢<small id="nRad">0</small></button>
+</div>
+<div id="log" class="hud"></div>
+<div id="fala" class="hud cx"></div>
+<div id="mochila" class="hud cx"></div>
+<div id="tag">ZONA MORTAL 3D</div>
+<div id="cobre"><div class="caixa" id="cobreBox"></div></div>
+
+<script type="module">
+import * as THREE from "three";
+// ======================================================================
+//  ZONA MORTA — dados do mundo (cópia fiel do jogo original)
+// ======================================================================
+const R = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const chance = p => Math.random()*100 < p;
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const cheb = (a,b) => Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const hash = (x,y) => { let h = x*374761393 + y*668265263; h=(h^(h>>13))*1274126177; return (h^(h>>16))>>>0; };
+const T = {GRAMA:0,TERRA:1,AREIA:2,ASF:3,PISO:4,PAREDE:5,AGUA:6,ARVORE:7,ENTULHO:8,CARRO:9,RAD:10,BUEIRO:11,ESCADA:12,PORTA:13,ESGC:14,ESGP:15,LODO:16,POCO:17,CALC:18,FOGO:19};
+const TP = [
+  {n:"grama",mm:"#3f6b2a"},{n:"terra",mm:"#6b5236"},{n:"areia",mm:"#b49a64"},{n:"asfalto",mm:"#45454a"},
+  {n:"piso",mm:"#6e6253"},{n:"parede",b:1,op:1,obj:"parede",mm:"#8a8580"},{n:"água",b:1,mm:"#2a5a85"},
+  {n:"árvore",b:1,op:1,obj:"arvore",mm:"#1f4515"},{n:"entulho",b:1,obj:"entulho",mm:"#777"},
+  {n:"carro abandonado",b:1,obj:"carro",mm:"#8a4a2a"},{n:"poça radioativa",rad:3,mm:"#7aff3a"},
+  {n:"bueiro",mm:"#ffcc00"},{n:"escada",mm:"#ffcc00"},{n:"porta",mm:"#7a5a3a"},
+  {n:"chão do esgoto",mm:"#4a463e"},{n:"parede",b:1,op:1,obj:"parede2",mm:"#222"},{n:"lodo",rad:.6,mm:"#5a6a2a"},
+  {n:"poço",b:1,obj:"poco",mm:"#5ad1ff"},{n:"calçada",mm:"#777779"},{n:"fogueira",b:1,obj:"fogo",mm:"#ff8a20"}
+];
+function mk(W,H){ return {W,H,t:new Uint8Array(W*H),pz:new Uint8Array(W*H),visto:new Uint8Array(W*H)}; }
+const ITENS = {
+  tampinha:{n:"Tampinha",ic:"🪙",st:1,d:"A moeda do fim do mundo."},
+  lata:{n:"Lata de feijão",ic:"🥫",st:1,t:"comida",fome:30,d:"Mata a fome (+30)."},
+  cereal:{n:"Barra de cereal",ic:"🍫",st:1,t:"comida",fome:12,d:"Lanche rápido (+12)."},
+  carne_rato:{n:"Carne de rato",ic:"🍖",st:1,t:"comida",fome:8,rad:5,d:"+8 fome, mas é radioativa."},
+  carne_cao:{n:"Carne de cão",ic:"🥩",st:1,t:"comida",fome:16,d:"+16 fome. Não pense muito."},
+  garrafa:{n:"Garrafa d'água",ic:"💧",st:1,t:"bebida",sede:35,d:"Água limpa (+35 sede)."},
+  agua_suja:{n:"Água suja",ic:"🫙",st:1,t:"bebida",sede:22,rad:8,d:"+22 sede, mas dá radiação."},
+  refri:{n:"Refrigerante quente",ic:"🥤",st:1,t:"bebida",sede:15,fome:4,d:"Doce e quente (+15 sede)."},
+  bandagem:{n:"Bandagem",ic:"🩹",st:1,t:"cura",hp:45,d:"Recupera 45 de vida."},
+  medkit:{n:"Kit médico",ic:"💉",st:1,t:"cura",hp:140,d:"Recupera 140 de vida."},
+  iodo:{n:"Pílula de iodo",ic:"💊",st:1,t:"antirad",rad:50,d:"Remove 50 de radiação."},
+  cauda:{n:"Cauda de rato",ic:"🐀",st:1,d:"O Sargento Rocha paga por isso."},
+  couro:{n:"Couro de cão",ic:"🟫",st:1,d:"Vende bem."},
+  ferrao:{n:"Ferrão radioativo",ic:"🦂",st:1,d:"Brilha no escuro. Vende bem."},
+  sucata:{n:"Sucata",ic:"🔩",st:1,d:"Ferro velho."},
+  componente:{n:"Componente eletrônico",ic:"🔌",st:1,d:"Valioso para o Seu Zé."},
+  coroa:{n:"Coroa do Rei dos Esgotos",ic:"👑",d:"Prova de que o Rei caiu."},
+  pedra:{n:"Pedra",ic:"🪨",st:1,mun:1,d:"Munição de estilingue."},
+  flecha:{n:"Flecha",ic:"🏹",st:1,mun:1,d:"Munição de arco."},
+  bala:{n:"Bala .38",ic:"🔸",st:1,mun:1,d:"Munição de pistola."},
+  cartucho:{n:"Cartucho",ic:"🔴",st:1,mun:1,d:"Munição de espingarda."},
+  canivete:{n:"Canivete",ic:"🔪",slot:"arma",atk:7},
+  faca:{n:"Faca de caça",ic:"🔪",slot:"arma",atk:11},
+  taco:{n:"Taco de beisebol",ic:"🏏",slot:"arma",atk:15},
+  pe_cabra:{n:"Pé-de-cabra",ic:"🔧",slot:"arma",atk:19},
+  facao:{n:"Facão",ic:"🗡️",slot:"arma",atk:23},
+  machado:{n:"Machado de incêndio",ic:"🪓",slot:"arma",atk:29},
+  motosserra:{n:"Motosserra do Carniça",ic:"🪚",slot:"arma",atk:44,maos2:1},
+  estilingue:{n:"Estilingue",ic:"🪃",slot:"arma",atk:9,alc:4,mun:"pedra"},
+  arco:{n:"Arco recurvo",ic:"🏹",slot:"arma",atk:17,alc:5,mun:"flecha",maos2:1},
+  pistola:{n:"Revólver .38",ic:"🔫",slot:"arma",atk:27,alc:5,mun:"bala"},
+  espingarda:{n:"Espingarda",ic:"💥",slot:"arma",atk:39,alc:4,mun:"cartucho",maos2:1},
+  tampa:{n:"Tampa de lixo",ic:"🛡️",slot:"escudo",def:8},
+  escudo_placa:{n:"Escudo de placa",ic:"🛡️",slot:"escudo",def:14},
+  escudo_motim:{n:"Escudo antimotim",ic:"🛡️",slot:"escudo",def:22},
+  bone:{n:"Boné",ic:"🧢",slot:"cabeca",arm:1,cor:"#c33"},
+  capacete_obra:{n:"Capacete de obra",ic:"⛑️",slot:"cabeca",arm:2,cor:"#e8c020"},
+  mascara:{n:"Máscara de gás",ic:"😷",slot:"cabeca",arm:1,antirad:1,cor:"#333"},
+  capacete_mil:{n:"Capacete militar",ic:"🪖",slot:"cabeca",arm:3,cor:"#4a5a2a"},
+  camiseta:{n:"Camiseta",ic:"👕",slot:"corpo",arm:1,cor:"#3a6ab0"},
+  jaqueta:{n:"Jaqueta de couro",ic:"🧥",slot:"corpo",arm:3,cor:"#5a3a20"},
+  colete_sucata:{n:"Colete de sucata",ic:"🦺",slot:"corpo",arm:5,cor:"#7a7a7a"},
+  colete_bal:{n:"Colete balístico",ic:"🦺",slot:"corpo",arm:8,cor:"#2a3a2a"},
+  jeans:{n:"Calça jeans",ic:"👖",slot:"pernas",arm:1,cor:"#2a3a6a"},
+  cargo:{n:"Calça cargo",ic:"👖",slot:"pernas",arm:2,cor:"#5a5a3a"},
+  caneleira:{n:"Caneleiras de pneu",ic:"👖",slot:"pernas",arm:3,cor:"#222"},
+  tenis:{n:"Tênis surrado",ic:"👟",slot:"pes",arm:1},
+  coturno:{n:"Coturno",ic:"🥾",slot:"pes",arm:2},
+  tocha:{n:"Tocha",ic:"🔥",slot:"luz",luz:3.5},
+  lanterna:{n:"Lanterna",ic:"🔦",slot:"luz",luz:5.5}
+};
+const PRECO = {lata:8,cereal:3,garrafa:6,refri:4,bandagem:15,medkit:60,iodo:35,tocha:20,lanterna:150,pedra:1,flecha:2,bala:4,cartucho:8,
+  canivete:15,faca:40,taco:90,pe_cabra:220,facao:380,machado:900,motosserra:4000,estilingue:30,arco:260,pistola:850,espingarda:2600,
+  tampa:30,escudo_placa:320,escudo_motim:1300,bone:10,capacete_obra:120,mascara:420,capacete_mil:900,camiseta:5,jaqueta:90,
+  colete_sucata:420,colete_bal:1600,jeans:10,cargo:130,caneleira:480,tenis:8,coturno:160};
+function descItem(id){ const it=ITENS[id]; if(it.d) return it.d; const p=[];
+  if(it.atk) p.push(`Ataque ${it.atk}`); if(it.alc) p.push(`alcance ${it.alc}, usa ${ITENS[it.mun].n.toLowerCase()}`);
+  if(it.maos2) p.push("duas mãos"); if(it.def) p.push(`Defesa ${it.def}`); if(it.arm) p.push(`Armadura ${it.arm}`);
+  if(it.antirad) p.push("protege de radiação"); if(it.luz) p.push(`Luz ${it.luz}`); return p.join(", ")+"."; }
+
+const HUM = (pele,roupa,calca,cabelo,extra) => ({pele,roupa,calca,cabelo,extra});
+const MONS = {
+  rato:{n:"Rato Mutante",hp:20,atk:6,arm:0,xp:8,vel:380,spr:"rato",loot:[["tampinha",70,1,4],["cauda",55,1,1],["carne_rato",35,1,1]]},
+  barata:{n:"Barata Gigante",hp:32,atk:9,arm:1,xp:14,vel:420,spr:"barata",loot:[["tampinha",60,1,6],["sucata",25,1,1]]},
+  cao:{n:"Cão Raivoso",hp:45,atk:13,arm:1,xp:22,vel:270,spr:"cao",loot:[["couro",45,1,1],["carne_cao",35,1,1],["tampinha",30,1,3]]},
+  carnical:{n:"Carniçal",hp:85,atk:17,arm:2,xp:42,vel:480,spr:"hum",c:HUM("#7c9a5c","#5a4a3a","#3a3a4a","#2d3a22"),
+    loot:[["tampinha",70,4,15],["bandagem",12,1,1],["jeans",6,1,1],["agua_suja",25,1,1],["bone",5,1,1]]},
+  saqueador:{n:"Saqueador",hp:95,atk:19,arm:3,xp:55,vel:330,spr:"hum",c:HUM("#c99a72","#7a2a22","#33405a","#2a1a10","bandana"),saq:1,
+    loot:[["tampinha",85,8,28],["faca",8,1,1],["jaqueta",5,1,1],["lata",22,1,1],["garrafa",22,1,1],["pe_cabra",3,1,1],["taco",6,1,1],["tampa",6,1,1]]},
+  atirador:{n:"Saqueador Atirador",hp:80,atk:23,arm:2,xp:70,vel:360,spr:"hum",alc:4,proj:"#ffd23a",c:HUM("#a8784f","#3a4a2a","#2a2a2a","#111","oculos"),saq:1,
+    loot:[["bala",55,3,10],["tampinha",80,8,25],["pistola",3,1,1],["bandagem",15,1,1],["cargo",5,1,1]]},
+  escorp:{n:"Escorpião Radioativo",hp:115,atk:24,arm:4,xp:90,vel:400,spr:"escorp",rad:6,
+    loot:[["ferrao",40,1,1],["tampinha",45,3,12],["componente",8,1,1],["iodo",8,1,1]]},
+  mutante:{n:"Mutante Brutamontes",hp:260,atk:36,arm:6,xp:240,vel:500,spr:"hum",esc:1.4,c:HUM("#8a6aa8","#3a2a2a","#2a2020","#4a3a5a"),
+    loot:[["tampinha",90,25,70],["machado",6,1,1],["colete_sucata",6,1,1],["medkit",12,1,1],["componente",22,1,2],["caneleira",3,1,1]]},
+  rei:{n:"Rei dos Esgotos",hp:700,atk:42,arm:6,xp:1200,vel:380,spr:"rato",esc:1.9,boss:1,coroa:1,invoca:"rato",
+    loot:[["tampinha",100,150,300],["capacete_mil",35,1,1],["escudo_placa",55,1,1],["medkit",100,2,3],["coroa",100,1,1]]},
+  carnica:{n:"Carniça, Senhor da Estrada",hp:1600,atk:58,arm:10,xp:4000,vel:300,spr:"hum",esc:1.5,alc:4,boss:1,proj:"#ff5a2a",
+    c:HUM("#b07a58","#5a1010","#1a1a1a","#111","espinhos"),
+    loot:[["motosserra",100,1,1],["tampinha",100,800,1500],["colete_bal",60,1,1],["medkit",100,3,5],["escudo_motim",25,1,1]]}
+};
+
+const MAPA = {};
+const tileEm = (m,x,y) => { const M=MAPA[m]; return (!M||x<0||y<0||x>=M.W||y>=M.H) ? T.ESGP : M.t[y*M.W+x]; };
+const pzEm = (m,x,y) => { const M=MAPA[m]; return !!M && x>=0&&y>=0&&x<M.W&&y<M.H && M.pz[y*M.W+x]===1; };
+function xpNivel(L){ return Math.round(50/3*(L**3 - 6*L**2 + 17*L - 12)); }
+Object.assign(T, {METAL:20,METALP:21,ROCHA:22,ROCHAP:23,TRILHO:24,AZULEJO:25,PEDRA:26,DESCE:27,SOBE:28,PORTAF:29,CONT:30,PLACA:31,
+  CAMA:32,CAMA2:33,CONSOLE:34,TANQUE:35,CRISTAL:36,GRADE:37,MADEIRA:38,CONCRETO:39,ARBUSTO:40,BARRACA:41,BLOQ:42,MESA:43});
+TP.push(
+  {n:"piso de metal",mm:"#6a6e72"},{n:"parede blindada",b:1,op:1,obj:"parede3",mm:"#3a3e44"},
+  {n:"chão de rocha",mm:"#5a5248"},{n:"rocha",b:1,op:1,obj:"rocha",mm:"#2a2420"},
+  {n:"trilhos",mm:"#3a3a3a"},{n:"parede de azulejo",b:1,op:1,obj:"parede4",mm:"#7a8a8a"},
+  {n:"pedras",mm:"#8a7a6a"},{n:"descida",mm:"#ffcc00"},{n:"subida",mm:"#ffcc00"},
+  {n:"porta fechada",b:1,op:1,obj:"portaf",mm:"#7a5a3a"},{n:"contêiner",b:1,obj:"cont",mm:"#b08a4a"},
+  {n:"placa",b:1,obj:"placa",mm:"#9a7a4a"},{n:"cama",b:1,obj:"cama",mm:"#5a7a4a"},{n:"cama",b:1,mm:"#5a7a4a"},
+  {n:"computador",b:1,obj:"console",mm:"#5ad1ff"},{n:"purificador de água",b:1,obj:"tanque",mm:"#5ad1ff"},
+  {n:"cristal radioativo",b:1,obj:"cristal",rad:0,mm:"#7aff3a"},{n:"cerca",b:1,obj:"grade",mm:"#8a8a7a"},
+  {n:"assoalho",mm:"#7a5230"},{n:"concreto",mm:"#7a7a78"},{n:"arbusto",b:1,obj:"arbusto",mm:"#2a5a1c"},
+  {n:"barraca",b:1,obj:"barraca",mm:"#7a6a3a"},{n:"",b:1,mm:"#555"},{n:"mesa",b:1,obj:"mesa",mm:"#9a8a6a"}
+);
+const PORTAIS = new Set([T.BUEIRO,T.ESCADA,T.DESCE,T.SOBE]);
+
+Object.assign(ITENS, {
+  mre:{n:"Ração militar",ic:"🍱",st:1,t:"comida",fome:60,d:"Comida de soldado (+60 fome)."},
+  cristal:{n:"Cristal radioativo",ic:"💎",st:1,d:"Brilha verde. Tião do Metrô paga bem."},
+  teia:{n:"Seda de aranha",ic:"🕸️",st:1,d:"Resistente. Vende bem."},
+  chip:{n:"Chip militar",ic:"💾",st:1,d:"Tecnologia do velho exército."},
+  soro:{n:"Soro do Experimento X",ic:"🧪",d:"Prova de que o Experimento X caiu."},
+  rifle:{n:"Fuzil de assalto",ic:"🔫",slot:"arma",atk:47,alc:5,mun:"bala",maos2:1},
+  armadura_tat:{n:"Armadura tática",ic:"🦺",slot:"corpo",arm:11,cor:"#1e2a1e"}
+});
+Object.assign(PRECO, {mre:25,cristal:0,teia:0,chip:0,rifle:5200,armadura_tat:6000});
+Object.assign(MONS, {
+  morcego:{n:"Morcego Mutante",hp:28,atk:10,arm:0,xp:16,vel:230,spr:"morcego",loot:[["tampinha",40,1,4]]},
+  aranha:{n:"Aranha Gigante",hp:130,atk:27,arm:3,xp:105,vel:330,spr:"aranha",loot:[["teia",55,1,2],["tampinha",40,4,14]]},
+  soldado:{n:"Soldado Zumbi",hp:190,atk:33,arm:8,xp:175,vel:430,spr:"hum",
+    loot:[["bala",60,4,12],["mre",30,1,1],["chip",20,1,1],["capacete_mil",4,1,1],["colete_bal",2,1,1],["tampinha",70,10,40]]},
+  drone:{n:"Drone de Segurança",hp:150,atk:30,arm:10,xp:195,vel:300,spr:"drone",alc:5,proj:"#5ad1ff",
+    loot:[["componente",50,1,2],["chip",35,1,1],["sucata",60,1,3]]},
+  experimento:{n:"Experimento X",hp:2600,atk:72,arm:12,xp:8000,vel:330,spr:"hum",esc:1.7,boss:1,invoca:"soldado",
+    loot:[["soro",100,1,1],["rifle",60,1,1],["armadura_tat",40,1,1],["tampinha",100,1500,3000],["medkit",100,4,6]]}
+});
+
+const PT = {
+  bunkerElev:["bunker",22,3], supHatch:["sup",38,72],
+  supMetroA:["sup",130,79], supMetroB:["sup",178,62], metroA:["metro",18,5], metroB:["metro",118,5],
+  supBueiroA:["sup",151,85], supBueiroB:["sup",125,104], esgA:["esg",8,7], esgB:["esg",40,31],
+  supUsina:["sup",68,119], supBuraco:["sup",96,133], cavA:["caverna",10,10], cavB:["caverna",85,60],
+  supBase:["sup",170,130], baseA:["base",6,6]
+};
+const LINKS = [];
+for (const [a,b] of [["bunkerElev","supHatch"],["supMetroA","metroA"],["supMetroB","metroB"],["supBueiroA","esgA"],["supBueiroB","esgB"],
+  ["supUsina","cavA"],["supBuraco","cavB"],["supBase","baseA"]]) { LINKS.push([PT[a],PT[b]]); LINKS.push([PT[b],PT[a]]); }
+function linkEm(m,x,y){ for (const [a,b] of LINKS) if (a[0]===m && a[1]===x && a[2]===y) return b; return null; }
+const NOME_MAPA = {bunker:"Bunker 47",sup:"Superfície",esg:"Esgotos",metro:"Metrô",caverna:"Cavernas",base:"Base Subterrânea"};
+const TEMPLO = {mapa:"bunker",x:8,y:7};
+const NPC_POS = {ze:["bunker",22,22],ana:["bunker",37,7],cida:["bunker",8,22],rocha:["bunker",37,22],tiao:["metro",68,6]};
+
+function novoMapa(W,H,fill){ const M=mk(W,H); M.t.fill(fill); M.cont=new Map(); M.placas=new Map(); return M; }
+function ferramentas(M,seed){
+  const r=mulberry(seed), W=M.W, H=M.H;
+  const ok=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+  const S=(x,y,v)=>{ if(ok(x,y)) M.t[y*W+x]=v; }, G=(x,y)=>ok(x,y)?M.t[y*W+x]:-1;
+  const rect=(x1,y1,x2,y2,v)=>{ for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++) S(x,y,v); };
+  const borda=(x1,y1,x2,y2,v)=>{ for(let x=x1;x<=x2;x++){ S(x,y1,v); S(x,y2,v); } for(let y=y1;y<=y2;y++){ S(x1,y,v); S(x2,y,v); } };
+  const sala=(x1,y1,x2,y2,piso,parede)=>{ rect(x1,y1,x2,y2,piso); borda(x1,y1,x2,y2,parede); };
+  const pz=(x1,y1,x2,y2)=>{ for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++) if(ok(x,y)) M.pz[y*W+x]=1; };
+  const cont=(x,y,tipo)=>{ S(x,y,T.CONT); M.cont.set(x+","+y,tipo); };
+  const placa=(x,y,txt)=>{ S(x,y,T.PLACA); M.placas.set(x+","+y,txt); };
+  const cama=(x,y)=>{ S(x,y,T.CAMA); S(x,y+1,T.CAMA2); };
+  const ri=(a,b)=>a+Math.floor(r()*(b-a+1));
+  const cavar=(x,y,dx,dy,piso)=>{ for(let k=0;k<40;k++){ x+=dx; y+=dy; const t=G(x,y); if(t<0) return; if(!TP[t].b) return; S(x,y,piso); } };
+  const limpar=(x1,y1,x2,y2,v)=>{ for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++){ S(x,y,v); M.cont.delete(x+","+y); M.placas.delete(x+","+y); } };
+  return {r,S,G,rect,borda,sala,pz,cont,placa,cama,ri,ok,cavar,limpar};
+}
+const andavel = t => !TP[t].b;
+
+function gerarBunker(){
+  const M=novoMapa(46,32,T.METALP), g=ferramentas(M,47);
+  g.rect(2,15,43,16,T.METAL);
+  const salas=[[2,2,14,13],[16,2,29,13],[31,2,43,13],[2,18,14,29],[16,18,29,29],[31,18,43,29]];
+  for(const [x1,y1,x2,y2] of salas){ g.sala(x1-1,y1-1,x2+1,y2+1,T.METAL,T.METALP); }
+  g.rect(2,15,43,16,T.METAL);
+  for(const [x1,y1,x2,y2] of salas){ const cx=(x1+x2)>>1; const py=y1<15?y2+1:y1-1; g.S(cx,py,T.PORTA); g.S(cx+1,py,T.PORTA); }
+  for(const x of [3,5,7,9,11,13]){ g.cama(x,3); g.cama(x,11); }
+  g.cont(3,7,"armario"); g.cont(13,7,"armario"); g.placa(8,9,"Dormitório do Bunker 47. Você acordou aqui depois do colapso. Descanse numa cama para recuperar a vida.");
+  for(const x of [18,21,24,27]) for(const y of [7,10]) g.S(x,y,T.MESA);
+  g.S(17,3,T.TANQUE); g.S(28,3,T.TANQUE); g.cont(29,12,"geladeira");
+  g.S(22,3,T.SOBE); g.S(23,3,T.METAL);
+  g.placa(24,3,"ELEVADOR → SUPERFÍCIE. Lá fora: ratos, cães, saqueadores e coisa pior. Volte vivo.");
+  g.placa(16,5,"Purificador de água: use para beber de graça.");
+  for(const x of [33,35,39,41]) g.cama(x,3);
+  g.cont(32,11,"medico"); g.cont(43,11,"medico");
+  for(const x of [3,5,11,13]) g.cont(x,19,"militar");
+  g.placa(4,27,"Arsenal. Dona Cida troca armas e proteção por tampinhas.");
+  for(const x of [17,19,26,28]) g.cont(x,19,"caixa");
+  for(let x=33;x<=41;x++) g.S(x,19,T.CONSOLE);
+  g.placa(32,27,"Sala de Comando. O Sargento Rocha distribui as MISSÕES.");
+  g.pz(0,0,45,31);
+  return M;
+}
+
+function gerarSup(){
+  const W=192,H=144, M=novoMapa(W,H,T.GRAMA), g=ferramentas(M,4242), r=g.r;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    let v;
+    if(y>=96 && x<120) v = r()<.78?T.AREIA:T.TERRA;
+    else if(x>=112 && y>=40 && y<=112) v=T.CALC;
+    else if(x>=128 && y>=116) v=T.CONCRETO;
+    else v = r()<.74?T.GRAMA:T.TERRA;
+    g.S(x,y,v);
+  }
+  for(let y=1;y<=56;y++) for(let x=1;x<=104;x++){ const q=r(); if(q<.27) g.S(x,y,T.ARVORE); else if(q<.31) g.S(x,y,T.ARBUSTO); }
+  for(let x=1;x<=104;x++){ g.S(x,30,T.TERRA); g.S(x,31,T.TERRA); }
+  for(let y=1;y<=60;y++){ for(const tx of [20,21,50,51,80,81]) g.S(tx,y,T.TERRA); }
+  for(const [cx,cy,rr] of [[34,14,5],[70,44,5],[12,48,4],[88,12,5],[40,48,4]]) for(let y=cy-rr;y<=cy+rr;y++) for(let x=cx-rr;x<=cx+rr;x++) g.S(x,y,r()<.7?T.GRAMA:T.TERRA);
+  for(let y=12;y<=38;y++) for(let x=44;x<=78;x++) if(((x-61)/14)**2+((y-24)/8)**2<1) g.S(x,y,T.AGUA);
+  for(let y=6;y<=14;y++) for(let x=8;x<=18;x++) if(((x-13)/5)**2+((y-10)/3.5)**2<1) g.S(x,y,T.AGUA);
+  for(let y=4;y<=34;y++) for(let x=112;x<=188;x++) g.S(x,y, r()<.8?T.GRAMA:T.TERRA);
+  for(const [fx,fy] of [[118,6],[150,6],[118,22],[166,20]]){
+    for(let y=fy;y<=fy+9;y++) for(let x=fx;x<=fx+16;x++) if((y-fy)%2===0) g.S(x,y,T.TERRA);
+    g.borda(fx-1,fy-1,fx+17,fy+10,T.GRADE); g.S(fx+8,fy+10,T.TERRA);
+  }
+  for(const [hx,hy] of [[138,8],[176,6],[140,24]]){
+    g.sala(hx,hy,hx+8,hy+7,T.MADEIRA,T.PAREDE); g.S(hx+4,hy+7,T.PORTAF);
+    g.cont(hx+1,hy+1,"geladeira"); g.cont(hx+7,hy+1,"armario"); g.cont(hx+1,hy+5,"caixa"); g.S(hx+4,hy+3,T.MESA);
+  }
+  g.placa(140,33,"Fazenda Boa Vista. Os donos sumiram. A despensa ainda pode ter comida.");
+  for(let bx=112;bx<190;bx+=13) for(let by=40;by<112;by+=13){
+    for(let x=bx;x<bx+13;x++){ g.S(x,by,T.ASF); g.S(x,by+1,T.ASF); }
+    for(let y=by;y<by+13;y++){ g.S(bx,y,T.ASF); g.S(bx+1,y,T.ASF); }
+    const q=r();
+    if(q<.12){ for(let k=0;k<10;k++) g.S(bx+g.ri(3,11),by+g.ri(3,11),T.ENTULHO); continue; }
+    const x1=bx+3+g.ri(0,1), y1=by+3+g.ri(0,1), x2=bx+11-g.ri(0,1), y2=by+11-g.ri(0,1);
+    const piso = r()<.5?T.PISO:T.MADEIRA;
+    for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++){
+      const bd=x===x1||x===x2||y===y1||y===y2;
+      if(bd) g.S(x,y, r()<.06 ? T.ENTULHO : T.PAREDE); else g.S(x,y, r()<.05?T.ENTULHO:piso);
+    }
+    const portas=[[g.ri(x1+1,x2-1),y2],[x1,g.ri(y1+1,y2-1)],[g.ri(x1+1,x2-1),y1],[x2,g.ri(y1+1,y2-1)]];
+    for(let k=0;k<2;k++){ const p=portas.splice(g.ri(0,portas.length-1),1)[0]; g.S(p[0],p[1], r()<.6?T.PORTAF:T.PORTA); }
+    const tipos=["armario","geladeira","caixa","lixeira","armario","caixa"];
+    for(let k=0;k<g.ri(1,3);k++){ const cx=g.ri(x1+1,x2-1), cy=g.ri(y1+1,y2-1); if(g.G(cx,cy)===piso) g.cont(cx,cy, r()<.06?"cofre":tipos[g.ri(0,tipos.length-1)]); }
+  }
+  for(let y=112;y<=113;y++) for(let x=112;x<191;x++) g.S(x,y,T.ASF);
+  g.limpar(138,52,162,68,T.CALC); g.limpar(164,86,182,100,T.CALC);
+  g.sala(140,54,160,66,T.PISO,T.PAREDE); g.S(150,66,T.PORTA); g.S(151,66,T.PORTA); g.S(140,60,T.PORTAF);
+  for(const x of [142,145,148,154,157]){ g.cama(x,56); } for(const x of [142,146,150,154,158]) g.cont(x,63,"medico");
+  g.placa(149,68,"HOSPITAL SANTA CASA. Remédios lá dentro — e muita gente desesperada procurando também.");
+  g.sala(166,88,180,98,T.PISO,T.PAREDE); g.S(173,98,T.PORTAF);
+  for(const x of [168,171,175,178]) g.cont(x,90,"militar"); g.cont(168,96,"cofre");
+  g.placa(172,100,"DELEGACIA. O arsenal foi saqueado, mas nem tudo foi levado.");
+  for(let x=40;x<192;x++) for(let y=71;y<=73;y++) g.S(x,y,T.ASF);
+  for(let y=0;y<144;y++) for(let x=100;x<=102;x++) g.S(x,y,T.ASF);
+  for(let i=0;i<W*H;i++) if(M.t[i]===T.ASF && r()<.028){ const x=i%W,y=(i/W)|0; if(!(y>=71&&y<=73&&x<112)&&!(x>=100&&x<=102)) { M.t[i]=T.CARRO; M.cont.set(x+","+y,"carro"); } }
+  for(let y=96;y<H-1;y++) for(let x=1;x<118;x++){ if(M.t[y*W+x]!==T.AREIA && M.t[y*W+x]!==T.TERRA) continue; const q=r(); if(q<.025) g.S(x,y,T.ENTULHO); else if(q<.04) g.S(x,y,T.ARVORE); else if(q<.043) g.cont(x,y,"mochila"); }
+  for(let i=0;i<46;i++){ const cx=g.ri(4,114), cy=g.ri(98,140); g.S(cx,cy,T.RAD); if(r()<.7) g.S(cx+1,cy,T.RAD); if(r()<.5) g.S(cx,cy+1,T.RAD); }
+  g.sala(58,110,78,128,T.CONCRETO,T.PAREDE); g.S(68,128,T.PORTA); g.S(69,128,T.PORTA);
+  for(const [x,y] of [[61,113],[75,113],[61,125],[75,125],[64,116],[72,122]]) g.S(x,y,T.CRISTAL);
+  for(let y=113;y<=116;y++) for(let x=66;x<=71;x++) g.S(x,y,T.RAD);
+  g.cont(60,127,"militar"); g.placa(66,130,"USINA NUCLEAR ANGRA-SUL. PERIGO: RADIAÇÃO. Um buraco no porão desce para as cavernas.");
+  g.sala(6,118,28,138,T.TERRA,T.PAREDE); g.S(17,118,T.TERRA); g.S(18,118,T.TERRA);
+  for(let k=0;k<14;k++) g.S(g.ri(8,26),g.ri(120,136),T.ENTULHO);
+  g.placa(17,116,"VOLTA. Território do CARNIÇA.");
+  g.borda(128,116,190,142,T.GRADE); g.S(140,116,T.CONCRETO); g.S(141,116,T.CONCRETO);
+  for(const [bx,by] of [[134,122],[150,126],[176,120]]){ g.sala(bx,by,bx+9,by+7,T.METAL,T.METALP); g.S(bx+4,by+7,T.PORTAF);
+    g.cont(bx+1,by+1,"militar"); g.cont(bx+8,by+1,"militar"); g.S(bx+4,by+2,T.CONSOLE); }
+  g.placa(142,114,"BASE MILITAR 7 — ÁREA RESTRITA. Os sinais de vida no subsolo não são humanos.");
+  g.rect(26,62,52,82,T.TERRA);
+  for(let y=63;y<=81;y++) for(let x=27;x<=51;x++) if(r()<.55) g.S(x,y,T.GRAMA);
+  g.rect(33,68,44,77,T.PEDRA);
+  g.borda(26,62,52,82,T.GRADE);
+  for(const [x,y] of [[52,71],[52,72],[52,73],[38,62],[39,62],[38,82],[39,82]]) g.S(x,y,T.TERRA);
+  for(const [x,y] of [[29,65],[47,65],[29,78]]){ g.S(x,y,T.BARRACA); g.S(x+1,y,T.BLOQ); g.S(x,y+1,T.BLOQ); g.S(x+1,y+1,T.BLOQ); }
+  g.S(34,66,T.FOGO); g.S(45,79,T.FOGO); g.S(46,67,T.POCO);
+  g.placa(50,70,"ACAMPAMENTO DO BUNKER 47 — zona segura. A escotilha no centro desce para o bunker.");
+  g.placa(54,74,"→ Leste: ruínas da cidade.   ↑ Norte: mata.   ↓ Sul: deserto radioativo.");
+  g.pz(26,62,52,82);
+  for(const k of ["supHatch","supMetroA","supMetroB","supBueiroA","supBueiroB","supUsina","supBuraco","supBase"]){
+    const [,x,y]=PT[k]; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const t=g.G(x+dx,y+dy); if(TP[t] && TP[t].b) g.S(x+dx,y+dy, k==="supHatch"?T.PEDRA : (y>=96&&x<120?T.AREIA:(x>=128&&y>=116?T.CONCRETO:T.CALC))); M.cont.delete((x+dx)+","+(y+dy)); }
+    g.S(x,y, k.startsWith("supBueiro")?T.BUEIRO:T.DESCE);
+  }
+  for(const k of ["supMetroA","supMetroB"]){ const [,x,y]=PT[k]; g.placa(x+2,y-1,"Estação de METRÔ. Escadas para o subsolo."); }
+  for(let x=0;x<W;x++){ g.S(x,0,T.ARVORE); g.S(x,H-1,T.ENTULHO); }
+  for(let y=0;y<H;y++){ g.S(0,y,T.ARVORE); g.S(W-1,y,T.ENTULHO); }
+  return M;
+}
+
+function gerarEsg(){
+  const M=novoMapa(80,56,T.ESGP), g=ferramentas(M,99), r=g.r;
+  for(const y of [6,18,30,42]) g.rect(2,y-1,77,y+1,T.ESGC);
+  for(const x of [7,23,39,55,71]) g.rect(x-1,2,x+1,53,T.ESGC);
+  for(const y of [18,42]) for(let x=3;x<77;x++) if(r()<.85) g.S(x,y,T.LODO);
+  for(const [x1,y1,x2,y2] of [[10,9,18,15],[26,21,34,27],[44,9,52,15],[58,21,66,27],[12,33,20,39],[42,33,50,39]]){ g.rect(x1,y1,x2,y2,T.ESGC); for(let k=0;k<3;k++) g.S(g.ri(x1,x2),g.ri(y1,y2),T.ENTULHO); g.cont(x2,y1,"caixa"); }
+  g.rect(58,44,76,53,T.ESGC); g.rect(55,42,60,45,T.ESGC);
+  for(let i=0;i<M.W*M.H;i++) if(M.t[i]===T.ESGC && r()<.03) M.t[i]=T.ENTULHO;
+  for(const [x1,y1,x2,y2] of [[10,9,18,15],[26,21,34,27],[44,9,52,15],[58,21,66,27],[12,33,20,39],[42,33,50,39]]){
+    const cy=(y1+y2)>>1; g.limpar(x1-5,cy,x1+1,cy,T.ESGC); g.limpar(x2-1,y1-3,x2-1,y1+1,T.ESGC); }
+  for(const k of ["esgA","esgB"]){ const [,x,y]=PT[k]; g.rect(x-1,y-1,x+1,y+1,T.ESGC); g.S(x,y,T.ESCADA); }
+  g.placa(10,5,"Esgoto da cidade. Os ratos aqui obedecem a alguém...");
+  return M;
+}
+
+function gerarMetro(){
+  const M=novoMapa(140,26,T.AZULEJO), g=ferramentas(M,77), r=g.r;
+  g.rect(2,10,137,15,T.TRILHO);
+  for(const [x1,x2] of [[10,26],[60,76],[110,126]]){ g.rect(x1,3,x2,9,T.CALC); g.rect(x1,16,x2,21,T.CALC); }
+  for(let x=4;x<136;x++) if(r()<.04) g.S(x,g.ri(10,15),T.ENTULHO);
+  for(const x of [34,48,88,100]) { g.cont(x,12,"carro"); }
+  g.cont(12,20,"lixeira"); g.cont(24,20,"caixa"); g.cont(112,20,"lixeira"); g.cont(124,4,"caixa");
+  for(const k of ["metroA","metroB"]){ const [,x,y]=PT[k]; g.S(x,y,T.ESCADA); }
+  g.placa(70,4,"ESTAÇÃO CENTRAL — território neutro do Tião. Sem brigas aqui.");
+  g.pz(60,3,76,9);
+  return M;
+}
+
+function gerarCaverna(){
+  const W=96,H=72, M=novoMapa(W,H,T.ROCHAP), g=ferramentas(M,1313), r=g.r;
+  let c=new Uint8Array(W*H); for(let i=0;i<W*H;i++) c[i]=r()<.45?1:0;
+  for(let it=0;it<5;it++){ const n=new Uint8Array(W*H);
+    for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){ let k=0; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) k+=c[(y+dy)*W+x+dx]; n[y*W+x]= k>=5?1:0; }
+    for(let i=0;i<W;i++){ n[i]=1; n[(H-1)*W+i]=1; } for(let y=0;y<H;y++){ n[y*W]=1; n[y*W+W-1]=1; } c=n; }
+  for(let i=0;i<W*H;i++) M.t[i]= c[i]?T.ROCHAP:T.ROCHA;
+  const pts=[[10,10],[30,20],[50,12],[70,24],[45,40],[20,55],[60,58],[85,60]];
+  for(let i=0;i<pts.length-1;i++){ let [x,y]=pts[i]; const [tx,ty]=pts[i+1];
+    while(x!==tx||y!==ty){ g.rect(x-1,y-1,x+1,y+1,T.ROCHA); if(r()<.5 && x!==tx) x+=Math.sign(tx-x); else if(y!==ty) y+=Math.sign(ty-y); else x+=Math.sign(tx-x); } }
+  const vis=new Uint8Array(W*H), fila=[10*W+10]; vis[10*W+10]=1;
+  while(fila.length){ const i=fila.pop(), x=i%W, y=(i/W)|0; for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const j=(y+dy)*W+x+dx; if(!vis[j] && M.t[j]!==T.ROCHAP){ vis[j]=1; fila.push(j); } } }
+  for(let i=0;i<W*H;i++) if(M.t[i]!==T.ROCHAP && !vis[i]) M.t[i]=T.ROCHAP;
+  for(let i=0;i<W*H;i++){ if(M.t[i]!==T.ROCHA) continue; const x=i%W,y=(i/W)|0;
+    const parede = M.t[i-1]===T.ROCHAP || M.t[i+1]===T.ROCHAP || M.t[i-W]===T.ROCHAP;
+    const q=r(); if(parede && q<.05) M.t[i]=T.CRISTAL; else if(q<.012) M.t[i]=T.RAD; else if(q<.016){ M.t[i]=T.CONT; M.cont.set(x+","+y,"mochila"); } }
+  for(const k of ["cavA","cavB"]){ const [,x,y]=PT[k]; g.rect(x-1,y-1,x+1,y+1,T.ROCHA); for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) M.cont.delete((x+dx)+","+(y+dy)); g.S(x,y,T.ESCADA); }
+  return M;
+}
+
+function gerarBase(){
+  const M=novoMapa(64,48,T.METALP), g=ferramentas(M,7777), r=g.r;
+  g.rect(3,5,60,7,T.CONCRETO); g.rect(30,5,32,44,T.CONCRETO); g.rect(3,24,60,26,T.CONCRETO); g.rect(5,5,7,44,T.CONCRETO);
+  const labs=[[10,10,26,20],[36,10,58,20],[10,30,26,42]];
+  for(const [x1,y1,x2,y2] of labs){ g.sala(x1-1,y1-1,x2+1,y2+1,T.METAL,T.METALP); g.S(((x1+x2)>>1),y1-1,T.PORTAF); g.S(x1-1,((y1+y2)>>1),T.PORTA);
+    g.cavar((x1+x2)>>1,y1-1,0,-1,T.CONCRETO); g.cavar(x1-1,(y1+y2)>>1,-1,0,T.CONCRETO);
+    for(let x=x1+1;x<x2;x+=3) g.S(x,y1+1,T.CONSOLE); g.cont(x2,y2,"militar"); g.cont(x1,y2,"medico"); }
+  g.rect(8,8,9,9,T.CONCRETO); g.rect(27,25,29,25,T.CONCRETO);
+  g.sala(39,29,59,45,T.METAL,T.METALP); g.S(39,37,T.PORTAF); g.rect(33,36,38,38,T.CONCRETO);
+  for(const [x,y] of [[42,32],[56,32],[42,42],[56,42]]) g.S(x,y,T.CONSOLE);
+  g.placa(34,35,"LABORATÓRIO 0 — PROJETO X. ACESSO PROIBIDO. Se você está lendo isto, corra.");
+  for(let i=0;i<M.W*M.H;i++) if(M.t[i]===T.CONCRETO && r()<.02) M.t[i]=T.ENTULHO;
+  const [,x,y]=PT.baseA; g.rect(x-1,y-1,x+1,y+1,T.CONCRETO); g.S(x,y,T.ESCADA);
+  return M;
+}
+function gerarMundo(){
+  MAPA.bunker=gerarBunker(); MAPA.sup=gerarSup(); MAPA.esg=gerarEsg(); MAPA.metro=gerarMetro(); MAPA.caverna=gerarCaverna(); MAPA.base=gerarBase();
+}
+const MAPAS = ["bunker","sup","esg","metro","caverna","base"];
+
+const CONT_INFO = {
+  armario:{n:"Armário",loot:[["camiseta",15,1,1],["jeans",12,1,1],["bone",10,1,1],["bandagem",30,1,2],["tampinha",50,3,15],["refri",25,1,1],["cargo",4,1,1],["jaqueta",4,1,1]]},
+  geladeira:{n:"Geladeira",loot:[["lata",50,1,2],["refri",40,1,2],["garrafa",40,1,2],["agua_suja",25,1,1],["cereal",30,1,2]]},
+  caixa:{n:"Caixa",loot:[["sucata",55,1,3],["componente",15,1,1],["pedra",30,5,15],["flecha",15,3,8],["tampinha",40,2,10],["cereal",15,1,1]]},
+  carro:{n:"Carro abandonado",loot:[["tampinha",55,3,20],["bala",20,2,6],["garrafa",25,1,1],["sucata",40,1,2],["componente",12,1,1],["bandagem",15,1,1],["tocha",5,1,1]]},
+  lixeira:{n:"Lixeira",loot:[["sucata",40,1,2],["cereal",15,1,1],["agua_suja",30,1,1],["tampinha",35,1,6],["carne_rato",15,1,1]]},
+  mochila:{n:"Mochila abandonada",loot:[["lata",30,1,1],["garrafa",30,1,1],["bandagem",30,1,2],["iodo",20,1,1],["tampinha",60,5,25],["bala",15,3,8],["mascara",2,1,1]]},
+  militar:{n:"Caixa militar",loot:[["bala",55,5,15],["cartucho",30,2,6],["mre",40,1,2],["iodo",25,1,1],["medkit",15,1,1],["colete_sucata",3,1,1],["capacete_mil",2,1,1],["rifle",1,1,1]]},
+  medico:{n:"Armário de remédios",loot:[["bandagem",60,1,3],["medkit",20,1,1],["iodo",35,1,2]]},
+  cofre:{n:"Cofre",loot:[["tampinha",100,40,200],["componente",40,1,2],["chip",15,1,1]]}
+};
+const CONT_TEMPO = 8*60*1000;
+function rolarLoot(tab){ const out=[]; for(const [id,pct,mn,mx] of tab) if(chance(pct)) out.push({id,q:R(mn,mx)}); return out; }
+
+const DEF_SPAWNS = [
+  ["sup","rato",58,72,5,3,25],["sup","rato",66,80,4,3,25],["sup","rato",56,60,4,2,25],
+  ["sup","rato",30,40,6,4,25],["sup","rato",70,46,5,3,25],["sup","cao",40,22,6,3,30],["sup","cao",12,46,5,3,30],["sup","cao",88,14,5,3,30],
+  ["sup","cao",86,36,6,3,30],
+  ["sup","cao",124,14,6,3,30],["sup","saqueador",150,14,6,2,40],["sup","cao",172,30,6,3,30],
+  ["sup","saqueador",120,50,6,3,40],["sup","saqueador",160,46,6,3,40],["sup","atirador",182,52,5,2,45],["sup","carnical",130,92,6,3,35],
+  ["sup","carnical",150,104,6,3,35],["sup","saqueador",170,76,6,3,40],["sup","atirador",186,96,5,2,45],["sup","carnical",118,64,5,3,35],
+  ["sup","carnical",150,60,5,3,35],["sup","atirador",172,92,4,2,45],
+  ["sup","escorp",40,104,8,4,45],["sup","escorp",90,112,8,4,45],["sup","carnical",60,136,6,3,35],["sup","mutante",36,128,5,2,60],
+  ["sup","mutante",100,124,5,2,60],["sup","escorp",68,121,5,3,45],["sup","carnica",17,130,2,1,600],
+  ["sup","soldado",150,132,8,3,50],["sup","soldado",180,128,6,3,50],["sup","drone",165,124,6,2,55],
+  ["esg","rato",12,6,5,4,20],["esg","barata",23,12,4,4,25],["esg","rato",39,18,6,4,20],["esg","barata",30,24,4,3,25],["esg","rato",55,30,6,4,20],
+  ["esg","barata",14,36,4,3,25],["esg","barata",46,36,4,3,25],["esg","rato",71,12,6,4,20],["esg","rei",68,49,1,1,300],
+  ["metro","carnical",40,12,8,4,35],["metro","rato",30,12,8,4,20],["metro","saqueador",95,12,8,3,40],["metro","carnical",100,12,8,3,35],["metro","atirador",118,18,4,2,45],
+  ["caverna","morcego",30,20,8,5,20],["caverna","morcego",60,58,8,5,20],["caverna","aranha",50,12,6,3,45],["caverna","escorp",70,24,7,4,45],
+  ["caverna","aranha",45,40,6,3,45],["caverna","mutante",20,55,6,2,60],["caverna","escorp",80,58,6,3,45],
+  ["base","soldado",18,6,6,3,50],["base","drone",31,15,5,2,55],["base","soldado",18,15,5,3,50],["base","drone",47,15,6,3,55],
+  ["base","soldado",18,36,5,3,50],["base","soldado",45,25,8,3,50],["base","experimento",50,38,2,1,900]
+].filter(s=>MONS[s[1]]);
+
+// ======================================================================
+//  ZONA MORTA 3D — prévia (motor Three.js sobre os dados do jogo original)
+// ======================================================================
+const $ = s => document.querySelector(s);
+const SAVE = "zonaMorta3d_previa";
+const ehToque = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
+if (!ehToque) document.body.classList.add("pc");
+
+gerarMundo();
+
+// ---------------------------------------------------------------- RENDER
+const canvas = $("#gl");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 50, 90);
+const cam = new THREE.OrthographicCamera(-10,10,10,-10,0.1,200);
+const camCfg = {yaw:0, tilt:THREE.MathUtils.degToRad(55), zoom:6.4, alvoYaw:0, alvoTilt:THREE.MathUtils.degToRad(55)};
+const PRESETS = [["Clássica 3D",55,6.4],["Visão de cima",80,8.5],["Cinema",32,6]];
+let presetIdx = 0;
+function ajustarCam(){
+  const a = innerWidth/innerHeight, z = camCfg.zoom, hw = Math.max(z*a, z*.95), hh = hw/a;
+  cam.left=-hw; cam.right=hw; cam.top=hh; cam.bottom=-hh; cam.updateProjectionMatrix();
+}
+ajustarCam();
+addEventListener("resize", ()=>{ renderer.setSize(innerWidth, innerHeight, false); ajustarCam(); });
+
+const hemi = new THREE.HemisphereLight(0xcfd8e0, 0x2a2418, 1.0); scene.add(hemi);
+const sol = new THREE.DirectionalLight(0xffffff, 1.6);
+sol.castShadow = true; sol.shadow.mapSize.set(1024,1024);
+Object.assign(sol.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:60});
+sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.03;
+scene.add(sol, sol.target);
+const luzP = new THREE.PointLight(0xffc27a, 0, 8, 1.2); scene.add(luzP);
+
+// ---------------------------------------------------------------- BIBLIOTECA 3D
+const GEO = {
+  box:new THREE.BoxGeometry(1,1,1), cyl:new THREE.CylinderGeometry(1,1,1,10), cone4:new THREE.ConeGeometry(1,1,4),
+  cone:new THREE.ConeGeometry(1,1,8), ico:new THREE.IcosahedronGeometry(1,0), dode:new THREE.DodecahedronGeometry(1,0),
+  oct:new THREE.OctahedronGeometry(1,0), sph:new THREE.SphereGeometry(1,12,9), torus:new THREE.TorusGeometry(1,.12,6,24)
+};
+GEO.torus.rotateX(-Math.PI/2);
+const MAT = {
+  lam:new THREE.MeshLambertMaterial({color:0xffffff}),
+  glow:new THREE.MeshBasicMaterial({color:0xffffff, toneMapped:false}),
+  rad:new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.55, depthWrite:false, toneMapped:false}),
+  portal:new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.8, depthWrite:false, toneMapped:false}),
+  agua:new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:.78})
+};
+const cor = new THREE.Color(), dummy = new THREE.Object3D();
+function jit(hex, rnd, k=.08){ cor.set(hex); const f = 1 + (rnd()-.5)*2*k; cor.r=clamp(cor.r*f,0,1); cor.g=clamp(cor.g*f,0,1); cor.b=clamp(cor.b*f,0,1); return cor.getHex(); }
+
+class Lote {
+  constructor(){ this.g = new Map(); }
+  add(geo, mat, x,y,z, sx,sy,sz, ry=0, hex=0xffffff, rx=0, rz=0){
+    const k = geo+"|"+mat; let L = this.g.get(k); if(!L){ L=[]; this.g.set(k,L); }
+    L.push([x,y,z,sx,sy,sz,ry,hex,rx,rz]);
+  }
+  montar(grupo){
+    for (const [k,L] of this.g){
+      const [geo,mat] = k.split("|");
+      const im = new THREE.InstancedMesh(GEO[geo], MAT[mat], L.length);
+      L.forEach((d,i)=>{ dummy.position.set(d[0],d[1],d[2]); dummy.scale.set(d[3],d[4],d[5]); dummy.rotation.set(d[8],d[6],d[9]); dummy.updateMatrix();
+        im.setMatrixAt(i,dummy.matrix); im.setColorAt(i, cor.set(d[7])); });
+      im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true;
+      im.frustumCulled = false;
+      im.castShadow = mat==="lam"; im.receiveShadow = mat==="lam";
+      grupo.add(im);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- CHÃO (textura pintada)
+const PX = 8;
+const COR_CHAO = {
+  [T.GRAMA]:"#46732e",[T.TERRA]:"#6b5236",[T.AREIA]:"#b49a64",[T.ASF]:"#3c3c41",[T.PISO]:"#6e6253",[T.RAD]:"#3a5a20",
+  [T.BUEIRO]:"#3c3c41",[T.ESCADA]:"#4a4a4a",[T.PORTA]:"#6a4a2a",[T.ESGC]:"#4a463e",[T.LODO]:"#56682a",[T.CALC]:"#7a7a7c",
+  [T.METAL]:"#5c6166",[T.ROCHA]:"#57503f",[T.TRILHO]:"#3a3530",[T.PEDRA]:"#8a7a6a",[T.DESCE]:"#4a4a4a",[T.SOBE]:"#5c6166",
+  [T.MADEIRA]:"#7a5230",[T.CONCRETO]:"#787876",[T.AGUA]:"#24557e"
+};
+function hexRgb(h){ const n=parseInt(h.slice(1),16); return [n>>16&255,n>>8&255,n&255]; }
+function corChao(M,x,y){
+  const t = M.t[y*M.W+x];
+  if (COR_CHAO[t]) return [t, COR_CHAO[t]];
+  for (const [dx,dy] of [[0,1],[1,0],[-1,0],[0,-1],[1,1],[-1,1]]){
+    const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=M.W||ny>=M.H) continue;
+    const t2=M.t[ny*M.W+nx]; if(COR_CHAO[t2] && t2!==T.AGUA) return [t2, COR_CHAO[t2]];
+  }
+  return [-1, "#26231f"];
+}
+const NATURAL = new Set([T.GRAMA,T.TERRA,T.AREIA]);
+function pintarChao(M){
+  const c = document.createElement("canvas"); c.width=M.W*PX; c.height=M.H*PX;
+  const ctx = c.getContext("2d"), img = ctx.createImageData(c.width, c.height), d = img.data, CW = c.width;
+  const TT = new Int16Array(M.W*M.H), CR = new Float32Array(M.W*M.H*3);
+  for (let y=0;y<M.H;y++) for (let x=0;x<M.W;x++){ const [t,hex]=corChao(M,x,y), i=y*M.W+x; TT[i]=t; const rgb=hexRgb(hex); CR[i*3]=rgb[0]; CR[i*3+1]=rgb[1]; CR[i*3+2]=rgb[2]; }
+  const nat = (x,y)=> x>=0&&y>=0&&x<M.W&&y<M.H && NATURAL.has(TT[y*M.W+x]);
+  for (let y=0;y<M.H;y++) for (let x=0;x<M.W;x++){
+    const i0 = y*M.W+x, t = TT[i0]; let r0=CR[i0*3], g0=CR[i0*3+1], b0=CR[i0*3+2];
+    const h0 = hash(x,y), tv = ((h0&255)/255-.5)*.12, natural = NATURAL.has(t);
+    for (let py=0;py<PX;py++) for (let px=0;px<PX;px++){
+      const hh = hash(x*PX+px, y*PX+py); let f = 1 + tv + ((hh&255)/255-.5)*.16;
+      let r=r0,g=g0,b=b0;
+      if (natural){
+        const u = x + (px+.5)/PX - .5 + (((hh>>8)&255)/255-.5)*.5, v = y + (py+.5)/PX - .5 + (((hh>>16)&255)/255-.5)*.5;
+        const ux=Math.floor(u), vy=Math.floor(v), fx=u-ux, fy=v-vy; r=g=b=0; let wt=0;
+        for (const [ox,oy,w] of [[0,0,(1-fx)*(1-fy)],[1,0,fx*(1-fy)],[0,1,(1-fx)*fy],[1,1,fx*fy]]){
+          const nx=ux+ox, ny=vy+oy; const k = nat(nx,ny) ? (ny*M.W+nx) : i0; r+=CR[k*3]*w; g+=CR[k*3+1]*w; b+=CR[k*3+2]*w; wt+=w; }
+        r/=wt; g/=wt; b/=wt;
+      }
+      if (t===T.CALC || t===T.METAL || t===T.PISO || t===T.CONCRETO){ if(px===0||py===0) f*=.82; }
+      if (t===T.PISO && ((x+y)&1)) f*=.92;
+      if (t===T.MADEIRA && (py===0 || py===4)) f*=.78;
+      if (t===T.TRILHO){ if(py===2||py===5) f=1.9; else if(px===0||px===4) f*=.6; }
+      if (t===T.ASF && py===3 && (x%4<2) && (hash(x,y>>2)&1)) f=1.5;
+      if (t===T.GRAMA && (hh>>9&31)===0) f=1.35;
+      if (t===T.PEDRA && (px===0||py===0||px===4)) f*=.7;
+      if ((t===T.BUEIRO||t===T.ESCADA||t===T.DESCE) && (px-3.5)**2+(py-3.5)**2<9) f=.18;
+      const i = ((y*PX+py)*CW + x*PX+px)*4;
+      d[i]=clamp(r*f,0,255); d[i+1]=clamp(g*f,0,255); d[i+2]=clamp(b*f,0,255); d[i+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  return tex;
+}
+
+// ---------------------------------------------------------------- OBJETOS DOS TILES
+const ALT_PAREDE = 1.25;
+const COR_CONT = {armario:["box",.8,1.1,.5,"#6a4a2a"],geladeira:["box",.7,1.25,.6,"#d8d8d0"],caixa:["box",.7,.6,.7,"#a07a40"],lixeira:["cyl",.3,.75,.3,"#3a5a3a"],
+  cofre:["box",.7,.8,.7,"#3a3a42"],militar:["box",.9,.5,.6,"#4a5a2a"],medico:["box",.8,1,.4,"#e6e6e6"],mochila:["box",.45,.4,.32,"#6a5a3a"]};
+const CORES_CARRO = ["#7a3a22","#2a4a6a","#6a6a5a","#8a7a3a","#3a5a3a","#5a2a3a"];
+let fogos = [];
+function carro(L,x,y,rnd,metro){
+  const ry = metro ? 0 : (rnd()<.5?0:Math.PI/2) + (rnd()-.5)*.35, c = jit(CORES_CARRO[(rnd()*CORES_CARRO.length)|0], rnd, .15);
+  if (metro){ L.add("box","lam",x,.6,y,.98,1.05,.9,0,"#8a9096"); L.add("box","glow",x,.75,y+.455,.7,.3,.02,0,"#c8e0a0"); return; }
+  L.add("box","lam",x,.33,y,.62,.38,.95,ry,c); L.add("box","lam",x,.62,y,.56,.26,.5,ry,"#2a2e33");
+  L.add("box","lam",x,.12,y,.66,.18,.82,ry,"#151515");
+}
+function objTile(M, mapa, x, y, t, L, A){
+  const rnd = mulberry(hash(x*7+3,y*13+1)), obj = TP[t].obj;
+  const viz = (dx,dy)=>{ const nx=x+dx, ny=y+dy; return (nx<0||ny<0||nx>=M.W||ny>=M.H) ? -1 : M.t[ny*M.W+nx]; };
+  if (t===T.AGUA){ A.add("box","agua",x,.04,y,1,.06,1,0,jit("#2f6fa0",rnd,.06)); return; }
+  if (t===T.RAD){ A.add("box","rad",x,.03,y,.86,.02,.86,0,"#7aff3a"); return; }
+  if (PORTAIS.has(t)){ A.add("torus","portal",x,.05,y,.4,.6,.4,0,"#ffcc00"); A.add("cyl","rad",x,.9,y,.32,1.8,.32,0,"#ffdc60"); return; }
+  if (!obj) return;
+  switch(obj){
+    case "parede": L.add("box","lam",x,ALT_PAREDE/2,y,1,ALT_PAREDE,1,0,jit("#8f8a82",rnd,.07)); break;
+    case "parede2": L.add("box","lam",x,.7,y,1,1.4,1,0,jit("#55503f",rnd,.08)); break;
+    case "parede3": L.add("box","lam",x,ALT_PAREDE/2,y,1,ALT_PAREDE,1,0,jit("#6a7078",rnd,.04)); L.add("box","lam",x,.12,y,1.002,.24,1.002,0,"#3a3e44"); break;
+    case "parede4": L.add("box","lam",x,.7,y,1,1.4,1,0,jit("#86989a",rnd,.05)); L.add("box","lam",x,.25,y,1.002,.5,1.002,0,"#4e6a6a"); break;
+    case "rocha": { const h=1.1+rnd()*.7; L.add("box","lam",x,h/2,y,1,h,1,0,jit("#3d342b",rnd,.15)); if(rnd()<.4) L.add("dode","lam",x+(rnd()-.5)*.3,h,y+(rnd()-.5)*.3,.45,.3,.45,rnd()*6,jit("#4a4034",rnd,.1)); break; }
+    case "arvore": {
+      const seco = mapa==="sup" && y>=96 && x<120, s=.8+rnd()*.45, ox=(rnd()-.5)*.25, oz=(rnd()-.5)*.25;
+      if (seco){ L.add("cyl","lam",x+ox,.6*s,y+oz,.08*s,1.2*s,.08*s,0,"#5a4a3a"); L.add("box","lam",x+ox+.15,.9*s,y+oz,.4*s,.05,.05,0,"#5a4a3a",0,.6); L.add("box","lam",x+ox-.12,.75*s,y+oz,.3*s,.05,.05,0,"#5a4a3a",0,-.7); break; }
+      L.add("cyl","lam",x+ox,.45*s,y+oz,.11*s,.9*s,.11*s,0,"#5a3a1e");
+      L.add("ico","lam",x+ox,1.25*s,y+oz,.62*s,.7*s,.62*s,rnd()*6,jit(rnd()<.5?"#2f5a22":"#3a6a26",rnd,.15));
+      L.add("ico","lam",x+ox+.1,1.7*s,y+oz-.05,.4*s,.45*s,.4*s,rnd()*6,jit("#3f7a2c",rnd,.15)); break; }
+    case "arbusto": L.add("ico","lam",x,.32,y,.46,.38,.46,rnd()*6,jit("#2e5e20",rnd,.18)); break;
+    case "entulho": for(let k=0;k<3;k++) L.add(rnd()<.5?"dode":"box","lam",x+(rnd()-.5)*.5,.1+rnd()*.18,y+(rnd()-.5)*.5,.22+rnd()*.25,.18+rnd()*.2,.22+rnd()*.25,rnd()*6,jit(rnd()<.6?"#7a7670":"#6a5040",rnd,.15),rnd(),rnd()); break;
+    case "carro": carro(L,x,y,rnd,false); break;
+    case "poco": L.add("cyl","lam",x,.25,y,.44,.5,.44,0,"#6e6a62"); L.add("cyl","lam",x,.51,y,.34,.02,.34,0,"#3a7ab0"); L.add("box","lam",x,.95,y,.9,.06,.06,0,"#5a3a1e"); L.add("box","lam",x-.42,.72,y,.06,.5,.06,0,"#5a3a1e"); L.add("box","lam",x+.42,.72,y,.06,.5,.06,0,"#5a3a1e"); break;
+    case "fogo": L.add("box","lam",x,.08,y,.7,.1,.12,.6,"#4a2a12"); L.add("box","lam",x,.08,y,.7,.1,.12,-.6,"#4a2a12");
+      A.add("cone","glow",x,.32,y,.2,.45,.2,0,"#ff7a18"); A.add("cone","glow",x,.28,y,.11,.3,.11,0,"#ffe060"); fogos.push([x,y]); break;
+    case "portaf": { const hz = TP[viz(-1,0)]?.b || TP[viz(1,0)]?.b; L.add("box","lam",x,.6,y,hz?.92:.14,1.2,hz?.14:.92,0,"#6a4626"); L.add("box","lam",x,ALT_PAREDE-.03,y,1,.06,1,0,"#7a7670"); break; }
+    case "cont": {
+      const tipo = M.cont.get(x+","+y);
+      if (tipo==="carro"){ carro(L,x,y,rnd,mapa==="metro"); break; }
+      const [g,w,h,dd,c] = COR_CONT[tipo] || COR_CONT.caixa, ry = (rnd()-.5)*.2;
+      L.add(g,"lam",x,h/2,y,w,h,dd,ry,jit(c,rnd,.06));
+      if (tipo==="medico") A.add("box","glow",x,.75,y+.21,.22,.07,.01,0,"#e23030"), A.add("box","glow",x,.75,y+.21,.07,.22,.01,0,"#e23030");
+      if (tipo==="militar") L.add("box","lam",x,.52,y,.92,.04,.62,ry,"#3a4520");
+      if (tipo==="cofre") L.add("cyl","lam",x,.45,y+.36,.1,.03,.1,0,"#999",Math.PI/2);
+      break; }
+    case "placa": L.add("cyl","lam",x,.45,y,.05,.9,.05,0,"#5a4028"); L.add("box","lam",x,.85,y,.72,.42,.06,0,"#a08050"); A.add("box","glow",x,.85,y+.035,.5,.06,.005,0,"#3a2a18"); break;
+    case "cama": L.add("box","lam",x,.17,y+.5,.9,.34,1.9,0,"#4a3a2a"); L.add("box","lam",x,.38,y+.55,.8,.12,1.75,0,"#5a7a4a"); L.add("box","lam",x,.47,y-.2,.6,.08,.3,0,"#ddd"); break;
+    case "console": L.add("box","lam",x,.42,y,.9,.84,.6,0,"#2a3038"); A.add("box","glow",x,.6,y+.305,.62,.32,.01,0,(hash(x,y)&1)?"#5ad1ff":"#4bd16b"); break;
+    case "tanque": L.add("cyl","lam",x,.65,y,.38,1.3,.38,0,"#6a8a9a"); L.add("cyl","lam",x,1.32,y,.25,.08,.25,0,"#4a5a6a"); A.add("cyl","glow",x,.65,y,.385,.08,.385,0,"#5ad1ff"); break;
+    case "cristal": for(let k=0;k<3;k++) A.add("oct","glow",x+(rnd()-.5)*.4,.3+rnd()*.3,y+(rnd()-.5)*.4,.14+rnd()*.12,.35+rnd()*.3,.14+rnd()*.12,rnd()*3,jit("#7aff3a",rnd,.2),(rnd()-.5)*.5); break;
+    case "grade": {
+      L.add("cyl","lam",x,.45,y,.04,.9,.04,0,"#8a8a7a");
+      for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) if (viz(dx,dy)===T.GRADE) for (const hy of [.3,.72])
+        L.add("box","lam",x+dx*.25,hy,y+dy*.25,dx?.5:.04,.05,dy?.5:.04,0,"#9a9a8a");
+      break; }
+    case "mesa": L.add("box","lam",x,.7,y,.92,.07,.92,0,"#8a6a40"); L.add("cyl","lam",x,.35,y,.06,.7,.06,0,"#4a3a2a"); break;
+    case "barraca": L.add("cone4","lam",x+.5,.7,y+.5,1.15,1.4,1.15,Math.PI/4,jit("#7a6a3a",rnd,.08)); break;
+  }
+}
+
+// ---------------------------------------------------------------- MAPA ATIVO
+let grupoMapa = null, texChao = null, luzesFogo = [], miniBase = null, mapaAtual = null;
+function montarMapa(m){
+  if (grupoMapa){ scene.remove(grupoMapa); grupoMapa.traverse(o=>{ if(o.isInstancedMesh) o.dispose(); }); }
+  if (texChao) texChao.dispose();
+  for (const l of luzesFogo) scene.remove(l); luzesFogo=[]; fogos=[];
+  const M = MAPA[m]; mapaAtual = m;
+  grupoMapa = new THREE.Group();
+  texChao = pintarChao(M);
+  const chao = new THREE.Mesh(new THREE.PlaneGeometry(M.W, M.H), new THREE.MeshLambertMaterial({map:texChao}));
+  chao.rotation.x = -Math.PI/2; chao.position.set(M.W/2-.5, 0, M.H/2-.5); chao.receiveShadow = true;
+  grupoMapa.add(chao);
+  // borda escura em volta do mapa
+  const borda = new THREE.Mesh(new THREE.PlaneGeometry(M.W+80, M.H+80), new THREE.MeshBasicMaterial({color:0x050505}));
+  borda.rotation.x = -Math.PI/2; borda.position.set(M.W/2-.5,-.02,M.H/2-.5); grupoMapa.add(borda);
+  const L = new Lote(), A = new Lote();
+  for (let y=0;y<M.H;y++) for (let x=0;x<M.W;x++) objTile(M, m, x, y, M.t[y*M.W+x], L, A);
+  L.montar(grupoMapa); A.montar(grupoMapa);
+  for (const [x,y] of fogos.slice(0,6)){ const l = new THREE.PointLight(0xff9a40, 1.5, 5.5, 1.5); l.position.set(x,.9,y); scene.add(l); luzesFogo.push(l); }
+  scene.add(grupoMapa);
+  // minimapa base
+  miniBase = document.createElement("canvas"); miniBase.width=M.W; miniBase.height=M.H;
+  const mc = miniBase.getContext("2d"), id = mc.createImageData(M.W,M.H);
+  for (let i=0;i<M.W*M.H;i++){ const [r,g,b] = hexRgb(TP[M.t[i]].mm.length===4 ? "#"+TP[M.t[i]].mm.slice(1).split("").map(c=>c+c).join("") : TP[M.t[i]].mm);
+    id.data[i*4]=r; id.data[i*4+1]=g; id.data[i*4+2]=b; id.data[i*4+3]=255; }
+  mc.putImageData(id,0,0);
+}
+
+// ---------------------------------------------------------------- PERSONAGENS 3D
+function mL(c){ return new THREE.MeshLambertMaterial({color:c}); }
+function peca(par, geo, w,h,d, x,y,z, c, mats, glow){
+  const mt = glow ? new THREE.MeshBasicMaterial({color:c, toneMapped:false}) : mL(c); if(!glow) mats.push(mt);
+  const me = new THREE.Mesh(GEO[geo], mt); me.scale.set(w,h,d); me.position.set(x,y,z); me.castShadow = true; par.add(me); return me;
+}
+function pivo(par,x,y,z){ const g=new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; }
+
+function humanoide(c, opt={}){
+  const g = new THREE.Group(), mats = [], P = {};
+  const roupa = opt.corpo || c.roupa, calca = opt.pernas || c.calca;
+  P.lL = pivo(g,-.11,.72,0); peca(P.lL,"box",.15,.62,.17,0,-.31,0,calca,mats); peca(P.lL,"box",.16,.1,.24,0,-.66,.03,opt.pes||"#2a2622",mats);
+  P.lR = pivo(g, .11,.72,0); peca(P.lR,"box",.15,.62,.17,0,-.31,0,calca,mats); peca(P.lR,"box",.16,.1,.24,0,-.66,.03,opt.pes||"#2a2622",mats);
+  peca(g,"box",.44,.52,.25,0,.98,0,roupa,mats);
+  peca(g,"box",.42,.06,.26,0,.73,0,"#2a2018",mats);
+  P.aL = pivo(g,-.29,1.19,0); peca(P.aL,"box",.13,.5,.15,0,-.24,0,roupa,mats); peca(P.aL,"box",.11,.11,.12,0,-.53,0,c.pele,mats);
+  P.aR = pivo(g, .29,1.19,0); peca(P.aR,"box",.13,.5,.15,0,-.24,0,roupa,mats); peca(P.aR,"box",.11,.11,.12,0,-.53,0,c.pele,mats);
+  P.cab = pivo(g,0,1.27,0);
+  peca(P.cab,"box",.31,.31,.3,0,.16,0,c.pele,mats);
+  peca(P.cab,"box",.06,.05,.02,-.07,.19,.152,"#111",mats); peca(P.cab,"box",.06,.05,.02,.07,.19,.152,"#111",mats);
+  if (c.cabelo && !opt.cabeca){ peca(P.cab,"box",.33,.09,.32,0,.33,-.01,c.cabelo,mats); peca(P.cab,"box",.33,.2,.08,0,.2,-.13,c.cabelo,mats); }
+  const ex = c.extra;
+  if (ex==="bandana") peca(P.cab,"box",.335,.07,.32,0,.27,0,"#a82222",mats);
+  if (ex==="oculos") peca(P.cab,"box",.27,.07,.03,0,.19,.16,"#0a0a0a",mats);
+  if (ex==="boina") peca(P.cab,"box",.36,.07,.36,.03,.34,0,"#3a2a1a",mats);
+  if (ex==="capacete") peca(P.cab,"box",.36,.14,.36,0,.34,0,"#3a4a2a",mats);
+  if (ex==="espinhos") for (const s of [-1,1]) for (let k=0;k<3;k++) peca(g,"cone",.05,.18,.05,s*(.18+k*.05),1.3,-.02,"#bbb",mats);
+  if (ex==="tubos"){ peca(g,"cyl",.06,.5,.06,-.1,1.0,-.16,"#7aff3a",mats,true); peca(g,"cyl",.06,.5,.06,.1,1.0,-.16,"#7aff3a",mats,true); }
+  if (opt.cabeca) peca(P.cab,"box",.36,.16,.36,0,.36,0,opt.cabeca,mats);
+  if (opt.mascara) peca(P.cab,"box",.2,.14,.06,0,.09,.16,"#222",mats);
+  if (opt.arma) { const a = ITENS[opt.arma]; const longa = a.alc || a.maos2;
+    peca(P.aR,"box",.05,.05,longa?.75:.45,0,-.55,longa?.3:.2,a.alc?"#2a2a2a":(a.atk>20?"#9aa0a6":"#7a5a3a"),mats); }
+  if (opt.escudo) peca(P.aL,"box",.06,.42,.36,-.08,-.38,.06,opt.escudo==="tampa"?"#8a8a8a":"#4a5a6a",mats);
+  if (opt.luz) { const lz = peca(P.aL,"cyl",.04,.25,.04,0,-.6,.12,"#5a3a1a",mats); peca(P.aL,"sph",.07,.09,.07,0,-.45,.12,opt.luz==="tocha"?"#ff9a30":"#fff8c0",mats,true); }
+  g.userData.mats = mats;
+  return {g, P, tipo:"hum", alt:1.75};
+}
+
+function animal(spr, def){
+  const g = new THREE.Group(), mats = [], P = {pernas:[]};
+  const perna = (x,z,c,len=.2,w=.05)=>{ const p=pivo(g,x,len,z); peca(p,"box",w,len,w,0,-len/2,0,c,mats); P.pernas.push(p); };
+  let alt = .6;
+  if (spr==="rato"){
+    peca(g,"sph",.24,.18,.38,0,.22,0,"#6a5a4a",mats); peca(g,"sph",.14,.13,.16,0,.27,.36,"#7a6a5a",mats);
+    peca(g,"sph",.05,.05,.02,-.08,.4,.34,"#c99",mats); peca(g,"sph",.05,.05,.02,.08,.4,.34,"#c99",mats);
+    peca(g,"sph",.025,.025,.02,-.06,.31,.5,"#ff2020",mats,true); peca(g,"sph",.025,.025,.02,.06,.31,.5,"#ff2020",mats,true);
+    P.cauda = pivo(g,0,.2,-.34); peca(P.cauda,"cyl",.025,.5,.025,0,0,-.24,"#c99a8a",mats).rotation.x = Math.PI/2;
+    for (const [x,z] of [[-.14,.18],[.14,.18],[-.14,-.18],[.14,-.18]]) perna(x,z,"#5a4a3a",.12);
+    if (def.coroa){ peca(g,"cyl",.12,.08,.12,0,.45,.34,"#e8c060",mats,true); for(let k=0;k<5;k++){ const a=k/5*Math.PI*2; peca(g,"cone",.03,.1,.03,Math.cos(a)*.1,.53,.34+Math.sin(a)*.1,"#ffd860",mats,true); } }
+    alt = .55;
+  } else if (spr==="barata"){
+    peca(g,"sph",.26,.12,.4,0,.17,0,"#4a2a12",mats); peca(g,"sph",.12,.09,.1,0,.17,.38,"#3a1e0a",mats);
+    for (const z of [.2,0,-.2]) for (const s of [-1,1]){ const p=pivo(g,s*.2,.17,z); peca(p,"box",.3,.03,.03,s*.15,-.06,0,"#2a1508",mats).rotation.z = s*.5; P.pernas.push(p); }
+    for (const s of [-1,1]) peca(g,"box",.02,.02,.4,s*.06,.25,.62,"#3a1e0a",mats).rotation.y = s*.3;
+    alt = .4;
+  } else if (spr==="cao"){
+    peca(g,"box",.28,.28,.66,0,.5,0,"#6a4a2a",mats); P.cab = pivo(g,0,.66,.36);
+    peca(P.cab,"box",.25,.24,.28,0,.04,.08,"#6a4a2a",mats); peca(P.cab,"box",.14,.12,.16,0,-.02,.28,"#4a321a",mats);
+    peca(P.cab,"box",.06,.1,.04,-.09,.2,.02,"#4a321a",mats); peca(P.cab,"box",.06,.1,.04,.09,.2,.02,"#4a321a",mats);
+    peca(P.cab,"box",.04,.04,.02,-.07,.09,.225,"#ff3020",mats,true); peca(P.cab,"box",.04,.04,.02,.07,.09,.225,"#ff3020",mats,true);
+    P.cauda = pivo(g,0,.58,-.33); peca(P.cauda,"box",.05,.05,.3,0,.08,-.13,"#5a3a1a",mats).rotation.x = -.6;
+    for (const [x,z] of [[-.1,.24],[.1,.24],[-.1,-.24],[.1,-.24]]) perna(x,z,"#5a3a1a",.38,.08);
+    alt = .9;
+  } else if (spr==="escorp"){
+    peca(g,"sph",.3,.14,.38,0,.2,0,"#7a8a30",mats); peca(g,"sph",.2,.12,.18,0,.2,.36,"#6a7a28",mats);
+    for (const s of [-1,1]){ peca(g,"box",.06,.06,.3,s*.22,.2,.5,"#6a7a28",mats).rotation.y = -s*.4; peca(g,"box",.14,.08,.16,s*.32,.2,.66,"#8a9a38",mats); }
+    P.cauda = pivo(g,0,.25,-.3);
+    let px=0,py=0,pz=0; for (let k=0;k<4;k++){ peca(P.cauda,"sph",.11-k*.01,.11-k*.01,.11-k*.01,0,py,pz,"#7a8a30",mats); py+=.15; pz-=.1-k*.05; }
+    peca(P.cauda,"cone",.05,.16,.05,0,py+.02,pz+.12,"#7aff3a",mats,true).rotation.x = 2.2;
+    for (const z of [.15,-.05,-.22]) for (const s of [-1,1]){ const p=pivo(g,s*.25,.2,z); peca(p,"box",.28,.03,.03,s*.13,-.07,0,"#5a6a20",mats).rotation.z = s*.55; P.pernas.push(p); }
+    alt = .8;
+  } else if (spr==="morcego"){
+    P.corpo = pivo(g,0,1.1,0);
+    peca(P.corpo,"sph",.16,.18,.16,0,0,0,"#3a2a3a",mats); peca(P.corpo,"sph",.11,.1,.1,0,.14,.08,"#2a1a2a",mats);
+    peca(P.corpo,"sph",.025,.025,.02,-.04,.16,.17,"#ff4040",mats,true); peca(P.corpo,"sph",.025,.025,.02,.04,.16,.17,"#ff4040",mats,true);
+    P.asaE = pivo(P.corpo,-.12,0,0); peca(P.asaE,"box",.55,.02,.3,-.27,0,0,"#4a2a3a",mats);
+    P.asaD = pivo(P.corpo, .12,0,0); peca(P.asaD,"box",.55,.02,.3, .27,0,0,"#4a2a3a",mats);
+    alt = 1.5;
+  } else if (spr==="aranha"){
+    peca(g,"sph",.24,.2,.24,0,.42,.15,"#2a1a2a",mats); peca(g,"sph",.36,.32,.42,0,.5,-.3,"#3a1a3a",mats);
+    peca(g,"sph",.2,.03,.2,0,.79,-.3,"#a02020",mats);
+    for (let k=0;k<4;k++){ peca(g,"sph",.03,.03,.02,-.05-k*.03,.5,.38,"#ff3030",mats,true); }
+    for (let k=0;k<4;k++) for (const s of [-1,1]){ const p=pivo(g,s*.18,.45,.25-k*.15); const a=peca(p,"box",.55,.04,.04,s*.25,.05,0,"#1a0a1a",mats); a.rotation.z = s*-.35; const b=peca(p,"box",.04,.5,.04,s*.5,-.2,0,"#1a0a1a",mats); P.pernas.push(p); }
+    alt = 1.0;
+  } else if (spr==="drone"){
+    P.corpo = pivo(g,0,1.3,0);
+    peca(P.corpo,"box",.5,.18,.5,0,0,0,"#40464e",mats); peca(P.corpo,"box",.16,.1,.08,0,-.04,.27,"#111",mats);
+    peca(P.corpo,"sph",.05,.05,.03,0,-.04,.31,"#5ad1ff",mats,true);
+    P.rot = [];
+    for (const [x,z] of [[-.35,-.35],[.35,-.35],[-.35,.35],[.35,.35]]){ peca(P.corpo,"box",.25,.04,.04,x/2,0,z/2,"#2a2e33",mats).rotation.y = Math.atan2(x,z)+Math.PI/2;
+      const r = pivo(P.corpo,x,.06,z); peca(r,"cyl",.2,.01,.2,0,0,0,"#888",mats).material.transparent = true; P.rot.push(r); }
+    alt = 1.7;
+  }
+  g.userData.mats = mats;
+  return {g, P, tipo:spr, alt};
+}
+
+function modeloMonstro(def){
+  let mo;
+  if (def.spr==="hum"){
+    const c = def.c || (def===MONS.soldado ? HUM("#6a8a5a","#3a4a2a","#2a3a2a","#222","capacete") : HUM("#a8b0b8","#d8d8d8","#333",null,"tubos"));
+    const op = {}; if (def===MONS.carnica) op.arma = "motosserra"; if (def===MONS.saqueador) op.arma = "taco"; if (def.alc) op.arma = op.arma || "pistola";
+    if (def===MONS.mutante) op.arma = "machado";
+    mo = humanoide(c, op);
+  } else mo = animal(def.spr, def);
+  const e = def.esc || 1; mo.g.scale.setScalar(e); mo.alt *= e;
+  return mo;
+}
+
+// barra de vida flutuante
+const GEO_PL = new THREE.PlaneGeometry(1,1);
+function barraVida(){
+  const g = new THREE.Group();
+  const bg = new THREE.Mesh(GEO_PL, new THREE.MeshBasicMaterial({color:0x000000, depthTest:false, transparent:true, opacity:.75}));
+  bg.scale.set(.82,.11,1); bg.renderOrder = 998;
+  const fg = new THREE.Mesh(GEO_PL, new THREE.MeshBasicMaterial({color:0x4bd16b, depthTest:false, toneMapped:false}));
+  fg.scale.set(.78,.07,1); fg.renderOrder = 999; fg.position.z = .001;
+  g.add(bg, fg); g.userData.fg = fg; return g;
+}
+function setBarra(b, frac){ const fg=b.userData.fg; frac=clamp(frac,0,1); fg.scale.x = .78*frac; fg.position.x = -.39*(1-frac);
+  fg.material.color.set(frac>.6?0x4bd16b:frac>.3?0xe8c020:0xff4030); }
+
+// anel do alvo
+const anelAlvo = new THREE.Mesh(GEO.torus, new THREE.MeshBasicMaterial({color:0xff3030, toneMapped:false, transparent:true, opacity:.9}));
+anelAlvo.scale.set(.5,.5,.5); anelAlvo.visible = false; scene.add(anelAlvo);
+
+// ---------------------------------------------------------------- ESTADO
+let P = null, CRI = [], NPCV = [], SPAWNS = [], contTempo = {};
+let tJogo = 0, uid = 1, rodando = false;
+const hpMax = () => 145 + P.lvl*15;
+const tentativas = v => Math.floor(30*Math.pow(1.1, v-10));
+const velP = () => Math.max(170, 260 - P.lvl*3);
+function armaduraTotal(){ let a=0; for(const s of ["cabeca","corpo","pernas","pes"]) if(P.eq[s]) a+=ITENS[P.eq[s]].arm||0; return a; }
+function novoJogador(nome){
+  return {nome, mapa:TEMPLO.mapa, x:TEMPLO.x, y:TEMPLO.y, lvl:1, xp:0, hp:160, fome:80, sede:80, rad:0,
+    sk:{corpo:{v:10,t:0},dist:{v:10,t:0},def:{v:10,t:0}},
+    inv:[{id:"lata",q:2},{id:"garrafa",q:2},{id:"bandagem",q:2},{id:"tampinha",q:25},{id:"tampa",q:1}],
+    eq:{arma:"canivete",corpo:"camiseta",pernas:"jeans",pes:"tenis",cabeca:null,escudo:null,luz:null},
+    quest:{ratos:0,saq:0,saqMortes:0,rei:0,carnica:0,base:0}, mortes:0, tJogo:0};
+}
+// ator visual do jogador
+const ator = {x:0,y:0, mv:null, rot:0, mo:null, fase:0, atkT:0};
+
+// ---------------------------------------------------------------- INVENTÁRIO
+const contar = id => P.inv.filter(s=>s.id===id).reduce((a,s)=>a+s.q,0);
+const temItem = (id,q=1) => contar(id) >= q;
+function darItem(id,q=1){ const s=P.inv.find(s=>s.id===id && ITENS[id].st); if(s) s.q+=q; else if(ITENS[id].st) P.inv.push({id,q}); else for(let k=0;k<q;k++) P.inv.push({id,q:1}); hudItens(); }
+function tirarItem(id,q=1){ for(let i=P.inv.length-1;i>=0&&q>0;i--){ const s=P.inv[i]; if(s.id!==id) continue; const t=Math.min(q,s.q); s.q-=t; q-=t; if(s.q<=0) P.inv.splice(i,1); } hudItens(); }
+
+// ---------------------------------------------------------------- LOG E EFEITOS
+function log(txt, cls="c-cinza"){
+  const p = document.createElement("p"); p.className = cls; p.textContent = txt; const L = $("#log"); L.appendChild(p);
+  while (L.children.length > 6) L.removeChild(L.firstChild);
+  setTimeout(()=>{ p.style.transition="opacity 1s"; p.style.opacity="0"; setTimeout(()=>p.remove(),1000); }, 9000);
+}
+const FXS = [];
+const v3 = new THREE.Vector3();
+function textoFlutuante(x,y,alt,txt,c){
+  const el = document.createElement("div"); el.className="fx"; el.textContent=txt; el.style.color=c; document.body.appendChild(el);
+  FXS.push({el, x:x+(Math.random()-.5)*.3, y, alt, t0:performance.now(), dur:1100});
+}
+const PARTS = [];
+function efeito(x,y,c, alt=.8){
+  const me = new THREE.Mesh(GEO.torus, new THREE.MeshBasicMaterial({color:c, transparent:true, toneMapped:false, depthWrite:false}));
+  me.position.set(x,alt,y); me.scale.setScalar(.2); scene.add(me); PARTS.push({me, t0:performance.now(), dur:450});
+}
+function projetil(de, para, c){
+  const me = new THREE.Mesh(GEO.sph, new THREE.MeshBasicMaterial({color:c, toneMapped:false}));
+  me.scale.setScalar(.08); scene.add(me);
+  PARTS.push({me, t0:performance.now(), dur:200, de:new THREE.Vector3(de.x,1,de.y), para:new THREE.Vector3(para.x,.9,para.y)});
+}
+
+// ---------------------------------------------------------------- REGRAS DE MOVIMENTO
+function ocupadoPor(x,y){
+  if (P && P.x===x && P.y===y) return P;
+  for (const c of CRI) if (!c.morto && c.x===x && c.y===y) return c;
+  for (const n of NPCV) if (n.x===x && n.y===y) return n;
+  return null;
+}
+function livre(m,x,y,monstro){
+  const t = tileEm(m,x,y); if (TP[t].b) return false;
+  if (monstro && (pzEm(m,x,y) || PORTAIS.has(t))) return false;
+  return !ocupadoPor(x,y);
+}
+function podePassar(m, a, dx, dy, monstro){
+  const nx=a.x+dx, ny=a.y+dy;
+  if (!livre(m,nx,ny,monstro)) return false;
+  if (dx && dy && (TP[tileEm(m,a.x+dx,a.y)].b || TP[tileEm(m,a.x,a.y+dy)].b)) return false;
+  return true;
+}
+function iniciarPasso(a, vis, dx, dy, dur, agora){
+  const t0 = (vis.mv && agora - vis.mv.fim < 60) ? Math.max(vis.mv.fim, agora-60) : agora;
+  const dd = (dx&&dy) ? dur*1.35 : dur;
+  vis.mv = {fx:a.x, fy:a.y, tx:a.x+dx, ty:a.y+dy, t0, fim:t0+dd};
+  a.x += dx; a.y += dy; vis.rot = Math.atan2(dx,dy);
+  return dd;
+}
+const DIRS = [[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1]];
+function passoPara(m, a, alvo, monstro){
+  const d0 = cheb(a,alvo); let best=null, bd=1e9;
+  for (const [dx,dy] of DIRS){
+    const nx=a.x+dx, ny=a.y+dy; if (nx===alvo.x && ny===alvo.y) continue;
+    if (!podePassar(m,a,dx,dy,monstro)) continue;
+    const d = Math.max(Math.abs(nx-alvo.x),Math.abs(ny-alvo.y)) + (Math.abs(nx-alvo.x)+Math.abs(ny-alvo.y))*.01 + ((dx&&dy)?.003:0);
+    if (d < bd){ bd=d; best=[dx,dy]; }
+  }
+  if (!best || bd >= d0+.5) return null;
+  return best;
+}
+function visao(m, a, b){
+  let x0=a.x, y0=a.y; const x1=b.x, y1=b.y, dx=Math.abs(x1-x0), dy=-Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1; let err=dx+dy;
+  while (true){ if (x0===x1 && y0===y1) return true; const e2=2*err; if (e2>=dy){ err+=dy; x0+=sx; } if (e2<=dx){ err+=dx; y0+=sy; }
+    if ((x0!==x1||y0!==y1) && TP[tileEm(m,x0,y0)].op) return false; }
+}
+
+// ---------------------------------------------------------------- CRIATURAS
+function criarCriatura(tipo, x, y, sp){
+  const def = MONS[tipo], mo = modeloMonstro(def);
+  const c = {id:uid++, tipo, def, x, y, hp:def.hp, sp, mv:null, rot:Math.random()*6, mo, prox:0, proxAtk:0, proxInv:0, morto:false, fase:Math.random()*6, atkT:0, flash:0};
+  c.barra = barraVida(); c.barra.visible = false; scene.add(c.barra);
+  mo.g.userData.cri = c; mo.g.position.set(x,0,y); scene.add(mo.g);
+  CRI.push(c); return c;
+}
+function lugarLivreAoRedor(m, cx, cy, r){
+  for (let k=0;k<40;k++){ const x=cx+R(-r,r), y=cy+R(-r,r); if (livre(m,x,y,true)) return [x,y]; }
+  return null;
+}
+function prepararSpawns(m){
+  for (const c of CRI){ scene.remove(c.mo.g); scene.remove(c.barra); }
+  CRI = []; SPAWNS = [];
+  for (const s of DEF_SPAWNS) if (s[0]===m){
+    const sp = {tipo:s[1], x:s[2], y:s[3], r:s[4], qtd:s[5], seg:s[6], vivos:0, fila:[]};
+    SPAWNS.push(sp);
+    for (let k=0;k<sp.qtd;k++){ const p = lugarLivreAoRedor(m, sp.x, sp.y, sp.r); if (p){ criarCriatura(sp.tipo, p[0], p[1], sp); sp.vivos++; } }
+  }
+}
+function atualizarSpawns(agora){
+  for (const sp of SPAWNS){
+    while (sp.fila.length && sp.fila[0] <= agora){
+      const p = lugarLivreAoRedor(mapaAtual, sp.x, sp.y, sp.r);
+      if (!p || cheb({x:p[0],y:p[1]},P) < 7){ sp.fila[0] = agora + 4000; break; }
+      sp.fila.shift(); criarCriatura(sp.tipo, p[0], p[1], sp); sp.vivos++;
+    }
+  }
+}
+function iaCriaturas(agora){
+  const pzJog = pzEm(mapaAtual,P.x,P.y);
+  for (const c of CRI){
+    if (c.morto || agora < c.prox) continue;
+    const d = cheb(c,P), def = c.def;
+    const agro = !P.morto && !pzJog && d <= 8;
+    let mov = 0;
+    if (agro){
+      if (def.boss && def.invoca && agora > c.proxInv){ c.proxInv = agora + 12000;
+        const p = lugarLivreAoRedor(mapaAtual, c.x, c.y, 2); if (p && CRI.filter(o=>!o.morto&&o.tipo===def.invoca).length < 6){ criarCriatura(def.invoca, p[0], p[1], null); log(`${def.n} chama reforços!`,"c-verm"); } }
+      const alc = def.alc || 1, vendo = d<=alc && visao(mapaAtual,c,P);
+      if (vendo && agora >= c.proxAtk){ atacarJogador(c, d>1); c.proxAtk = agora + 2000; }
+      const querAndar = def.alc ? (d>alc || !vendo || (d>2 && Math.random()<.25)) : d>1;
+      if (querAndar){ const st = passoPara(mapaAtual, c, P, true); if (st) mov = iniciarPasso(c, c, st[0], st[1], def.vel, agora); }
+      else c.rot = Math.atan2(P.x-c.x, P.y-c.y);
+    } else if (Math.random() < .35){
+      const [dx,dy] = DIRS[R(0,7)], o = c.sp || c;
+      if (Math.abs(c.x+dx-o.x) <= (o.r||3)+3 && Math.abs(c.y+dy-o.y) <= (o.r||3)+3 && podePassar(mapaAtual,c,dx,dy,true)) mov = iniciarPasso(c,c,dx,dy,def.vel*1.3,agora);
+    }
+    c.prox = agora + (mov || (agro?220:900+Math.random()*900));
+  }
+}
+function atacarJogador(c, dist){
+  const def = c.def; c.atkT = performance.now();
+  if (dist) projetil(c, P, def.proj || "#ffd23a");
+  let dmg = R(0, def.atk);
+  const arm = armaduraTotal(); dmg -= R(arm>>1, arm);
+  if (P.eq.escudo){ const bl = R(0, Math.floor(ITENS[P.eq.escudo].def*.6 + P.sk.def.v*.3)); dmg -= bl; treinar("def"); }
+  if (dmg <= 0){ textoFlutuante(P.x,P.y,1.9,"defendeu","#7ac8ff"); efeito(P.x,P.y,"#7ac8ff",1); return; }
+  P.hp -= dmg; ator.flash = performance.now();
+  textoFlutuante(P.x,P.y,1.9,"-"+dmg,"#ff5040");
+  if (def.rad) P.rad = clamp(P.rad + (P.eq.cabeca==="mascara" ? def.rad*.3 : def.rad), 0, 100);
+  if (P.hp <= 0) morrer(c);
+}
+
+// ---------------------------------------------------------------- COMBATE DO JOGADOR
+function treinar(k){
+  const s = P.sk[k]; s.t++;
+  if (s.t >= tentativas(s.v)){ s.t = 0; s.v++; log(`Sua habilidade de ${({corpo:"combate corpo a corpo",dist:"tiro à distância",def:"defesa"})[k]} subiu para ${s.v}!`,"c-ouro"); }
+}
+function ganharXP(n){
+  P.xp += n; textoFlutuante(P.x,P.y,2.2,"+"+n+" xp","#ffffff");
+  while (P.xp >= xpNivel(P.lvl+1)){ P.lvl++; P.hp = hpMax(); log(`★ Você subiu para o nível ${P.lvl}! ★`,"c-ouro"); efeito(P.x,P.y,"#e8c060",.1); }
+}
+let avisoPZ = 0;
+function combateJogador(agora){
+  const a = P.alvo; if (!a) return;
+  if (a.morto){ P.alvo = null; return; }
+  if (pzEm(mapaAtual,P.x,P.y) || pzEm(mapaAtual,a.x,a.y)){ if (agora > avisoPZ){ log("Zona segura: aqui não há combate.","c-verde"); avisoPZ = agora+6000; } return; }
+  const arma = ITENS[P.eq.arma] || {atk:3}, ranged = arma.alc && temItem(arma.mun);
+  const alc = ranged ? arma.alc : 1, d = cheb(P,a);
+  if (d > alc || !visao(mapaAtual,P,a) || agora < P.proxAtk) return;
+  P.proxAtk = agora + (ranged ? 1600 : 1500); ator.atkT = agora; ator.rot = Math.atan2(a.x-P.x, a.y-P.y);
+  if (ranged){ tirarItem(arma.mun,1); projetil(P, a, "#ffe08a"); }
+  const sk = P.sk[ranged?"dist":"corpo"];
+  const maxHit = Math.floor(arma.atk*(.6 + sk.v/25) + P.lvl/4);
+  let dmg = R(0,maxHit) - R(0,a.def.arm);
+  treinar(ranged?"dist":"corpo");
+  if (dmg <= 0){ textoFlutuante(a.x,a.y,a.mo.alt+.3,"errou","#aaaaaa"); return; }
+  a.hp -= dmg; a.flash = agora;
+  textoFlutuante(a.x,a.y,a.mo.alt+.3,"-"+dmg, "#ffd040"); efeito(a.x,a.y,"#ff3020",a.mo.alt*.5);
+  if (a.hp <= 0) matar(a);
+}
+function matar(c){
+  c.morto = true; c.mortoT = performance.now(); c.barra.visible = false;
+  if (P.alvo===c) P.alvo = null;
+  const def = c.def; ganharXP(def.xp);
+  if (def.saq && P.quest.saq===1) P.quest.saqMortes++;
+  if (c.tipo==="carnica" && P.quest.carnica===1){ P.quest.carnica=2; log("Carniça caiu! Volte ao Sargento Rocha.","c-ouro"); }
+  const loot = rolarLoot(def.loot);
+  if (loot.length){ for (const l of loot) darItem(l.id,l.q); log(`Saque de ${def.n}: ${loot.map(l=>`${l.q>1?l.q+" ":""}${ITENS[l.id].n}`).join(", ")}.`,"c-verde"); autoEquipar(loot); }
+  else log(`${def.n} não tinha nada.`);
+  if (c.sp){ c.sp.vivos--; c.sp.fila.push(performance.now() + c.sp.seg*1000); }
+}
+function autoEquipar(loot){
+  for (const l of loot){ const it = ITENS[l.id]; if (!it.slot || it.alc) continue;
+    const atual = P.eq[it.slot] ? ITENS[P.eq[it.slot]] : null;
+    const val = i => (i ? (i.atk||0)+(i.def||0)+(i.arm||0)*4 : -1);
+    if (val(it) > val(atual) && !(it.slot==="escudo" && ITENS[P.eq.arma]?.maos2)){ equipar(l.id, true); } }
+}
+function morrer(c){
+  P.morto = true; P.hp = 0; P.alvo = null;
+  log(`Você foi morto por ${c.def.n}.`,"c-verm");
+  const perda = Math.floor((P.xp - xpNivel(P.lvl))*.3);
+  setTimeout(()=>{
+    P.xp -= perda; P.mortes++; P.hp = hpMax(); P.fome = Math.max(P.fome,40); P.sede = Math.max(P.sede,40); P.rad = 0; P.morto = false;
+    trocarMapa(TEMPLO.mapa, TEMPLO.x, TEMPLO.y);
+    log("Você acordou no dormitório do Bunker 47.","c-ouro");
+  }, 2200);
+}
+function proximoAlvo(){
+  const vivos = CRI.filter(c=>!c.morto && cheb(c,P)<=8 && visao(mapaAtual,P,c)).sort((a,b)=>cheb(a,P)-cheb(b,P));
+  if (!vivos.length){ log("Nenhum inimigo por perto."); P.alvo = null; return; }
+  const i = P.alvo ? vivos.indexOf(P.alvo) : -1;
+  P.alvo = vivos[(i+1) % vivos.length];
+  log(`Alvo: ${P.alvo.def.n}`,"c-verm");
+}
+
+// ---------------------------------------------------------------- NPCs
+const HUMNPC = {ze:HUM("#c9956a","#8a6a2a","#4a3a2a","#ddd"),ana:HUM("#e0b090","#e8e8e8","#3a5a7a","#6a3a1a"),cida:HUM("#8a5a3a","#3a3a3a","#2a2a2a","#999"),
+  rocha:HUM("#7a5038","#4a5a2a","#3a4a2a","#111","boina"),tiao:HUM("#9a6a48","#5a4a6a","#2a2a3a","#222","oculos")};
+let tradeAberto = null;
+const NPCS = [
+  {id:"ze",nome:"Seu Zé",vende:["lata","cereal","garrafa","refri","tocha","lanterna","pedra","flecha","bala","cartucho"],
+    compra:{cauda:3,couro:9,ferrao:22,sucata:3,componente:18,carne_rato:1,carne_cao:3,coroa:400},chips:["trocar","tchau"],
+    ola:()=>`Opa, ${P.nome}! Tenho comida, água, luz e munição. Diga TROCAR. Também compro as tralhas que você achar lá fora.`,
+    resp:t=>{ if(/troca|compr|vend|trade/.test(t)) return abrirTrade("ze"), "Dá uma olhada. Preço justo, palavra de Zé."; }},
+  {id:"ana",nome:"Doutora Ana",vende:["bandagem","medkit","iodo"],compra:{},chips:["curar","radiação","trocar","tchau"],
+    ola:()=>`Olá, ${P.nome}. Posso CURAR seus ferimentos ou tirar sua RADIAÇÃO. Também tenho remédios para TROCAR.`,
+    resp:t=>{
+      if(/cura/.test(t)){ if(P.hp>=hpMax()) return "Você está inteiro. Vá com cuidado.";
+        if(P.lvl>8){ if(!temItem("tampinha",15)) return "Para você agora são 15 tampinhas. Remédio está caro."; tirarItem("tampinha",15); }
+        P.hp=hpMax(); efeito(P.x,P.y,"#4bd16b",.1); return P.lvl>8?"Pronto. 15 tampinhas, obrigada.":"Pronto, novinho. Para iniciantes é de graça."; }
+      if(/radia/.test(t)){ if(P.rad<1) return "Seu contador Geiger está limpo.";
+        if(!temItem("tampinha",20)) return "Descontaminar custa 20 tampinhas."; tirarItem("tampinha",20); P.rad=0; return "Banho químico feito. Radiação zerada."; }
+      if(/troca|compr|trade/.test(t)) return abrirTrade("ana"), "Aqui estão."; }},
+  {id:"cida",nome:"Dona Cida",vende:["faca","taco","pe_cabra","facao","machado","estilingue","arco","pistola","espingarda","tampa","escudo_placa","escudo_motim",
+      "bone","capacete_obra","mascara","capacete_mil","jaqueta","colete_sucata","colete_bal","cargo","caneleira","coturno"],compra:"equip",chips:["trocar","tchau"],
+    ola:()=>`Hm. ${P.nome}, né? Armas e proteção. Diga TROCAR. Compro equipamento usado por um terço do preço.`,
+    resp:t=>{ if(/troca|compr|vend|trade/.test(t)) return abrirTrade("cida"), "Escolhe logo, que eu tenho mais o que fazer."; }},
+  {id:"rocha",nome:"Sargento Rocha",vende:[],compra:{},chips:["missão","tchau"],
+    ola:()=>`Sentido, ${P.nome}! Sargento Rocha, comandante do Bunker 47. Temos uma MISSÃO pra quem tem coragem.`,
+    resp:t=>{ if(/miss|tarefa|quest|trabalho/.test(t)) return missao(); }},
+  {id:"tiao",nome:"Tião do Metrô",vende:["bala","cartucho","flecha","mre","iodo","garrafa","lanterna"],compra:{cristal:30,teia:12,componente:18,sucata:3,chip:45,ferrao:22},chips:["trocar","tchau"],
+    ola:()=>`E aí, ${P.nome}. Aqui embaixo ninguém briga. Compro CRISTAL, seda de aranha e chips militares. Diga TROCAR.`,
+    resp:t=>{ if(/troca|compr|vend|trade/.test(t)) return abrirTrade("tiao"), "Negócio é negócio."; }}
+];
+function missao(){
+  const q=P.quest;
+  if(q.ratos===0){ q.ratos=1; return "Os ratos mutantes estão roendo nossos estoques. Traga 5 CAUDAS DE RATO e eu te recompenso. Tem muitos perto da estrada leste."; }
+  if(q.ratos===1){ if(!temItem("cauda",5)) return `Ainda faltam caudas. Você tem ${contar("cauda")}/5.`;
+    tirarItem("cauda",5); q.ratos=2; darItem("capacete_obra",1); darItem("tampinha",60); ganharXP(300);
+    return "Bom trabalho, recruta! Tome este capacete e 60 tampinhas. Volte quando quiser outra MISSÃO."; }
+  if(q.saq===0){ q.saq=1; q.saqMortes=0; return "Saqueadores dominam as ruínas da cidade, a leste. Elimine 10 deles. Atiradores contam."; }
+  if(q.saq===1){ if(q.saqMortes<10) return `Saqueadores eliminados: ${q.saqMortes}/10. Continue.`;
+    q.saq=2; darItem("pistola",1); darItem("bala",30); ganharXP(1500);
+    return "A cidade está respirando de novo. Tome este revólver e 30 balas. Quando estiver pronto, peça outra MISSÃO."; }
+  if(q.rei===0){ q.rei=1; return "Tem algo grande no ESGOTO. Os ratos obedecem a ele. Desça pelo BUEIRO na cidade (marcado em amarelo no mapa) e me traga a COROA do Rei dos Esgotos."; }
+  if(q.rei===1){ if(!temItem("coroa",1)) return "Sem a coroa, sem conversa. O bueiro fica na cidade, perto do cruzamento."; tirarItem("coroa",1); q.rei=2;
+    darItem("colete_bal",1); ganharXP(4000); return "Pela minha farda... você conseguiu! Este colete balístico é seu. Agora só falta UMA MISSÃO."; }
+  if(q.carnica===0){ q.carnica=1; return "Carniça, o Senhor da Estrada. Ele mora num covil murado no extremo SUDOESTE do deserto radioativo. Enquanto ele viver, ninguém está seguro. Mate-o."; }
+  if(q.carnica===1) return "Carniça ainda respira. O covil fica no sudoeste do deserto. Leve medkits e máscara de gás.";
+  if(q.carnica===2){ q.carnica=3; ganharXP(15000); darItem("tampinha",2000);
+    log("★ Você se tornou o HERÓI DO ABRIGO ESPERANÇA! ★","c-ouro");
+    return "Carniça está morto. Você é o Herói do Bunker 47. 2000 tampinhas e minha eterna gratidão. Quando quiser, tenho uma última MISSÃO."; }
+  if(!q.base){ q.base=1; return "Última missão, soldado. Debaixo da BASE MILITAR 7, no sudeste, o exército fazia experimentos. Algo chamado EXPERIMENTO X ainda vive lá. Traga o SORO dele."; }
+  if(q.base===1){ if(!temItem("soro",1)) return "Sem o soro do Experimento X, nada feito. A entrada fica num dos prédios da base militar."; tirarItem("soro",1); q.base=2;
+    darItem("armadura_tat",1); ganharXP(30000); darItem("tampinha",5000); log("★ Você derrotou o Projeto X! ★","c-ouro");
+    return "Você fez o impossível. Esta armadura tática é sua. O mundo lá fora tem uma chance agora."; }
+  return "Não tenho mais missões, herói. Mas o mundo lá fora continua perigoso — continue ficando forte.";
+}
+function prepararNPCs(m){
+  for (const n of NPCV){ scene.remove(n.mo.g); } NPCV = [];
+  for (const d of NPCS){ const [mm,x,y] = NPC_POS[d.id]; if (mm!==m) continue;
+    const mo = humanoide(HUMNPC[d.id]); mo.g.position.set(x,0,y); scene.add(mo.g);
+    const n = {...d, def:d, x, y, mo, rot:0, mv:null, fase:Math.random()*6, atkT:0, npc:true}; mo.g.userData.npc = n; NPCV.push(n); }
+}
+let npcFoco = null;
+function falarCom(n){
+  npcFoco = n; tradeAberto = null; n.rot = Math.atan2(P.x-n.x, P.y-n.y);
+  mostrarFala(n.ola());
+}
+function mostrarFala(txt){
+  const n = npcFoco, F = $("#fala"); F.style.display = "block";
+  F.innerHTML = `<div class="q"><span>${n.nome}</span><button class="chip" id="fFechar" style="padding:2px 9px">✕</button></div><div class="t"></div><div class="chips"></div>`;
+  F.querySelector(".t").textContent = txt;
+  const ch = F.querySelector(".chips");
+  for (const c of n.chips){ const b = document.createElement("button"); b.className="chip"; b.textContent=c; b.onclick=()=>responderNPC(c); ch.appendChild(b); }
+  $("#fFechar").onclick = fecharFala;
+}
+function responderNPC(t){
+  const n = npcFoco; if (!n) return;
+  if (/tchau/.test(t)){ log(`${n.nome}: Até mais, ${P.nome}.`,"c-azul"); fecharFala(); return; }
+  const r = n.resp(norm(t)); if (tradeAberto) return; mostrarFala(r || "Hm? Não entendi.");
+}
+function fecharFala(){ npcFoco = null; tradeAberto = null; $("#fala").style.display = "none"; }
+function abrirTrade(id){
+  const n = NPCS.find(x=>x.id===id); tradeAberto = id; const F = $("#fala"); F.style.display="block";
+  const precoVenda = it => n.compra==="equip" ? (ITENS[it].slot ? Math.floor((PRECO[it]||0)/3) : 0) : (n.compra[it]||0);
+  const vendiveis = P.inv.filter(s=>precoVenda(s.id)>0);
+  let h = `<div class="q"><span>${n.nome} — troca</span><button class="chip" id="fFechar" style="padding:2px 9px">✕</button></div>
+   <div class="t">Você tem <b style="color:#e8c060">${contar("tampinha")} 🪙</b>. Toque para comprar.</div>
+   <div class="chips" style="max-height:34vh;overflow-y:auto">`;
+  for (const it of n.vende) h += `<button class="chip" data-c="${it}">${ITENS[it].ic} ${ITENS[it].mun?"10 ":""}${ITENS[it].n} · ${PRECO[it]*(ITENS[it].mun?10:1)}🪙</button>`;
+  h += `</div>`;
+  if (vendiveis.length) h += `<div class="chips"><button class="chip" id="fVender" style="background:rgba(40,80,40,.9);border-color:#4bd16b;color:#cfc">Vender ${vendiveis.reduce((a,s)=>a+s.q,0)} itens por ${vendiveis.reduce((a,s)=>a+s.q*precoVenda(s.id),0)}🪙</button></div>`;
+  F.innerHTML = h;
+  $("#fFechar").onclick = fecharFala;
+  F.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{ const it=b.dataset.c, p=PRECO[it]*(ITENS[it].mun?10:1);
+    if (!temItem("tampinha",p)){ log(`${n.nome}: Faltam tampinhas, ${P.nome}.`,"c-azul"); return; }
+    tirarItem("tampinha",p); darItem(it, ITENS[it].mun ? 10 : 1);
+    log(`Você comprou ${ITENS[it].mun?"10 ":""}${ITENS[it].n}.`,"c-verde"); abrirTrade(id); });
+  const bv = $("#fVender"); if (bv) bv.onclick = ()=>{ let tot=0; for (const s of [...vendiveis]){ tot += s.q*precoVenda(s.id); tirarItem(s.id, s.q); } darItem("tampinha",tot); log(`Você vendeu suas tralhas por ${tot} tampinhas.`,"c-verde"); abrirTrade(id); };
+}
+
+// ---------------------------------------------------------------- USAR (interagir)
+function tileFrente(){ const a = ator.rot; return {x:P.x+Math.round(Math.sin(a)), y:P.y+Math.round(Math.cos(a))}; }
+function vizinhos(){ const f = tileFrente(), L=[f]; for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) if(dx||dy) L.push({x:P.x+dx,y:P.y+dy}); L.push({x:P.x,y:P.y}); return L; }
+function acharUsavel(){
+  const M = MAPA[mapaAtual];
+  for (const n of NPCV) if (cheb(n,P)<=2) return {tipo:"npc", n};
+  for (const v of vizinhos()){
+    const t = tileEm(mapaAtual,v.x,v.y), k = v.x+","+v.y;
+    if ((t===T.CONT||t===T.CARRO) && M.cont.has(k)) return {tipo:"cont", v, k, c:M.cont.get(k)};
+    if (t===T.PLACA) return {tipo:"placa", txt:M.placas.get(k)};
+    if (t===T.TANQUE||t===T.POCO) return {tipo:"agua"};
+    if (t===T.CAMA||t===T.CAMA2) return {tipo:"cama"};
+    if (t===T.FOGO) return {tipo:"fogo"};
+    if (t===T.PORTAF) return {tipo:"porta"};
+  }
+  return null;
+}
+function usar(){
+  if (P.morto) return;
+  const u = acharUsavel(); if (!u){ log("Não há nada para usar aqui."); return; }
+  if (u.tipo==="npc") return falarCom(u.n);
+  if (u.tipo==="cont"){
+    const key = mapaAtual+":"+u.k, ag = Date.now(), info = CONT_INFO[u.c] || CONT_INFO.caixa;
+    if ((contTempo[key]||0) > ag){ log(`${info.n}: vazio. Volte daqui a ${Math.ceil((contTempo[key]-ag)/60000)} min.`); return; }
+    contTempo[key] = ag + CONT_TEMPO;
+    const loot = rolarLoot(info.loot);
+    if (!loot.length){ log(`${info.n}: não tinha nada.`); return; }
+    for (const l of loot) darItem(l.id,l.q);
+    log(`${info.n}: ${loot.map(l=>`${l.q>1?l.q+" ":""}${ITENS[l.id].n}`).join(", ")}.`,"c-verde");
+    const [x,y] = u.k.split(",").map(Number); efeito(x,y,"#e8c060",.6); return;
+  }
+  if (u.tipo==="placa"){ log("📜 "+u.txt,"c-ouro"); return; }
+  if (u.tipo==="agua"){ P.sede = 100; log("Você bebeu água limpa até matar a sede.","c-azul"); return; }
+  if (u.tipo==="cama"){ if (P.hp>=hpMax()) { log("Você não está cansado."); return; } P.hp = hpMax(); log("Você descansou um pouco. Vida recuperada.","c-verde"); efeito(P.x,P.y,"#4bd16b",.1); return; }
+  if (u.tipo==="fogo"){ log("O fogo aquece. Por um instante, o mundo parece normal."); return; }
+  if (u.tipo==="porta"){ log("A porta está emperrada. Procure outra entrada."); return; }
+}
+
+// ---------------------------------------------------------------- ITENS: usar e equipar
+let proxUso = 0;
+function usarItem(id){
+  const it = ITENS[id], ag = performance.now(); if (!it || !temItem(id) || ag < proxUso || P.morto) return;
+  if (it.slot) return equipar(id);
+  if (!it.t){ log(it.d || "Isso não tem uso direto."); return; }
+  proxUso = ag + 500;
+  if (it.t==="cura"){ if (P.hp>=hpMax()){ log("Você já está com a vida cheia."); return; } P.hp = Math.min(hpMax(), P.hp+it.hp); textoFlutuante(P.x,P.y,1.9,"+"+it.hp,"#4bd16b"); }
+  if (it.t==="comida"){ if (P.fome>=99){ log("Você está cheio."); return; } P.fome = Math.min(100, P.fome+it.fome); }
+  if (it.t==="bebida"){ if (P.sede>=99){ log("Você não está com sede."); return; } P.sede = Math.min(100, P.sede+it.sede); if (it.fome) P.fome = Math.min(100,P.fome+it.fome); }
+  if (it.t==="antirad"){ if (P.rad<1){ log("Você não está contaminado."); return; } P.rad = Math.max(0, P.rad-it.rad); }
+  if (it.rad && it.t!=="antirad") P.rad = clamp(P.rad+it.rad,0,100);
+  tirarItem(id,1); log(`Você usou ${it.n}.`,"c-verde"); if (bagAberta) desenharMochila();
+}
+function usarRapido(lista){ for (const id of lista) if (temItem(id)) return usarItem(id); log("Você não tem nada disso na mochila."); }
+const RAP = {cura:["bandagem","medkit"], comer:["lata","mre","cereal","carne_cao","carne_rato"], beber:["garrafa","refri","agua_suja"], rad:["iodo"]};
+function equipar(id, silencioso){
+  const it = ITENS[id]; if (!it.slot) return;
+  if (it.slot==="escudo" && ITENS[P.eq.arma]?.maos2){ log("Sua arma usa as duas mãos."); return; }
+  const velho = P.eq[it.slot]; tirarItem(id,1); if (velho) darItem(velho,1);
+  P.eq[it.slot] = id;
+  if (it.maos2 && P.eq.escudo){ darItem(P.eq.escudo,1); P.eq.escudo = null; }
+  log(`Você equipou ${it.n}.`,"c-verde"); trocarModeloJogador(); if (bagAberta) desenharMochila();
+}
+function desequipar(slot){ const id = P.eq[slot]; if (!id) return; P.eq[slot] = null; darItem(id,1); log(`Você guardou ${ITENS[id].n}.`); trocarModeloJogador(); desenharMochila(); }
+function trocarModeloJogador(){
+  const e = P.eq, old = ator.mo;
+  const op = {arma:e.arma, escudo:e.escudo, luz:e.luz, corpo:e.corpo&&ITENS[e.corpo].cor, pernas:e.pernas&&ITENS[e.pernas].cor,
+    pes:e.pes==="coturno"?"#1a1a12":"#5a5a5a", cabeca:e.cabeca&&e.cabeca!=="mascara"?ITENS[e.cabeca].cor:null, mascara:e.cabeca==="mascara"};
+  ator.mo = humanoide(HUM("#d0a07a","#3a6ab0","#2a3a6a","#3a2414"), op);
+  if (old){ ator.mo.g.position.copy(old.g.position); scene.remove(old.g); }
+  scene.add(ator.mo.g);
+}
+
+// ---------------------------------------------------------------- MOCHILA
+let bagAberta = false, selItem = null;
+const SLOTS = [["cabeca","Cabeça"],["corpo","Corpo"],["pernas","Pernas"],["pes","Pés"],["arma","Arma"],["escudo","Escudo"],["luz","Luz"]];
+function desenharMochila(){
+  const B = $("#mochila");
+  let h = `<h3><span>Equipamento</span><span style="color:#ccc;font-weight:normal">Armadura ${armaduraTotal()}</span></h3><div class="grade" style="grid-template-columns:repeat(7,1fr)">`;
+  for (const [s,rot] of SLOTS){ const id=P.eq[s]; h += `<div class="slot" data-eq="${s}"><span class="rot">${rot}</span>${id?ITENS[id].ic:""}</div>`; }
+  h += `</div><h3 style="margin-top:10px"><span>Mochila</span><button class="chip" id="bagX" style="padding:2px 9px">✕</button></h3><div class="grade">`;
+  P.inv.forEach((s,i)=>{ h += `<div class="slot" data-i="${i}">${ITENS[s.id].ic}${s.q>1?`<span class="q">${s.q}</span>`:""}</div>`; });
+  for (let k=P.inv.length;k<24;k++) h += `<div class="slot" style="cursor:default"></div>`;
+  h += `</div><div id="detalhe">Toque num item para ver e usar.</div><div class="chips" id="bagAcoes" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="font-size:10px;color:#888;margin-top:8px;line-height:1.5">Combate ${P.sk.corpo.v} · Distância ${P.sk.dist.v} · Defesa ${P.sk.def.v} · Mortes ${P.mortes}</div>`;
+  B.innerHTML = h;
+  $("#bagX").onclick = alternarMochila;
+  B.querySelectorAll("[data-i]").forEach(el=>el.onclick=()=>{ const s=P.inv[+el.dataset.i]; selItem=s.id; const it=ITENS[s.id];
+    $("#detalhe").innerHTML = `<b style="color:#e8c060">${it.ic} ${it.n}</b>${s.q>1?` ×${s.q}`:""}<br>${descItem(s.id)}`;
+    const ac = $("#bagAcoes"); ac.innerHTML = "";
+    if (it.slot || it.t){ const b=document.createElement("button"); b.className="chip"; b.textContent = it.slot?"Equipar":"Usar"; b.onclick=()=>usarItem(s.id); ac.appendChild(b); } });
+  B.querySelectorAll("[data-eq]").forEach(el=>el.onclick=()=>{ const s=el.dataset.eq, id=P.eq[s]; if(!id) return;
+    $("#detalhe").innerHTML = `<b style="color:#e8c060">${ITENS[id].ic} ${ITENS[id].n}</b><br>${descItem(id)}`;
+    const ac=$("#bagAcoes"); ac.innerHTML=""; const b=document.createElement("button"); b.className="chip"; b.textContent="Guardar"; b.onclick=()=>desequipar(s); ac.appendChild(b); });
+}
+function alternarMochila(){ bagAberta = !bagAberta; $("#mochila").style.display = bagAberta?"block":"none"; $("#bBag").classList.toggle("on",bagAberta); if (bagAberta) desenharMochila(); }
+
+// ---------------------------------------------------------------- TROCA DE MAPA
+function trocarMapa(m, x, y){
+  fecharFala();
+  P.mapa = m; P.x = x; P.y = y; P.alvo = null;
+  montarMapa(m); prepararSpawns(m); prepararNPCs(m);
+  ator.mv = null; ator.mo.g.position.set(x,0,y);
+  cam.position.set(x, 30, y+20);
+  log(`— ${NOME_MAPA[m]} —`,"c-ouro"); salvar();
+}
+
+// ---------------------------------------------------------------- AMBIENTE (luz, dia/noite)
+const DIA_MS = 24*60*1000;
+const hora = () => (8 + tJogo/(DIA_MS/24)) % 24;
+const ceu = new THREE.Color(), corA = new THREE.Color(), corB = new THREE.Color();
+let escuridao = 0;
+function ambiente(agora){
+  if (!P) return;
+  const m = mapaAtual, h = hora();
+  let ambI, solI, sky, solCor = 0xffffff, hemiCeu = 0xcfd8e0;
+  if (m==="sup"){
+    const alt = Math.sin((h-6)/12*Math.PI), dia = clamp(alt*1.7+.2, 0, 1);
+    escuridao = 1 - dia;
+    ambI = .5 + dia*.6; solI = .25 + dia*1.45;
+    corA.set(0x0b1222); corB.set(0x8fb4c8); ceu.copy(corA).lerp(corB, dia);
+    if (alt > -.1 && alt < .35){ const k = 1 - Math.abs(alt-.1)/.25; ceu.lerp(corA.set(0xd0703a), clamp(k,0,1)*.45); solCor = 0xffb070; }
+    sky = ceu.getHex(); hemiCeu = dia>.3 ? 0xcfd8e0 : 0x7a8ac8; if (dia<.3) solCor = 0x8aa0d8;
+  } else if (m==="bunker"){ escuridao = .15; ambI = .95; solI = .7; sky = 0x0a0c0e; }
+  else { escuridao = .85; ambI = m==="caverna"?.42:.55; solI = .25; sky = 0x030303; hemiCeu = m==="caverna"?0x8aaa7a:0x9aa6b4; }
+  hemi.intensity = ambI; hemi.color.set(hemiCeu); sol.intensity = solI; sol.color.set(solCor);
+  scene.background = scene.fog.color.set(sky); scene.background = scene.fog.color;
+  const luz = P.eq.luz ? ITENS[P.eq.luz].luz : 1.6;
+  luzP.distance = (luz+2.2)*1.6; luzP.intensity = escuridao*(P.eq.luz ? 3.6 : 2.4);
+  luzP.color.set(P.eq.luz==="lanterna" ? 0xfff2d0 : 0xffb066);
+  for (const l of luzesFogo) l.intensity = (1 + Math.sin(agora*.013+l.position.x)*.2 + Math.random()*.15) * (.3+escuridao*.8);
+  MAT.portal.opacity = .55 + Math.sin(agora*.005)*.3; MAT.rad.opacity = .4 + Math.sin(agora*.003)*.15;
+}
+
+// ---------------------------------------------------------------- SOBREVIVÊNCIA
+let tickS = 0;
+function sobrevivencia(dt, agora){
+  if (P.morto) return;
+  tJogo += dt; tickS += dt;
+  if (tickS < 1000) return; tickS -= 1000;
+  const s = Math.floor(agora/1000);
+  if (s % 30 === 0) P.fome = Math.max(0, P.fome-1);
+  if (s % 22 === 0) P.sede = Math.max(0, P.sede-1);
+  const t = tileEm(mapaAtual,P.x,P.y), rt = TP[t].rad;
+  if (rt){ P.rad = clamp(P.rad + rt*(P.eq.cabeca==="mascara"?.75:3), 0, 100); if (s%4===0) log("☢ O contador Geiger está estalando!","c-verm"); }
+  if (s % 3 === 0 && P.rad > 0){ P.hp -= Math.ceil(P.rad/25); P.rad = Math.max(0, P.rad-1); }
+  if ((P.fome<=0 || P.sede<=0) && s%5===0){ P.hp -= 5; log(P.fome<=0?"Você está morrendo de fome!":"Você está morrendo de sede!","c-verm"); }
+  const pz = pzEm(mapaAtual,P.x,P.y);
+  if (s % 4 === 0 && P.fome>10 && P.sede>10 && P.hp < hpMax()) P.hp = Math.min(hpMax(), P.hp + (pz?6:2));
+  if (P.hp <= 0) morrer({def:{n:P.rad>0?"radiação":"fome e sede"}});
+  if (s % 15 === 0) salvar();
+}
+
+// ---------------------------------------------------------------- HUD
+function barraH(v,max,cor,txt){ return `<div class="barra"><i style="width:${clamp(v/max*100,0,100)}%;background:${cor}"></i><span>${txt}</span></div>`; }
+function hudItens(){
+  if (!P) return;
+  $("#nCura").textContent = RAP.cura.reduce((a,i)=>a+contar(i),0);
+  $("#nComer").textContent = RAP.comer.reduce((a,i)=>a+contar(i),0);
+  $("#nBeber").textContent = RAP.beber.reduce((a,i)=>a+contar(i),0);
+  $("#nRad").textContent = contar("iodo");
+}
+let hudT = 0;
+function hud(agora){
+  if (agora - hudT < 150) return; hudT = agora;
+  const xp0 = xpNivel(P.lvl), xp1 = xpNivel(P.lvl+1);
+  $("#stats").innerHTML = `<div class="nm"><span>${P.nome}</span><span>Nv ${P.lvl}</span></div>
+   ${barraH(P.hp,hpMax(),"#c83030",`${Math.max(0,P.hp)}/${hpMax()}`)}
+   <div class="barra fina"><i style="width:${(P.xp-xp0)/(xp1-xp0)*100}%;background:#e8c060"></i></div>
+   <div class="mini3">${barraH(P.fome,100,"#b07a30","🍖"+Math.round(P.fome))}${barraH(P.sede,100,"#3a8ad0","💧"+Math.round(P.sede))}${barraH(P.rad,100,"#7aff3a","☢"+Math.round(P.rad))}</div>
+   <div id="zona">${pzEm(mapaAtual,P.x,P.y)?"🛡 ZONA SEGURA":""}</div>`;
+  const a = P.alvo, A = $("#alvo");
+  if (a && !a.morto){ A.style.display="block"; A.innerHTML = `<div>${a.def.n}</div>${'<div class="barra"><i style="width:'+(a.hp/a.def.hp*100)+'%;background:#e33"></i></div>'}`; }
+  else A.style.display = "none";
+  const hh = hora(); $("#lugar").innerHTML = `<b>${NOME_MAPA[mapaAtual]}</b> · ${String(Math.floor(hh)).padStart(2,"0")}:${String(Math.floor(hh%1*60)).padStart(2,"0")}`;
+  $("#bUsar").classList.toggle("on", !!acharUsavel());
+  // minimapa
+  const mc = $("#mini").getContext("2d"), M = MAPA[mapaAtual], vw = 60, vh = 45;
+  mc.imageSmoothingEnabled = false; mc.fillStyle="#000"; mc.fillRect(0,0,120,90);
+  mc.drawImage(miniBase, P.x-vw/2, P.y-vh/2, vw, vh, 0, 0, 120, 90);
+  const ponto = (x,y,c,s=3)=>{ const px=(x-P.x+vw/2)*2, py=(y-P.y+vh/2)*2; if(px<0||py<0||px>120||py>90) return; mc.fillStyle=c; mc.fillRect(px-s/2+1,py-s/2+1,s,s); };
+  for (const c of CRI) if (!c.morto) ponto(c.x,c.y,c.def.boss?"#ff00ff":"#ff3030");
+  for (const n of NPCV) ponto(n.x,n.y,"#5ac8ff");
+  ponto(P.x,P.y,"#ffffff",4);
+}
+
+// ---------------------------------------------------------------- ENTRADA
+const teclas = {};
+const joy = {x:0, y:0, ativo:false, id:null};
+addEventListener("keydown", e=>{
+  if (!rodando || e.target.tagName==="INPUT") return;
+  const k = e.key.toLowerCase(); teclas[k] = true;
+  if (k===" "){ e.preventDefault(); proximoAlvo(); }
+  if (k==="e" || k==="enter") usar();
+  if (k==="1") usarRapido(RAP.cura); if (k==="2") usarRapido(RAP.comer); if (k==="3") usarRapido(RAP.beber); if (k==="4") usarRapido(RAP.rad);
+  if (k==="i" || k==="b") alternarMochila();
+  if (k==="escape"){ fecharFala(); if (bagAberta) alternarMochila(); P.alvo = null; }
+  if (k==="q") camCfg.alvoYaw += Math.PI/4; if (k==="r") camCfg.alvoYaw -= Math.PI/4;
+  if (k.startsWith("arrow")) e.preventDefault();
+});
+addEventListener("keyup", e=>{ teclas[e.key.toLowerCase()] = false; });
+addEventListener("blur", ()=>{ for (const k in teclas) teclas[k]=false; });
+function entradaDir(){
+  let x = joy.x, y = joy.y;
+  if (teclas.a||teclas.arrowleft) x-=1; if (teclas.d||teclas.arrowright) x+=1;
+  if (teclas.w||teclas.arrowup) y-=1; if (teclas.s||teclas.arrowdown) y+=1;
+  const m = Math.hypot(x,y); if (m < .3) return null;
+  // converte direção da tela para o mundo segundo o giro da câmera
+  const yaw = camCfg.yaw, wx = x*Math.cos(yaw) + y*Math.sin(yaw), wz = -x*Math.sin(yaw) + y*Math.cos(yaw);
+  const ang = Math.atan2(wz, wx), oct = Math.round(ang/(Math.PI/4));
+  const dx = Math.round(Math.cos(oct*Math.PI/4)), dy = Math.round(Math.sin(oct*Math.PI/4));
+  return [dx,dy];
+}
+// joystick
+const J = $("#joy"), JK = $("#joyK");
+J.addEventListener("pointerdown", e=>{ e.preventDefault(); joy.id = e.pointerId; J.setPointerCapture(e.pointerId); joy.ativo = true; moverJoy(e); });
+J.addEventListener("pointermove", e=>{ if (joy.ativo && e.pointerId===joy.id) moverJoy(e); });
+const soltarJoy = e=>{ if (e.pointerId!==joy.id) return; joy.ativo=false; joy.x=joy.y=0; JK.style.transform=""; };
+J.addEventListener("pointerup", soltarJoy); J.addEventListener("pointercancel", soltarJoy);
+function moverJoy(e){
+  const r = J.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let dx = e.clientX-cx, dy = e.clientY-cy; const m = Math.hypot(dx,dy), mx = 52;
+  if (m > mx){ dx*=mx/m; dy*=mx/m; }
+  JK.style.transform = `translate(${dx}px,${dy}px)`; joy.x = dx/mx; joy.y = dy/mx;
+}
+// câmera: arrastar gira, pinça aproxima, toque escolhe alvo
+const ptrs = new Map(); let pinch0 = 0, zoom0 = 0, toque0 = null;
+canvas.addEventListener("pointerdown", e=>{
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY}); canvas.setPointerCapture(e.pointerId);
+  if (ptrs.size===1) toque0 = {x:e.clientX, y:e.clientY, t:performance.now(), mov:false};
+  if (ptrs.size===2){ const [a,b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x-b.x,a.y-b.y); zoom0 = camCfg.zoom; toque0 = null; }
+});
+canvas.addEventListener("pointermove", e=>{
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const dx = e.clientX-p.x, dy = e.clientY-p.y; p.x = e.clientX; p.y = e.clientY;
+  if (ptrs.size===2){ const [a,b] = [...ptrs.values()]; const d = Math.hypot(a.x-b.x,a.y-b.y); camCfg.zoom = clamp(zoom0*pinch0/d, 4, 13); ajustarCam(); return; }
+  if (toque0 && Math.hypot(e.clientX-toque0.x, e.clientY-toque0.y) > 9) toque0.mov = true;
+  if (toque0 && toque0.mov){ camCfg.alvoYaw -= dx*.006; camCfg.alvoTilt = clamp(camCfg.alvoTilt + dy*.005, THREE.MathUtils.degToRad(22), THREE.MathUtils.degToRad(84)); }
+});
+const fimPtr = e=>{
+  if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId);
+  if (toque0 && !toque0.mov && performance.now()-toque0.t < 400) escolherNaTela(e.clientX, e.clientY);
+  if (!ptrs.size) toque0 = null;
+};
+canvas.addEventListener("pointerup", fimPtr); canvas.addEventListener("pointercancel", fimPtr);
+canvas.addEventListener("wheel", e=>{ e.preventDefault(); camCfg.zoom = clamp(camCfg.zoom*(1+Math.sign(e.deltaY)*.1), 4, 13); ajustarCam(); }, {passive:false});
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function escolherNaTela(cx, cy){
+  if (!rodando) return;
+  ndc.set(cx/innerWidth*2-1, -(cy/innerHeight)*2+1); ray.setFromCamera(ndc, cam);
+  const alvos = [...CRI.filter(c=>!c.morto).map(c=>c.mo.g), ...NPCV.map(n=>n.mo.g)];
+  const hit = ray.intersectObjects(alvos, true)[0];
+  if (hit){ let o = hit.object; while (o && !o.userData.cri && !o.userData.npc) o = o.parent;
+    if (o?.userData.cri){ P.alvo = o.userData.cri; log(`Alvo: ${P.alvo.def.n}`,"c-verm"); return; }
+    if (o?.userData.npc){ const n = o.userData.npc; if (cheb(n,P)<=3) falarCom(n); else log(`${n.nome} está longe. Chegue mais perto.`); return; } }
+  // tocou no chão: escolhe criatura mais próxima do ponto tocado
+  const pt = new THREE.Vector3(); if (ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), pt)){
+    const c = CRI.filter(c=>!c.morto).sort((a,b)=>Math.hypot(a.x-pt.x,a.y-pt.z)-Math.hypot(b.x-pt.x,b.y-pt.z))[0];
+    if (c && Math.hypot(c.x-pt.x,c.y-pt.z) < 1.3){ P.alvo = c; log(`Alvo: ${c.def.n}`,"c-verm"); } }
+}
+const tap = (sel, fn)=>$(sel).addEventListener("pointerdown", e=>{ e.preventDefault(); e.stopPropagation(); if (rodando) fn(); });
+tap("#bAtk", proximoAlvo); tap("#bUsar", usar);
+tap("#bCura", ()=>usarRapido(RAP.cura)); tap("#bComer", ()=>usarRapido(RAP.comer)); tap("#bBeber", ()=>usarRapido(RAP.beber)); tap("#bRad", ()=>usarRapido(RAP.rad));
+tap("#bBag", alternarMochila);
+tap("#bCam", ()=>{ presetIdx = (presetIdx+1)%PRESETS.length; const [n,t,z] = PRESETS[presetIdx]; camCfg.alvoTilt = THREE.MathUtils.degToRad(t); camCfg.zoom = z; camCfg.alvoYaw = Math.round(camCfg.alvoYaw/(Math.PI*2))*Math.PI*2; ajustarCam(); log("Câmera: "+n,"c-azul"); });
+tap("#bTela", ()=>{ try { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.()?.catch?.(()=>{}); else document.exitFullscreen?.(); } catch(e){} });
+tap("#bAjuda", ()=>{ rodando = false; telaAjuda(); });
+
+// ---------------------------------------------------------------- MOVIMENTO DO JOGADOR
+function moverJogador(agora){
+  if (P.morto) return;
+  if (ator.mv && agora < ator.mv.fim - 35) return;
+  const d = entradaDir();
+  let passo = null;
+  if (d){
+    if (npcFoco) fecharFala();
+    const [dx,dy] = d;
+    if (podePassar(mapaAtual,P,dx,dy,false)) passo = d;
+    else if (dx && dy){ if (podePassar(mapaAtual,P,dx,0,false)) passo=[dx,0]; else if (podePassar(mapaAtual,P,0,dy,false)) passo=[0,dy]; }
+    if (!passo) ator.rot = Math.atan2(dx,dy);
+  } else if (P.alvo && !P.alvo.morto){
+    const arma = ITENS[P.eq.arma] || {}, alc = (arma.alc && temItem(arma.mun)) ? arma.alc : 1;
+    if (cheb(P,P.alvo) > alc || !visao(mapaAtual,P,P.alvo)) passo = passoPara(mapaAtual, P, P.alvo, false);
+  }
+  if (!passo) return;
+  iniciarPasso(P, ator, passo[0], passo[1], velP(), agora);
+  const t = tileEm(mapaAtual,P.x,P.y);
+  if (PORTAIS.has(t)){ const dest = linkEm(mapaAtual,P.x,P.y); if (dest) setTimeout(()=>trocarMapa(dest[0],dest[1],dest[2]), Math.max(0,ator.mv.fim-agora)); }
+}
+
+// ---------------------------------------------------------------- ANIMAÇÃO
+function posRender(a, vis, agora){
+  const mv = vis.mv; if (!mv) return [a.x, a.y, 0];
+  const k = clamp((agora-mv.t0)/(mv.fim-mv.t0), 0, 1);
+  if (k>=1) return [mv.tx, mv.ty, 0];
+  return [mv.fx+(mv.tx-mv.fx)*k, mv.fy+(mv.ty-mv.fy)*k, 1];
+}
+function animar(vis, mo, andando, agora, dt){
+  const g = mo.g, P2 = mo.P;
+  let dr = vis.rot - g.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); g.rotation.y += dr*Math.min(1, dt*.015);
+  vis.fase += dt*.012*(andando?1:0);
+  const s = Math.sin(vis.fase), at = clamp(1-(agora-vis.atkT)/300, 0, 1);
+  if (mo.tipo==="hum"){
+    const amp = andando ? .7 : 0;
+    P2.lL.rotation.x = s*amp; P2.lR.rotation.x = -s*amp;
+    P2.aL.rotation.x = -s*amp*.8; P2.aR.rotation.x = s*amp*.8 - at*1.9;
+    g.position.y = andando ? Math.abs(Math.cos(vis.fase))*.06 : Math.sin(agora*.002)*.008;
+  } else {
+    P2.pernas.forEach((p,i)=>{ p.rotation.x = (andando? Math.sin(vis.fase*1.6 + i*Math.PI/2)*.6 : 0); });
+    if (P2.cauda) P2.cauda.rotation.y = Math.sin(agora*.008)*.4;
+    if (P2.cab) P2.cab.rotation.x = -at*.5;
+    if (P2.asaE){ const f = Math.sin(agora*.03)*.8; P2.asaE.rotation.z = f; P2.asaD.rotation.z = -f; P2.corpo.position.y = 1.1 + Math.sin(agora*.006)*.12; }
+    if (P2.rot) { P2.rot.forEach(r=>r.rotation.y += dt*.05); P2.corpo.position.y = 1.3 + Math.sin(agora*.004)*.08; }
+    g.position.y = 0; if (at>0 && !P2.asaE && !P2.rot) g.position.y = at*.12;
+  }
+}
+function piscar(mo, t0, agora){
+  const k = clamp(1-(agora-t0)/110, 0, 1);
+  for (const m of mo.g.userData.mats) m.emissive.setRGB(k*.3, 0, 0);
+}
+
+// ---------------------------------------------------------------- LOOP
+let ultimo = performance.now();
+const camAlvo = new THREE.Vector3();
+function quadro(){
+  requestAnimationFrame(quadro);
+  const agora = performance.now(), dt = Math.min(60, agora-ultimo); ultimo = agora;
+  if (!P){ renderer.render(scene,cam); return; }
+  if (rodando){
+    moverJogador(agora); iaCriaturas(agora); combateJogador(agora); atualizarSpawns(agora); sobrevivencia(dt, agora);
+    if (npcFoco && cheb(npcFoco,P) > 3) fecharFala();
+  }
+  // jogador
+  const [px,pz,andP] = posRender(P, ator, agora);
+  ator.mo.g.position.x = px; ator.mo.g.position.z = pz;
+  animar(ator, ator.mo, andP, agora, dt); piscar(ator.mo, ator.flash||0, agora);
+  if (P.morto){ ator.mo.g.rotation.x = Math.min(Math.PI/2, (ator.mo.g.rotation.x||0) + dt*.006); } else ator.mo.g.rotation.x = 0;
+  // criaturas
+  for (let i=CRI.length-1;i>=0;i--){
+    const c = CRI[i];
+    if (c.morto){
+      const k = (agora-c.mortoT)/1600; c.mo.g.rotation.z = Math.min(Math.PI/2, k*4); c.mo.g.position.y = -Math.max(0,k-.5)*.8;
+      if (k > 1.2){ scene.remove(c.mo.g); scene.remove(c.barra); CRI.splice(i,1); } continue;
+    }
+    const [cx,cz,anda] = posRender(c, c, agora);
+    c.mo.g.position.x = cx; c.mo.g.position.z = cz;
+    animar(c, c.mo, anda, agora, dt); piscar(c.mo, c.flash, agora);
+    const mostrar = c.hp < c.def.hp || P.alvo===c;
+    c.barra.visible = mostrar;
+    if (mostrar){ c.barra.position.set(cx, c.mo.alt+.25, cz); c.barra.quaternion.copy(cam.quaternion); setBarra(c.barra, c.hp/c.def.hp); }
+  }
+  for (const n of NPCV) animar(n, n.mo, false, agora, dt);
+  // alvo
+  if (P.alvo && !P.alvo.morto){ anelAlvo.visible = true; anelAlvo.position.set(P.alvo.mo.g.position.x, .04, P.alvo.mo.g.position.z); anelAlvo.rotation.y = agora*.002; const e=(P.alvo.def.esc||1)*.5; anelAlvo.scale.set(e,e,e); }
+  else anelAlvo.visible = false;
+  // câmera
+  camCfg.yaw += (camCfg.alvoYaw-camCfg.yaw)*Math.min(1,dt*.012); camCfg.tilt += (camCfg.alvoTilt-camCfg.tilt)*Math.min(1,dt*.012);
+  const D = 40; camAlvo.set(px, .8, pz);
+  cam.position.set(px + Math.sin(camCfg.yaw)*Math.cos(camCfg.tilt)*D, .8 + Math.sin(camCfg.tilt)*D, pz + Math.cos(camCfg.yaw)*Math.cos(camCfg.tilt)*D);
+  cam.lookAt(camAlvo);
+  scene.fog.near = D + camCfg.zoom*.6; scene.fog.far = D + camCfg.zoom*2.6 + 12;
+  sol.position.set(px+10, 22, pz+8); sol.target.position.set(px,0,pz);
+  luzP.position.set(px, 1.6, pz);
+  ambiente(agora);
+  // efeitos
+  for (let i=PARTS.length-1;i>=0;i--){ const p = PARTS[i], k = (agora-p.t0)/p.dur;
+    if (k >= 1){ scene.remove(p.me); p.me.material.dispose(); PARTS.splice(i,1); continue; }
+    if (p.de) p.me.position.lerpVectors(p.de, p.para, k); else { p.me.scale.setScalar(.2+k*.6); p.me.material.opacity = 1-k; } }
+  for (let i=FXS.length-1;i>=0;i--){ const f = FXS[i], k = (agora-f.t0)/f.dur;
+    if (k >= 1){ f.el.remove(); FXS.splice(i,1); continue; }
+    v3.set(f.x, f.alt + k*.8, f.y).project(cam);
+    f.el.style.left = ((v3.x+1)/2*innerWidth)+"px"; f.el.style.top = ((1-v3.y)/2*innerHeight)+"px"; f.el.style.opacity = 1-k*k; }
+  if (rodando) hud(agora);
+  renderer.render(scene, cam);
+}
+
+// ---------------------------------------------------------------- SALVAR / INÍCIO
+function salvar(){ if (!P) return; try { P.tJogo = tJogo; localStorage.setItem(SAVE, JSON.stringify({P:{...P, alvo:null, morto:false}, contTempo})); } catch(e){} }
+function carregar(){ try { const s = JSON.parse(localStorage.getItem(SAVE)); if (s && s.P && s.P.nome) return s; } catch(e){} return null; }
+function comecar(jog, ct){
+  P = jog; contTempo = ct || {}; tJogo = P.tJogo || 0;
+  trocarModeloJogador(); trocarMapa(P.mapa, P.x, P.y);
+  $("#cobre").style.display = "none"; document.body.classList.remove("inicio"); rodando = true; hudItens();
+  log(`Bem-vindo à Zona Mortal 3D, ${P.nome}.`,"c-ouro");
+  log(ehToque ? "Joystick move · arraste a tela para girar a câmera · ✋ fala e saqueia." : "WASD move · arraste o mouse para girar · Espaço = alvo · E = usar.","c-azul");
+}
+const CONTROLES = `<div class="ctl"><b style="color:#e8c060">Controles</b><br>
+ 📱 Celular: joystick para andar · arraste a tela para girar a câmera · pinça para zoom · toque num monstro para mirar · ⚔ escolhe alvo · ✋ fala, saqueia e usa objetos.<br>
+ 💻 PC: WASD/setas andam · arraste o mouse para girar · roda = zoom · Espaço = próximo alvo · E = usar · 1 curar · 2 comer · 3 beber · 4 iodo · I mochila · Q/R giram 45°.<br>
+ O ataque é automático quando o alvo está ao alcance, como no original.</div>`;
+function telaInicio(){
+  const s = carregar(), B = $("#cobreBox"); $("#cobre").style.display = "flex";
+  B.innerHTML = `<h1>ZONA MORTAL</h1><div class="sub">3D</div>
+   <p>O mundo do Zona Morta — Bunker 47, Superfície, Esgotos, Metrô, Cavernas e a Base Subterrânea — agora em 3D. O progresso fica salvo neste navegador.</p>
+   ${s?`<button id="bCont">▶ Continuar como ${s.P.nome} (nv ${s.P.lvl})</button><br><br>`:""}
+   <label>Nome do sobrevivente</label><input id="nome" maxlength="16" placeholder="Seu nome" value="">
+   <button id="bNovo">${s?"Novo personagem":"Entrar na Zona Morta"}</button>${CONTROLES}`;
+  if (s) $("#bCont").onclick = ()=>comecar(s.P, s.contTempo);
+  $("#bNovo").onclick = ()=>{ const n = $("#nome").value.trim() || "Sobrevivente"; comecar(novoJogador(n.slice(0,16)), {}); };
+  $("#nome").addEventListener("keydown", e=>{ if (e.key==="Enter") $("#bNovo").click(); });
+}
+function telaAjuda(){
+  $("#cobre").style.display = "flex";
+  $("#cobreBox").innerHTML = `<h1>ZONA MORTAL</h1><div class="sub">3D</div>
+   <p>Fale com o <b>Sargento Rocha</b> (sala de comando) para pegar missões. Seu Zé, Dona Cida e a Doutora Ana negociam no bunker. O elevador amarelo leva à Superfície.</p>
+   <p>Fique de olho na fome 🍖, na sede 💧 e na radiação ☢. À noite e no subsolo, leve uma tocha ou lanterna.</p>${CONTROLES}
+   <br><button id="bVolta">Voltar ao jogo</button>`;
+  $("#bVolta").onclick = ()=>{ $("#cobre").style.display = "none"; rodando = true; };
+}
+addEventListener("visibilitychange", ()=>{ if (document.hidden) salvar(); });
+
+// cena de fundo atrás da tela inicial
+montarMapa("sup"); scene.fog.near = 60; scene.fog.far = 160; scene.background = scene.fog.color.set(0x8fb4c8); hemi.intensity = 1; sol.intensity = 1.6; sol.position.set(60,30,90); sol.target.position.set(39,0,72);
+$("#carregando").remove();
+telaInicio();
+quadro();
+// o fundo da tela inicial gira devagar
+(function girarFundo(){ if (P) return; const t = performance.now()*.00005; cam.position.set(39+Math.sin(t)*30, 26, 72+Math.cos(t)*30); cam.lookAt(39,0,72); requestAnimationFrame(girarFundo); })();
+
+</script>
+</body>
+</html>
