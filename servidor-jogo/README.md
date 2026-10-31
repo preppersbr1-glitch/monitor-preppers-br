@@ -17,6 +17,15 @@ loot, NPCs, missões, trocas, chat e contas (nome + senha, com hash scrypt).
 
 Pronto: em preppersbr.com/jogo, use **JOGAR ONLINE**.
 
+## Quem pode jogar
+
+Só quem tem **conta no site** (qualquer nível, a partir de Sentinela, que é grátis).
+A página `jogo/` usa o `nivel.js`, e o servidor confere o *ID token* do Firebase de cada
+jogador (assinatura do Google + projeto `comunidade-preppers-br-f5253`). Cada conta do site
+tem um personagem; o nome é escolhido no primeiro acesso.
+
+Para testes locais sem Firebase: `EXIGIR_CONTA=0` libera entrar com nome + senha.
+
 ## Coisas para saber
 
 - **Plano grátis dorme** depois de 15 minutos sem ninguém conectado. O primeiro jogador
@@ -39,13 +48,15 @@ Pronto: em preppersbr.com/jogo, use **JOGAR ONLINE**.
 | `ORIGENS` | Sites que podem conectar, separados por vírgula | todos |
 | `DATA_DIR` | Pasta onde fica `contas.json` | `./dados` |
 | `MAX_JOGADORES` | Limite de conectados | `150` |
+| `EXIGIR_CONTA` | `1` = só conta do site; `0` = aceita nome + senha | `1` |
+| `FIREBASE_PROJETO` | Projeto Firebase das contas do site | `comunidade-preppers-br-f5253` |
 
 ## Rodar no seu computador
 
 ```bash
 cd servidor-jogo
 npm install
-node servidor.js
+EXIGIR_CONTA=0 node servidor.js
 ```
 Depois abra o jogo com `?servidor=ws://localhost:8080` no fim do endereço.
 
