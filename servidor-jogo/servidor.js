@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 8080;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "dados");
 const ORIGENS = (process.env.ORIGENS || "").split(",").map(s => s.trim()).filter(Boolean);
 const MAX_JOGADORES = +(process.env.MAX_JOGADORES || 150);
-const EXIGIR_CONTA = (process.env.EXIGIR_CONTA || "1") !== "0";          // só entra quem tem conta no site
+const EXIGIR_CONTA = process.env.EXIGIR_CONTA === "1";   // "1" = só conta do site; padrão: login próprio do jogo (nome + senha)
 const FIREBASE_PROJETO = process.env.FIREBASE_PROJETO || "comunidade-preppers-br-f5253";
 const TEMPLO = { mapa: "sup", x: 17, y: 36 };
 const MAX_INV = 24;
