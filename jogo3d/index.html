@@ -133,6 +133,14 @@ body.retrato #mTopo .bM{width:40px;height:40px;font-size:18px}
 body.retrato #logM{left:10px;right:10px;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 104px)}
 body.retrato #chipsM{max-width:90vw;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 240px)}
 
+/* ---------- 3D: no celular a tela do jogo ocupa a tela inteira ---------- */
+body.mobile #areaJogo{padding:0!important;display:block}
+body.mobile #tela{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh}
+body.mobile #tela2{position:fixed!important}
+body.retrato #logM{left:10px;right:10px;top:auto;bottom:calc(env(safe-area-inset-bottom) + 214px)}
+body.retrato #chipsM{max-width:92vw;top:auto;bottom:calc(env(safe-area-inset-bottom) + 166px)}
+body.mobile.retrato #alvoM{top:calc(max(env(safe-area-inset-top),4px) + 118px)}
+
 /* ---------- PC: cabe na janela sem rolagem ---------- */
 #lado{display:flex;gap:6px}
 .colL,.colR{display:flex;flex-direction:column;gap:6px;width:228px;flex:none}
@@ -1389,10 +1397,10 @@ function redimensionar3D(){
   renderer.setSize(w,h,false);
   ovDpr=Math.min(devicePixelRatio,2); ovW=w; ovH=h;
   ov.width=Math.round(w*ovDpr); ov.height=Math.round(h*ovDpr);
-  ov.style.width=w+"px"; ov.style.height=h+"px"; ov.style.left=(cv.offsetLeft+cv.clientLeft)+"px"; ov.style.top=(cv.offsetTop+cv.clientTop)+"px";
+  ov.style.width=w+"px"; ov.style.height=h+"px"; const rc=cv.getBoundingClientRect(), ra=MOBILE?{left:0,top:0}:$("#areaJogo").getBoundingClientRect(); ov.style.left=(rc.left-ra.left+cv.clientLeft)+"px"; ov.style.top=(rc.top-ra.top+cv.clientTop)+"px";
   ajustarCam3();
 }
-function ajustarCam3(){ const hw=CAM.zoom, hh=hw*ovH/ovW; cam3.left=-hw; cam3.right=hw; cam3.top=hh; cam3.bottom=-hh; cam3.updateProjectionMatrix(); }
+function ajustarCam3(){ const hw=CAM.zoom*(ovH>ovW?.7:1), hh=hw*ovH/ovW; cam3.left=-hw; cam3.right=hw; cam3.top=hh; cam3.bottom=-hh; cam3.updateProjectionMatrix(); }
 if(window.ResizeObserver) new ResizeObserver(redimensionar3D).observe(cv);
 
 const hemi=new THREE.HemisphereLight(0xcfd8e0,0x2a2418,1); scene.add(hemi);
@@ -2112,8 +2120,7 @@ function ajustarTela(){
   }
   $("#areaJogo").style.width=$("#cons").style.width="";
   const W=window.innerWidth, H=(window.visualViewport&&window.visualViewport.height)||window.innerHeight, retrato=H>W;
-  const s=Math.min(W/(VW*TS), (retrato?H*.6:H)/(VH*TS));
-  cv.style.width=Math.floor(VW*TS*s)+"px"; cv.style.height=Math.floor(VH*TS*s)+"px";
+  cv.style.width=W+"px"; cv.style.height=H+"px";
   document.body.classList.toggle("retrato",retrato);
   redimensionar3D();
 }
