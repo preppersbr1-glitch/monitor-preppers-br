@@ -1,0 +1,21 @@
+# Servidor multiplayer do jogo Zona Morta (preppersbr.com/jogo/)
+# No Render: New > Blueprint > escolha este repositório. Ele lê este arquivo.
+services:
+  - type: web
+    name: zona-morta-servidor
+    runtime: node
+    rootDir: servidor-jogo
+    plan: free
+    region: ohio
+    buildCommand: npm install --omit=dev
+    startCommand: node servidor.js
+    healthCheckPath: /saude
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - servidor-jogo/**
+    envVars:
+      - key: ORIGENS
+        value: https://preppersbr.com,https://www.preppersbr.com,https://preppersbr1-glitch.github.io
+      - key: NODE_VERSION
+        value: "20"

@@ -2,3 +2,5 @@ firmware/**/secrets.h
 __pycache__/
 firmware/**/build/
 *.bin
+servidor-jogo/node_modules/
+servidor-jogo/dados/

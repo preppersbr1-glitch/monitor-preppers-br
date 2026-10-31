@@ -1,0 +1,9 @@
+{
+  "name": "zona-morta-servidor",
+  "version": "1.0.0",
+  "description": "Servidor multiplayer do jogo Zona Morta (Preppers BR)",
+  "main": "servidor.js",
+  "scripts": { "start": "node servidor.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "ws": "^8.18.0" }
+}
