@@ -78,6 +78,26 @@ async function verificarToken(token) {
   return { uid: dados.sub, email: dados.email || "" };
 }
 
+// ---------------------------------------------------------------- CONTA DE GAME MASTER
+// Só o hash da senha fica aqui (o repositório é público). A senha está com o dono do jogo.
+const GM = { nome: "GM Julio", salt: "ad6acc5ae5050dc4e724c51f", hash: "95369405025fff9f253756d14d5bf982e2912b806e6882cf36095ed0640b3605" };
+const NIVEL_MAX = 300;
+const nomeReservado = n => /^(gm|adm|admin|god)\b/i.test(norm(n)) && norm(n) !== norm(GM.nome);
+function personagemGM() {
+  const s = novoPersonagem(GM.nome);
+  Object.assign(s, { lvl: NIVEL_MAX, xp: xpNivel(NIVEL_MAX), fome: 100, sede: 100, rad: 0,
+    sk: { corpo: { v: 150, t: 0 }, dist: { v: 150, t: 0 }, def: { v: 150, t: 0 } },
+    eq: { arma: "motosserra", corpo: "colete_bal", pernas: "caneleira", pes: "coturno", cabeca: "capacete_mil", escudo: null, luz: "lanterna" },
+    inv: [{ id: "espingarda", q: 1 }, { id: "pistola", q: 1 }, { id: "arco", q: 1 }, { id: "machado", q: 1 }, { id: "escudo_motim", q: 1 },
+      { id: "mascara", q: 1 }, { id: "cartucho", q: 999 }, { id: "bala", q: 999 }, { id: "flecha", q: 999 }, { id: "medkit", q: 99 },
+      { id: "lata", q: 99 }, { id: "garrafa", q: 99 }, { id: "iodo", q: 99 }, { id: "tampinha", q: 99999 }] });
+  s.hp = 145 + s.lvl * 15; return s;
+}
+function garantirGM() {
+  const k = norm(GM.nome); const c = CONTAS[k] || (CONTAS[k] = { save: personagemGM(), criado: Date.now() });
+  Object.assign(c, { salt: GM.salt, hash: GM.hash, adm: true }); contasSujas = true;
+}
+
 // ---------------------------------------------------------------- PERSONAGEM
 const CAMPOS = ["nome", "mapa", "x", "y", "dir", "lvl", "xp", "hp", "fome", "sede", "rad", "sk", "inv", "eq", "quest", "mortes"];
 function novoPersonagem(nome) {
@@ -102,6 +122,7 @@ function sanear(s, nome) {
   return b;
 }
 const hpMax = j => 145 + j.lvl * 15;
+const ehGM = j => !!j.adm;
 const velP = j => Math.max(170, 260 - j.lvl * 3);
 const tentativas = v => Math.floor(30 * Math.pow(1.1, v - 10));
 function armadura(j) { let a = 0; for (const s of ["cabeca", "corpo", "pernas", "pes"]) if (j.eq[s]) a += ITENS[j.eq[s]].arm || 0; return a; }
@@ -195,7 +216,7 @@ function usarItem(j, idx) {
   else if (it.t === "cura") { if (j.hp >= hpMax(j)) return logJ(j, "Sua vida já está cheia.", "c-cinza"); const h = Math.min(it.hp, hpMax(j) - j.hp); j.hp += h; texto(j.mapa, j.x, j.y, "+" + h, "#4bd16b"); efeito(j.mapa, j.x, j.y, "#4bd16b"); }
   else if (it.t === "antirad") { j.rad = Math.max(0, j.rad - it.rad); texto(j.mapa, j.x, j.y, "-rad", "#9aff6a"); }
   else return;
-  s.q--; if (s.q <= 0) j.inv.splice(idx, 1);
+  if (!ehGM(j)) { s.q--; if (s.q <= 0) j.inv.splice(idx, 1); }
   marcarEu(j);
 }
 function equipar(j, idx) {
@@ -230,8 +251,8 @@ function ataqueJogador(j, now) {
   const arma = ITENS[j.eq.arma], dist = cheb(j, m), ranged = arma && arma.alc;
   if (ranged) {
     if (dist > arma.alc || !linhaDeVisao(j.mapa, j.x, j.y, m.x, m.y)) return;
-    if (!temItem(j, arma.mun)) { if (now - (j.avisoMun || 0) > 4000) { j.avisoMun = now; logJ(j, `Sem munição (${ITENS[arma.mun].n})!`, "c-verm"); } return; }
-    tirarItem(j, arma.mun, 1);
+    if (ehGM(j)) {} else if (!temItem(j, arma.mun)) { if (now - (j.avisoMun || 0) > 4000) { j.avisoMun = now; logJ(j, `Sem munição (${ITENS[arma.mun].n})!`, "c-verm"); } return; }
+    else tirarItem(j, arma.mun, 1);
   } else if (dist > 1) return;
   j.proxAtk = now + 1500;
   const d = MONS[m.tipo], sk = ranged ? j.sk.dist : j.sk.corpo;
@@ -271,6 +292,7 @@ function matar(m) {
 function ataqueMonstro(m, d, j, now, ranged) {
   m.proxAtk = now + 2000;
   if (ranged) evPerto(m.mapa, m.x, m.y, ["proj", m.x, m.y, j.x, j.y, d.proj || "#ffffff"]);
+  if (ehGM(j)) { texto(j.mapa, j.x, j.y, "imune", "#e8c060"); return; }
   let dano = R(0, d.atk);
   const esc = ITENS[j.eq.escudo];
   if (esc) { treinar(j, "def"); if (dano > 0 && chance(Math.min(55, esc.def * 1.4 + j.sk.def.v * .5))) { texto(j.mapa, j.x, j.y, "bloqueou", "#7ac8ff"); return; } }
@@ -282,6 +304,7 @@ function ataqueMonstro(m, d, j, now, ranged) {
   if (j.hp <= 0) morrer(j, `por ${d.n}`);
 }
 function morrer(j, causa) {
+  if (ehGM(j)) { j.hp = hpMax(j); return; }
   const perda = Math.floor(j.xp * .1); j.xp -= perda; while (j.lvl > 1 && j.xp < xpNivel(j.lvl)) j.lvl--;
   const tamp = Math.floor(contar(j, "tampinha") * .1); if (tamp) tirarItem(j, "tampinha", tamp);
   j.mortes++;
@@ -340,8 +363,44 @@ function npcDiz(n, j, txt) {
   logJ(j, `${n.nome}: ${txt}`, "c-npc");
   texto(n.mapa, n.x, n.y, txt.length > 46 ? txt.slice(0, 44) + "…" : txt, "#7ac8ff", true);
 }
+const LUGARES = { abrigo: ["sup", 17, 36], cidade: ["sup", 66, 31], mata: ["sup", 20, 10], lago: ["sup", 39, 20], deserto: ["sup", 30, 54],
+  covil: ["sup", 11, 60], esgoto: ["esg", 5, 5], rei: ["esg", 34, 26], bueiro: ["sup", 77, 30] };
+function lugarLivre(mapa, x, y) {
+  for (let r = 0; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const nx = x + dx, ny = y + dy; const M = MAPA[mapa]; if (nx < 1 || ny < 1 || nx >= M.W - 1 || ny >= M.H - 1) continue;
+    if (livre(mapa, nx, ny, null, false) && tileEm(mapa, nx, ny) !== T.BUEIRO && tileEm(mapa, nx, ny) !== T.ESCADA) return [nx, ny]; }
+  return null;
+}
+function comandoGM(j, txt) {
+  const [cmd, ...a] = txt.slice(1).trim().split(/\s+/); const c = norm(cmd || "");
+  const ok = (m) => logJ(j, m, "c-ouro");
+  if (c === "ajuda" || c === "help") return ok("Comandos: /ir <abrigo|cidade|mata|lago|deserto|covil|esgoto|rei|bueiro> · /ir x y [sup|esg] · /item <id> [qtd] · /itens · /nivel <n> · /invocar <monstro> [qtd] · /monstros · /matar · /invisivel · /hora <0-23> · /quem");
+  if (c === "ir") {
+    let mapa, x, y;
+    if (LUGARES[norm(a[0] || "")]) [mapa, x, y] = LUGARES[norm(a[0])];
+    else if (a.length >= 2 && !isNaN(a[0]) && !isNaN(a[1])) { mapa = a[2] === "esg" ? "esg" : (a[2] === "sup" ? "sup" : j.mapa); x = +a[0]; y = +a[1]; }
+    else return ok("Use: /ir cidade  ou  /ir 40 20  (mapas: sup, esg)");
+    const p = lugarLivre(mapa, x | 0, y | 0); if (!p) return ok("Não achei lugar livre ali.");
+    Object.assign(j, { mapa, x: p[0], y: p[1], alvo: null, filaPassos: [] }); enviarPos(j); ev(j, ["alvo", null]); efeito(j.mapa, j.x, j.y, "#e8c060");
+    return ok(`Teletransportado para ${mapa === "esg" ? "esgoto" : "superfície"} ${p[0]},${p[1]}.`);
+  }
+  if (c === "item") { const id = a[0]; if (!ITENS[id]) return ok("Item não existe. Veja /itens"); darItem(j, id, clamp(+a[1] || 1, 1, 99999)); return ok(`Criado: ${ITENS[id].n}.`); }
+  if (c === "itens") return ok("Itens: " + Object.keys(ITENS).join(", "));
+  if (c === "nivel") { const n = clamp(+a[0] | 0, 1, NIVEL_MAX); j.lvl = n; j.xp = xpNivel(n); j.hp = hpMax(j); marcarEu(j); return ok(`Nível ${n}.`); }
+  if (c === "monstros") return ok("Monstros: " + Object.keys(MONS).join(", "));
+  if (c === "invocar") { const t = a[0]; if (!MONS[t]) return ok("Monstro não existe. Veja /monstros"); let n = 0;
+    for (let i = 0; i < clamp(+a[1] || 1, 1, 10); i++) { const p = lugarLivre(j.mapa, j.x + R(-2, 2), j.y + R(-2, 2)); if (!p || pzEm(j.mapa, p[0], p[1])) continue;
+      CRI.push({ id: uid++, tipo: t, mapa: j.mapa, x: p[0], y: p[1], dir: 0, hp: MONS[t].hp, proxMov: 0, proxAtk: 0, aggro: null, invocados: 0, danos: {} }); n++; efeito(j.mapa, p[0], p[1], "#ff5050"); }
+    return ok(`Invocado: ${n}× ${MONS[t].n}.`); }
+  if (c === "matar") { let n = 0; for (const m of [...CRI]) if (m.mapa === j.mapa && cheb(m, j) <= 7) { m.danos = { [j.id]: 1 }; m.hp = 0; matar(m); n++; } return ok(`${n} criatura(s) eliminada(s).`); }
+  if (c === "invisivel") { j.invisivel = !j.invisivel; for (const m of CRI) if (m.aggro === j.id) m.aggro = null; return ok(j.invisivel ? "Invisível: monstros te ignoram." : "Visível de novo."); }
+  if (c === "hora") { const h = clamp(+a[0] || 0, 0, 23); tJogo = (((h - 9 + 24) % 24) / 24) * 20 * 60 * 1000; return ok(`Hora do mundo: ${h}:00.`); }
+  if (c === "quem") return ok(`Online (${JOG.size}): ` + [...JOG.values()].map(o => `${o.nome} [${o.lvl}] ${o.mapa} ${o.x},${o.y}`).join(" · "));
+  return ok("Comando desconhecido. Digite /ajuda");
+}
 function fala(j, txtBruto) {
   const txt = String(txtBruto || "").replace(/[<>]/g, "").slice(0, 80).trim(); if (!txt) return;
+  if (txt[0] === "/") { if (ehGM(j)) comandoGM(j, txt); else logJ(j, "Comandos são só para o Game Master.", "c-cinza"); return; }
   const now = agora(); if (now - (j.ultFala || 0) < 300) return; j.ultFala = now;
   // todo mundo perto ouve (como o "say" do Tibia)
   for (const o of JOG.values()) if (o.mapa === j.mapa && cheb(o, j) <= 9) ev(o, ["log", `${j.nome} [${j.lvl}]: ${txt}`, o === j ? "c-eu" : "c-ouvir"]);
@@ -361,7 +420,7 @@ function comprar(j, nid, id, q) {
   const n = NPCS.find(n => n.id === nid); q = clamp(q | 0, 1, 100);
   if (!n || j.npc !== n || cheb(j, n) > 4 || !n.vende.includes(id)) return;
   if (!ITENS[id].st) q = 1;
-  const p = PRECO[id] * q; if (!temItem(j, "tampinha", p)) return;
+  const p = ehGM(j) ? 0 : PRECO[id] * q; if (!temItem(j, "tampinha", p)) return;
   if (!ITENS[id].st && j.inv.length >= MAX_INV) return logJ(j, "Mochila cheia.", "c-verm");
   tirarItem(j, "tampinha", p); darItem(j, id, q); logJ(j, `Você comprou ${q}× ${ITENS[id].n} por ${p} tampinhas.`, "c-cinza");
 }
@@ -385,13 +444,14 @@ function gerarMonstro(s) {
   return false;
 }
 for (const s of SPAWNS) for (let i = 0; i < s.q; i++) gerarMonstro(s);
+garantirGM();
 
 // ---------------------------------------------------------------- LOOP DO MUNDO
 function alvoMonstro(m) {
   let melhor = null, md = 99;
   const raio = ({ rato: 4, barata: 5, cao: 6 })[m.tipo] || 7;
   for (const j of JOG.values()) {
-    if (!j.vivo || j.mapa !== m.mapa || pzEm(j.mapa, j.x, j.y)) continue;
+    if (!j.vivo || j.invisivel || j.mapa !== m.mapa || pzEm(j.mapa, j.x, j.y)) continue;
     const d = cheb(m, j); const lim = m.aggro === j.id ? 11 : raio;
     if (d <= lim && (d < md || (d === md && m.aggro === j.id))) { md = d; melhor = j; }
   }
@@ -458,6 +518,7 @@ function tick() {
 function necessidades(now) {
   for (const j of JOG.values()) {
     if (!j.vivo) continue;
+    if (ehGM(j)) { j.fome = 100; j.sede = 100; j.rad = 0; j.hp = hpMax(j); continue; }
     j.fome = Math.max(0, j.fome - 1 / 8); j.sede = Math.max(0, j.sede - 1 / 6);
     const tl = TP[tileEm(j.mapa, j.x, j.y)], mascara = j.eq.cabeca && ITENS[j.eq.cabeca].antirad;
     if (tl.rad) { j.rad = Math.min(100, j.rad + tl.rad * (mascara ? .2 : 1)); if (!mascara && chance(30)) texto(j.mapa, j.x, j.y, "☢", "#9aff3a"); }
@@ -506,7 +567,7 @@ function login(ws, msg, ip, site) {
     chave = "fb:" + site.uid; c = CONTAS[chave];
     if (!c) {
       if (!/^[A-Za-zÀ-ÿ0-9 ]{3,14}$/.test(nome)) return { erro: "Escolha um nome de personagem com 3 a 14 letras ou números." };
-      if (nomeEmUso(nome, chave)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
+      if (nomeEmUso(nome, chave) || nomeReservado(nome)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
       c = CONTAS[chave] = { email: site.email, save: backupOk(nome) ? sanear(msg.backup, nome) : novoPersonagem(nome), criado: Date.now() };
       contasSujas = true; novo = true;
     }
@@ -517,7 +578,7 @@ function login(ws, msg, ip, site) {
     chave = norm(nome); c = CONTAS[chave];
     if (c) { if (!c.salt || hashSenha(senha, c.salt) !== c.hash) return { erro: "Senha incorreta para este nome." }; }
     else {
-      if (nomeEmUso(nome, chave)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
+      if (nomeEmUso(nome, chave) || nomeReservado(nome)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
       const salt = crypto.randomBytes(12).toString("hex");
       c = CONTAS[chave] = { salt, hash: hashSenha(senha, salt), save: backupOk(nome) ? sanear(msg.backup, nome) : novoPersonagem(nome), criado: Date.now() };
       contasSujas = true; novo = true;
@@ -526,7 +587,7 @@ function login(ws, msg, ip, site) {
   for (const o of JOG.values()) if (o.conta === chave) { enviar(o, { t: "erro", msg: "Sua conta entrou em outro lugar." }); o.ws.close(); desconectar(o); }
   const s = Object.assign(novoPersonagem(c.save.nome || nome), c.save);
   if (!livre(s.mapa, s.x, s.y, null, false) || TP[tileEm(s.mapa, s.x, s.y)].b) Object.assign(s, { mapa: TEMPLO.mapa, x: TEMPLO.x, y: TEMPLO.y });
-  const j = Object.assign(s, { id: uid++, ws, conta: chave, vivo: true, alvo: null, npc: null, proxAtk: 0, proxMov: 0, filaPassos: [], eventos: [], sujo: true, ip });
+  const j = Object.assign(s, { id: uid++, ws, conta: chave, vivo: true, adm: !!c.adm, alvo: null, npc: null, proxAtk: 0, proxMov: 0, filaPassos: [], eventos: [], sujo: true, ip });
   JOG.set(j.id, j);
   console.log(`+ ${j.nome} entrou (${JOG.size} online)`);
   for (const o of JOG.values()) if (o !== j) logJ(o, `${j.nome} entrou no mundo.`, "c-verde");
