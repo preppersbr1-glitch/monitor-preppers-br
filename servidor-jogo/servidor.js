@@ -10,7 +10,8 @@ const path = require("path");
 const crypto = require("crypto");
 const { WebSocketServer } = require("ws");
 const D = require("./dados.js");
-const { T, TP, ITENS, PRECO, MONS, MAPA, R, chance, clamp, cheb, norm, xpNivel, tileEm, pzEm } = D;
+const { T, TP, ITENS, PRECO, MONS, MAPA, R, chance, clamp, cheb, norm, xpNivel, tileEm, pzEm,
+  PORTAIS, linkEm, NOME_MAPA, NPC_POS, CONT_INFO, CONT_TEMPO, rolarLoot, MAPAS } = D;
 
 const PORT = process.env.PORT || 8080;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "dados");
@@ -18,18 +19,23 @@ const ORIGENS = (process.env.ORIGENS || "").split(",").map(s => s.trim()).filter
 const MAX_JOGADORES = +(process.env.MAX_JOGADORES || 150);
 const EXIGIR_CONTA = process.env.EXIGIR_CONTA === "1";   // "1" = só conta do site; padrão: login próprio do jogo (nome + senha)
 const FIREBASE_PROJETO = process.env.FIREBASE_PROJETO || "comunidade-preppers-br-f5253";
-const TEMPLO = { mapa: "sup", x: 17, y: 36 };
+const TEMPLO = D.TEMPLO;
 const MAX_INV = 24;
 const VISAO_X = 10, VISAO_Y = 8;
 
 // ---------------------------------------------------------------- MUNDO
-MAPA.sup = D.gerarSup();
-MAPA.esg = D.gerarEsg();
-const MAPAS_ENVIO = {};
-for (const k of ["sup", "esg"]) {
+D.gerarMundo();
+// placas e contêineres não mudam; o tile (porta aberta/fechada) é mandado na hora do login
+const MAPAS_FIXO = {};
+for (const k of MAPAS) {
   const M = MAPA[k];
-  MAPAS_ENVIO[k] = { W: M.W, H: M.H, t: Buffer.from(M.t).toString("base64"), pz: Buffer.from(M.pz).toString("base64") };
+  MAPAS_FIXO[k] = { W: M.W, H: M.H, pz: Buffer.from(M.pz).toString("base64"),
+    cont: [...M.cont].map(([c, tp]) => { const [x, y] = c.split(",").map(Number); return [x, y, tp]; }),
+    placas: [...M.placas].map(([c, tx]) => { const [x, y] = c.split(",").map(Number); return [x, y, tx]; }) };
 }
+const mapasEnvio = () => Object.fromEntries(MAPAS.map(k => [k, Object.assign({ t: Buffer.from(MAPA[k].t).toString("base64") }, MAPAS_FIXO[k])]));
+const PORTAS = new Map();   // "mapa:x,y" -> quando fecha
+const CONTS = new Map();    // "mapa:x,y" -> { itens, ate }
 const inicio = Date.now();
 const agora = () => Date.now() - inicio;
 let tJogo = 0;
@@ -99,13 +105,13 @@ function garantirGM() {
 }
 
 // ---------------------------------------------------------------- PERSONAGEM
-const CAMPOS = ["nome", "mapa", "x", "y", "dir", "lvl", "xp", "hp", "fome", "sede", "rad", "sk", "inv", "eq", "quest", "mortes"];
+const CAMPOS = ["nome", "mapa", "x", "y", "v4", "dir", "lvl", "xp", "hp", "fome", "sede", "rad", "sk", "inv", "eq", "quest", "mortes"];
 function novoPersonagem(nome) {
-  return { nome, mapa: "sup", x: 17, y: 36, dir: 0, lvl: 1, xp: 0, hp: 160, fome: 80, sede: 80, rad: 0,
+  return { nome, mapa: TEMPLO.mapa, x: TEMPLO.x, y: TEMPLO.y, v4: 1, dir: 0, lvl: 1, xp: 0, hp: 160, fome: 80, sede: 80, rad: 0,
     sk: { corpo: { v: 10, t: 0 }, dist: { v: 10, t: 0 }, def: { v: 10, t: 0 } },
     inv: [{ id: "lata", q: 2 }, { id: "garrafa", q: 2 }, { id: "bandagem", q: 2 }, { id: "tampinha", q: 25 }, { id: "tampa", q: 1 }],
     eq: { arma: "canivete", corpo: "camiseta", pernas: "jeans", pes: "tenis", cabeca: null, escudo: null, luz: null },
-    quest: { ratos: 0, saq: 0, saqMortes: 0, rei: 0, carnica: 0 }, mortes: 0 };
+    quest: { ratos: 0, saq: 0, saqMortes: 0, rei: 0, carnica: 0, base: 0 }, mortes: 0 };
 }
 // valida um personagem vindo de fora (backup do navegador)
 function sanear(s, nome) {
@@ -132,15 +138,18 @@ const JOG = new Map();     // id -> jogador conectado
 let CRI = [];              // criaturas
 let CORPOS = [];           // corpos/pilhas
 let uid = 1;
+function pos(id) { const [mapa, x, y] = NPC_POS[id]; return { mapa, x, y }; }
 const NPCS = [
-  { id: "ze", nome: "Seu Zé", mapa: "sup", x: 12, y: 32,
+  { id: "ze", nome: "Seu Zé", ...pos("ze"),
     vende: ["lata", "cereal", "garrafa", "refri", "tocha", "lanterna", "pedra", "flecha", "bala", "cartucho"],
     compra: { cauda: 3, couro: 9, ferrao: 22, sucata: 3, componente: 18, carne_rato: 1, carne_cao: 3, coroa: 400 } },
-  { id: "ana", nome: "Doutora Ana", mapa: "sup", x: 21, y: 39, vende: ["bandagem", "medkit", "iodo"], compra: {} },
-  { id: "cida", nome: "Dona Cida", mapa: "sup", x: 12, y: 40,
+  { id: "ana", nome: "Doutora Ana", ...pos("ana"), vende: ["bandagem", "medkit", "iodo"], compra: {} },
+  { id: "cida", nome: "Dona Cida", ...pos("cida"),
     vende: ["faca", "taco", "pe_cabra", "facao", "machado", "estilingue", "arco", "pistola", "espingarda", "tampa", "escudo_placa", "escudo_motim",
       "bone", "capacete_obra", "mascara", "capacete_mil", "jaqueta", "colete_sucata", "colete_bal", "cargo", "caneleira", "coturno"], compra: "equip" },
-  { id: "rocha", nome: "Sargento Rocha", mapa: "sup", x: 23, y: 34, vende: [], compra: {} }
+  { id: "rocha", nome: "Sargento Rocha", ...pos("rocha"), vende: [], compra: {} },
+  { id: "tiao", nome: "Tião do Metrô", ...pos("tiao"), vende: ["bala", "cartucho", "flecha", "mre", "iodo", "garrafa", "lanterna"],
+    compra: { cristal: 30, teia: 12, componente: 18, sucata: 3, chip: 45, ferrao: 22 } }
 ];
 const precoCompra = (n, id) => n.compra === "equip" ? ((ITENS[id].slot && PRECO[id]) ? Math.floor(PRECO[id] / 3) : 0) : (n.compra[id] || 0);
 
@@ -157,7 +166,7 @@ const marcarEu = j => { j.sujo = true; };
 // ---------------------------------------------------------------- MOVIMENTO E CAMINHO
 function livre(m, x, y, ign, monstro) {
   const tl = tileEm(m, x, y); if (TP[tl].b) return false;
-  if (monstro && (pzEm(m, x, y) || tl === T.BUEIRO || tl === T.ESCADA)) return false;
+  if (monstro && (pzEm(m, x, y) || PORTAIS.has(tl))) return false;
   for (const c of CRI) if (c !== ign && c.mapa === m && c.x === x && c.y === y) return false;
   for (const n of NPCS) if (n.mapa === m && n.x === x && n.y === y) return false;
   for (const j of JOG.values()) if (j !== ign && j.vivo && j.mapa === m && j.x === x && j.y === y) return false;
@@ -333,19 +342,25 @@ function missao(j) {
   if (q.carnica === 0) { q.carnica = 1; return "Carniça, o Senhor da Estrada. Ele mora num covil murado no extremo SUDOESTE do deserto radioativo. Junte um grupo e acabe com ele."; }
   if (q.carnica === 1) return "Carniça ainda respira. O covil fica no sudoeste do deserto. Leve medkits, máscara de gás e companhia.";
   if (q.carnica === 2) { q.carnica = 3; ganharXP(j, 15000); darItem(j, "tampinha", 2000);
-    for (const o of JOG.values()) logJ(o, `★ ${j.nome} se tornou HERÓI DO ABRIGO ESPERANÇA! ★`, "c-ouro");
-    return "Carniça está morto. Você é o Herói do Abrigo Esperança. 2000 tampinhas e minha eterna gratidão."; }
+    for (const o of JOG.values()) logJ(o, `★ ${j.nome} se tornou HERÓI DO BUNKER 47! ★`, "c-ouro");
+    return "Carniça está morto. Você é o Herói do Bunker 47. 2000 tampinhas e minha eterna gratidão. Quando quiser, tenho uma última MISSÃO."; }
+  if (!q.base) { q.base = 1; return "Última missão, soldado. Debaixo da BASE MILITAR 7, no sudeste, o exército fazia experimentos. Algo chamado EXPERIMENTO X ainda vive lá. Traga o SORO dele. Vá em grupo."; }
+  if (q.base === 1) { if (!temItem(j, "soro", 1)) return "Sem o soro do Experimento X, nada feito. A entrada fica num dos prédios da base militar.";
+    tirarItem(j, "soro", 1); q.base = 2; darItem(j, "armadura_tat", 1); ganharXP(j, 30000); darItem(j, "tampinha", 5000);
+    for (const o of JOG.values()) logJ(o, `★ ${j.nome} derrotou o Projeto X! ★`, "c-ouro");
+    return "Você fez o impossível. Esta armadura tática é sua. O mundo lá fora tem uma chance agora."; }
   return "Não tenho mais missões, herói. Mas o mundo lá fora continua perigoso — continue ficando forte.";
 }
 const OLA = {
   ze: j => `Opa, ${j.nome}! Tenho comida, água, luz e munição. Diga TROCAR. Também compro as tralhas que você achar lá fora.`,
   ana: j => `Olá, ${j.nome}. Posso CURAR seus ferimentos ou tirar sua RADIAÇÃO. Também tenho remédios para TROCAR.`,
   cida: j => `Hm. ${j.nome}, né? Armas e proteção. Diga TROCAR. Compro equipamento usado por um terço do preço.`,
-  rocha: j => `Sentido, ${j.nome}! Sargento Rocha, defensor do Abrigo Esperança. Temos uma MISSÃO pra quem tem coragem.`
+  rocha: j => `Sentido, ${j.nome}! Sargento Rocha, comandante do Bunker 47. Temos uma MISSÃO pra quem tem coragem.`,
+  tiao: j => `E aí, ${j.nome}. Aqui embaixo ninguém briga. Compro CRISTAL, seda de aranha e chips militares. Diga TROCAR.`
 };
 function respostaNpc(n, j, t) {
   if (n.id === "ze") { if (/troca|compr|vend|trade/.test(t)) { ev(j, ["trade", "ze"]); return "Dá uma olhada. Preço justo, palavra de Zé."; }
-    if (/agua|sede/.test(t)) return "O poço aqui do lado é de graça. Lá fora, água é ouro.";
+    if (/agua|sede/.test(t)) return "O purificador do refeitório é de graça. Lá fora, água é ouro.";
     if (/noite|escur|luz/.test(t)) return "De noite não se enxerga um palmo. Leva uma TOCHA ou LANTERNA."; }
   if (n.id === "ana") {
     if (/cura/.test(t)) { if (j.hp >= hpMax(j)) return "Você está inteiro. Vá com cuidado.";
@@ -357,32 +372,35 @@ function respostaNpc(n, j, t) {
   if (n.id === "cida") { if (/troca|compr|vend|trade/.test(t)) { ev(j, ["trade", "cida"]); return "Escolhe logo, que eu tenho mais o que fazer."; }
     if (/radia|mascara/.test(t)) return "Se for pro deserto do sul, leve uma MÁSCARA DE GÁS. A radiação lá come gente viva."; }
   if (n.id === "rocha" && /miss|tarefa|quest|trabalho/.test(t)) return missao(j);
+  if (n.id === "tiao") { if (/troca|compr|vend|trade/.test(t)) { ev(j, ["trade", "tiao"]); return "Negócio é negócio."; }
+    if (/caverna|cristal/.test(t)) return "Os cristais ficam nas cavernas debaixo da usina nuclear, no deserto. Leve iodo."; }
   return null;
 }
 function npcDiz(n, j, txt) {
   logJ(j, `${n.nome}: ${txt}`, "c-npc");
   texto(n.mapa, n.x, n.y, txt.length > 46 ? txt.slice(0, 44) + "…" : txt, "#7ac8ff", true);
 }
-const LUGARES = { abrigo: ["sup", 17, 36], cidade: ["sup", 66, 31], mata: ["sup", 20, 10], lago: ["sup", 39, 20], deserto: ["sup", 30, 54],
-  covil: ["sup", 11, 60], esgoto: ["esg", 5, 5], rei: ["esg", 34, 26], bueiro: ["sup", 77, 30] };
-function lugarLivre(mapa, x, y) {
-  for (let r = 0; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+const LUGARES = { bunker: ["bunker", 8, 7], acampamento: ["sup", 38, 74], cidade: ["sup", 150, 48], mata: ["sup", 30, 24], fazenda: ["sup", 150, 20],
+  usina: ["sup", 68, 124], covil: ["sup", 17, 130], basemil: ["sup", 150, 124], esgoto: ["esg", 8, 7], rei: ["esg", 68, 49],
+  metro: ["metro", 68, 8], caverna: ["caverna", 30, 22], base: ["base", 18, 12], experimento: ["base", 50, 38] };
+function lugarLivre(mapa, x, y, min = 0) {
+  for (let r = min; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const nx = x + dx, ny = y + dy; const M = MAPA[mapa]; if (nx < 1 || ny < 1 || nx >= M.W - 1 || ny >= M.H - 1) continue;
-    if (livre(mapa, nx, ny, null, false) && tileEm(mapa, nx, ny) !== T.BUEIRO && tileEm(mapa, nx, ny) !== T.ESCADA) return [nx, ny]; }
+    if (livre(mapa, nx, ny, null, false) && !PORTAIS.has(tileEm(mapa, nx, ny))) return [nx, ny]; }
   return null;
 }
 function comandoGM(j, txt) {
   const [cmd, ...a] = txt.slice(1).trim().split(/\s+/); const c = norm(cmd || "");
   const ok = (m) => logJ(j, m, "c-ouro");
-  if (c === "ajuda" || c === "help") return ok("Comandos: /ir <abrigo|cidade|mata|lago|deserto|covil|esgoto|rei|bueiro> · /ir x y [sup|esg] · /item <id> [qtd] · /itens · /nivel <n> · /invocar <monstro> [qtd] · /monstros · /matar · /invisivel · /hora <0-23> · /quem");
+  if (c === "ajuda" || c === "help") return ok(`Comandos: /ir <${Object.keys(LUGARES).join("|")}> · /ir x y [${MAPAS.join("|")}] · /item <id> [qtd] · /itens · /nivel <n> · /invocar <monstro> [qtd] · /monstros · /matar · /invisivel · /hora <0-23> · /quem`);
   if (c === "ir") {
     let mapa, x, y;
     if (LUGARES[norm(a[0] || "")]) [mapa, x, y] = LUGARES[norm(a[0])];
-    else if (a.length >= 2 && !isNaN(a[0]) && !isNaN(a[1])) { mapa = a[2] === "esg" ? "esg" : (a[2] === "sup" ? "sup" : j.mapa); x = +a[0]; y = +a[1]; }
-    else return ok("Use: /ir cidade  ou  /ir 40 20  (mapas: sup, esg)");
+    else if (a.length >= 2 && !isNaN(a[0]) && !isNaN(a[1])) { mapa = MAPAS.includes(a[2]) ? a[2] : j.mapa; x = +a[0]; y = +a[1]; }
+    else return ok(`Use: /ir cidade  ou  /ir 40 20 sup  (mapas: ${MAPAS.join(", ")})`);
     const p = lugarLivre(mapa, x | 0, y | 0); if (!p) return ok("Não achei lugar livre ali.");
     Object.assign(j, { mapa, x: p[0], y: p[1], alvo: null, filaPassos: [] }); enviarPos(j); ev(j, ["alvo", null]); efeito(j.mapa, j.x, j.y, "#e8c060");
-    return ok(`Teletransportado para ${mapa === "esg" ? "esgoto" : "superfície"} ${p[0]},${p[1]}.`);
+    return ok(`Teletransportado: ${NOME_MAPA[mapa]} ${p[0]},${p[1]}.`);
   }
   if (c === "item") { const id = a[0]; if (!ITENS[id]) return ok("Item não existe. Veja /itens"); darItem(j, id, clamp(+a[1] || 1, 1, 99999)); return ok(`Criado: ${ITENS[id].n}.`); }
   if (c === "itens") return ok("Itens: " + Object.keys(ITENS).join(", "));
@@ -475,8 +493,9 @@ function processarPassos(j, now) {
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || (!dx && !dy) || !livre(j.mapa, x, y, j, false)) { j.filaPassos = []; enviarPos(j); return; }
     passo(j, dx, dy); j.proxMov = Math.max(now, j.proxMov) + velP(j) * (dx && dy ? 1.4 : 1) - 25;
     const tl = tileEm(j.mapa, j.x, j.y);
-    if (tl === T.BUEIRO) { Object.assign(j, { mapa: "esg", x: 5, y: 5, alvo: null }); j.filaPassos = []; logJ(j, "Você desce pelo bueiro. O cheiro é insuportável..."); enviarPos(j); ev(j, ["alvo", null]); return; }
-    if (tl === T.ESCADA) { Object.assign(j, { mapa: "sup", x: 77, y: 30, alvo: null }); j.filaPassos = []; logJ(j, "Você sobe a escada de volta à superfície."); enviarPos(j); ev(j, ["alvo", null]); return; }
+    if (PORTAIS.has(tl)) { const d = linkEm(j.mapa, j.x, j.y); const p = d && lugarLivre(d[0], d[1], d[2], 1);
+      if (p) { Object.assign(j, { mapa: d[0], x: p[0], y: p[1], alvo: null, npc: null }); j.filaPassos = []; logJ(j, `Você chega: ${NOME_MAPA[d[0]]}.`);
+        enviarPos(j); ev(j, ["alvo", null]); ev(j, ["npc", null]); efeito(j.mapa, j.x, j.y, "#ffd23a"); return; } }
     if (j.npc && cheb(j, j.npc) > 4) { logJ(j, `${j.npc.nome}: Até mais, ${j.nome}.`, "c-npc"); j.npc = null; ev(j, ["npc", null]); }
   }
 }
@@ -484,6 +503,7 @@ let ultSeg = 0, ultSpawn = 0, ultSnap = 0, ultT = agora();
 function tick() {
   const now = agora(); tJogo += now - ultT; ultT = now;
   for (const j of JOG.values()) { if (!j.vivo) continue; processarPassos(j, now); ataqueJogador(j, now); }
+  if (PORTAS.size) fecharPortas(now);
   // monstros perto de algum jogador
   for (const m of CRI) {
     if (![...JOG.values()].some(j => j.vivo && j.mapa === m.mapa && cheb(j, m) <= 15)) continue;
@@ -586,6 +606,8 @@ function login(ws, msg, ip, site) {
   }
   for (const o of JOG.values()) if (o.conta === chave) { enviar(o, { t: "erro", msg: "Sua conta entrou em outro lugar." }); o.ws.close(); desconectar(o); }
   const s = Object.assign(novoPersonagem(c.save.nome || nome), c.save);
+  s.quest = Object.assign({ ratos: 0, saq: 0, saqMortes: 0, rei: 0, carnica: 0, base: 0 }, s.quest);
+  if (!s.v4 || !MAPA[s.mapa]) Object.assign(s, { v4: 1, mapa: TEMPLO.mapa, x: TEMPLO.x, y: TEMPLO.y });   // mundo novo: todo mundo acorda no bunker
   if (!livre(s.mapa, s.x, s.y, null, false) || TP[tileEm(s.mapa, s.x, s.y)].b) Object.assign(s, { mapa: TEMPLO.mapa, x: TEMPLO.x, y: TEMPLO.y });
   const j = Object.assign(s, { id: uid++, ws, conta: chave, vivo: true, adm: !!c.adm, alvo: null, npc: null, proxAtk: 0, proxMov: 0, filaPassos: [], eventos: [], sujo: true, ip });
   JOG.set(j.id, j);
@@ -610,8 +632,9 @@ function tratar(j, m) {
     case "deseq": desequipar(j, String(m.slot)); break;
     case "largar": if (Number.isInteger(m.i) && j.inv[m.i]) { const s = j.inv.splice(m.i, 1)[0]; largarNoChao(j.mapa, j.x, j.y, s.id, s.q); marcarEu(j); logJ(j, `Você largou ${ITENS[s.id].n}.`, "c-cinza"); } break;
     case "abrir": { const c = CORPOS.find(c => c.id === m.id); if (c && c.mapa === j.mapa && cheb(c, j) <= 1) enviarCont(j, c); break; }
+    case "usarTile": if (Number.isInteger(m.x) && Number.isInteger(m.y)) usarTile(j, m.x, m.y); break;
     case "pegar": case "pegarTudo": {
-      const c = CORPOS.find(c => c.id === m.id); if (!c || c.mapa !== j.mapa || cheb(c, j) > 1) break;
+      const c = typeof m.id === "string" ? contPorId(j, m.id) : CORPOS.find(c => c.id === m.id); if (!c || c.mapa !== j.mapa || cheb(c, j) > 1) break;
       const idxs = m.t === "pegarTudo" ? c.itens.map((_, i) => i) : [m.i];
       for (const i of idxs.reverse()) { const s = c.itens[i]; if (!s) continue;
         if ((!ITENS[s.id].st || !j.inv.find(x => x.id === s.id)) && j.inv.length >= MAX_INV) { logJ(j, "Sua mochila está cheia.", "c-verm"); break; }
@@ -623,7 +646,36 @@ function tratar(j, m) {
     case "poco": if (tileEm(j.mapa, m.x, m.y) === T.POCO && cheb(j, m) <= 1) { j.sede = 100; texto(j.mapa, j.x, j.y, "Gulp", "#7ac8ff"); logJ(j, "Você bebe a água fresca do poço. Sede saciada.", "c-npc"); } break;
   }
 }
-function enviarCont(j, c) { enviar(j, { t: "cont", id: c.id, nome: c.nome, itens: c.itens }); }
+function enviarCont(j, c) { enviar(j, { t: "cont", id: c.id, nome: c.nome + (c.fixo && !c.itens.length ? " (vazio — volte mais tarde)" : ""), itens: c.itens, x: c.x, y: c.y }); }
+// ---------------------------------------------------------------- CENÁRIO: portas, armários, camas, água
+function contPorId(j, id) {
+  const r = /^c:(\w+):(\d+),(\d+)$/.exec(id); if (!r || r[1] !== j.mapa) return null;
+  return CONTS.get(r[1] + ":" + r[2] + "," + r[3]) || null;
+}
+function usarTile(j, x, y) {
+  const M = MAPA[j.mapa]; if (!M || cheb(j, { x, y }) > 1) return;
+  const tl = tileEm(j.mapa, x, y), key = x + "," + y, k = j.mapa + ":" + key, now = agora();
+  if (tl === T.PORTAF) { M.t[y * M.W + x] = T.PORTA; PORTAS.set(k, now + 30000); tileMuda(j.mapa, x, y, T.PORTA); logJ(j, "Você abre a porta.", "c-cinza"); return; }
+  if (tl === T.TANQUE || tl === T.POCO) { j.sede = 100; texto(j.mapa, j.x, j.y, "Gulp", "#7ac8ff"); logJ(j, "Você bebe água limpa. Sede saciada.", "c-npc"); return; }
+  if (tl === T.CAMA || tl === T.CAMA2) { if (now < (j.proxCama || 0)) return logJ(j, "Você acabou de descansar.", "c-cinza");
+    j.proxCama = now + 60000; j.hp = hpMax(j); efeito(j.mapa, j.x, j.y, "#4bd16b"); logJ(j, "Você deita um pouco e recupera as forças. Vida cheia.", "c-verde"); return; }
+  if (tl === T.CONT || tl === T.CARRO) {
+    const tipo = M.cont.get(key) || "caixa", info = CONT_INFO[tipo] || CONT_INFO.caixa;
+    let c = CONTS.get(k);
+    if (!c || (now > c.ate && !c.itens.length)) {
+      c = { id: "c:" + k, nome: info.n, mapa: j.mapa, x, y, fixo: 1, ate: now + CONT_TEMPO,
+        itens: rolarLoot(info.loot).flatMap(s => ITENS[s.id].st ? [s] : Array.from({ length: s.q }, () => ({ id: s.id, q: 1 }))) };
+      CONTS.set(k, c);
+    }
+    enviarCont(j, c);
+  }
+}
+function tileMuda(mapa, x, y, t) { for (const o of JOG.values()) if (o.mapa === mapa) ev(o, ["tile", mapa, x, y, t]); }
+function fecharPortas(now) {
+  for (const [k, ate] of PORTAS) { if (now < ate) continue; const [m, xs, ys] = k.split(/[:,]/); const x = +xs, y = +ys;
+    if (!livre(m, x, y, null, false)) { PORTAS.set(k, now + 3000); continue; }
+    const M = MAPA[m]; M.t[y * M.W + x] = T.PORTAF; PORTAS.delete(k); tileMuda(m, x, y, T.PORTAF); }
+}
 
 const servidor = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -649,7 +701,7 @@ wss.on("connection", (ws, req) => {
         entrando = false;
         if (r.erro) { ws.send(JSON.stringify({ t: "erro", msg: r.erro })); return; }
         j = r.j;
-        ws.send(JSON.stringify({ t: "ok", id: j.id, novo: r.novo, mapas: MAPAS_ENVIO, tj: Math.round(tJogo),
+        ws.send(JSON.stringify({ t: "ok", id: j.id, novo: r.novo, mapas: mapasEnvio(), tj: Math.round(tJogo),
           eu: Object.fromEntries(CAMPOS.map(k => [k, j[k]])), online: [...JOG.values()].map(o => o.nome) }));
       }).catch(e => { entrando = false; console.log("token recusado:", e.message);
         if (ws.readyState === 1) ws.send(JSON.stringify({ t: "erro", msg: "Não consegui confirmar sua conta do site. Saia e entre de novo em preppersbr.com/membros.html." })); });
