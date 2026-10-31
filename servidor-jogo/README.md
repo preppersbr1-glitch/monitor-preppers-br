@@ -19,12 +19,11 @@ Pronto: em preppersbr.com/jogo, use **JOGAR ONLINE**.
 
 ## Quem pode jogar
 
-Só quem tem **conta no site** (qualquer nível, a partir de Sentinela, que é grátis).
-A página `jogo/` usa o `nivel.js`, e o servidor confere o *ID token* do Firebase de cada
-jogador (assinatura do Google + projeto `comunidade-preppers-br-f5253`). Cada conta do site
-tem um personagem; o nome é escolhido no primeiro acesso.
+Qualquer pessoa. O jogo tem **login próprio** (nome do personagem + senha), separado da
+conta do site/Monitor. A conta do jogo é criada no primeiro acesso.
 
-Para testes locais sem Firebase: `EXIGIR_CONTA=0` libera entrar com nome + senha.
+(Opcional: `EXIGIR_CONTA=1` faz o servidor aceitar só quem tem conta do site, conferindo o
+ID token do Firebase. Para isso a página `jogo/` também precisa carregar o `nivel.js`.)
 
 ## Coisas para saber
 
@@ -48,7 +47,7 @@ Para testes locais sem Firebase: `EXIGIR_CONTA=0` libera entrar com nome + senha
 | `ORIGENS` | Sites que podem conectar, separados por vírgula | todos |
 | `DATA_DIR` | Pasta onde fica `contas.json` | `./dados` |
 | `MAX_JOGADORES` | Limite de conectados | `150` |
-| `EXIGIR_CONTA` | `1` = só conta do site; `0` = aceita nome + senha | `1` |
+| `EXIGIR_CONTA` | `1` = só conta do site; vazio/`0` = login próprio do jogo | vazio |
 | `FIREBASE_PROJETO` | Projeto Firebase das contas do site | `comunidade-preppers-br-f5253` |
 
 ## Rodar no seu computador
@@ -56,7 +55,7 @@ Para testes locais sem Firebase: `EXIGIR_CONTA=0` libera entrar com nome + senha
 ```bash
 cd servidor-jogo
 npm install
-EXIGIR_CONTA=0 node servidor.js
+node servidor.js
 ```
 Depois abra o jogo com `?servidor=ws://localhost:8080` no fim do endereço.
 
