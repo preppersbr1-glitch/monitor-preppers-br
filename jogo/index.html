@@ -130,6 +130,24 @@ body.mobile #menuItem button{font-size:14px;padding:9px}
 #logM p{margin:1px 0}
 body.retrato #logM{left:10px;right:10px;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 104px)}
 body.retrato #chipsM{max-width:90vw;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 240px)}
+
+/* ---------- PC: cabe na janela sem rolagem ---------- */
+#lado{display:flex;gap:6px}
+.colL,.colR{display:flex;flex-direction:column;gap:6px;width:228px;flex:none}
+#batalha{max-height:118px;overflow-y:auto}
+body:not(.mobile){height:100vh;overflow:hidden}
+body:not(.mobile) #raiz{height:100vh;box-sizing:border-box;max-width:none;grid-template-columns:auto auto;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"jogo lado" "cons lado";justify-content:center;align-items:stretch}
+body:not(.mobile) #areaJogo{align-self:start}
+body:not(.mobile) #tela{width:auto}
+body:not(.mobile) #cons{display:flex;flex-direction:column;min-height:0;box-sizing:border-box}
+body:not(.mobile) #log{flex:1;height:auto;min-height:40px}
+body:not(.mobile) #lado{min-height:0;overflow-y:auto;align-items:flex-start;flex-direction:row}
+body:not(.mobile) #lado.uma{flex-direction:column;flex-wrap:nowrap}
+body:not(.mobile) #mini{width:auto;height:112px;display:block;margin:0 auto}
+body:not(.mobile) #hotbar{margin-top:4px}
+body:not(.mobile) #hotbar button{padding:4px}
+body.mobile #lado{flex-direction:column}
+body.mobile .colL,body.mobile .colR{width:auto}
 </style>
 </head>
 <body>
@@ -161,15 +179,16 @@ body.retrato #chipsM{max-width:90vw;bottom:auto;top:calc(env(safe-area-inset-top
     <div id="chips"></div>
     <div id="linhaChat"><input id="chat" placeholder="Digite aqui (ex: oi, trocar, missão, tchau) e Enter" autocomplete="off" maxlength="80"><button id="enviar">Falar</button></div>
   </div>
-  <div id="lado">
+  <div id="lado"><div class="colL">
     <div class="painel"><canvas id="mini" width="192" height="144"></canvas><div class="linhaS" style="margin-top:3px"><span id="lugar">—</span><span id="relogio">--:--</span></div></div>
     <div class="painel" id="status"></div>
-    <div class="painel"><div class="tit">Equipamento</div><div id="equip"></div></div>
-    <div class="painel"><div class="tit">Mochila</div><div id="mochila"></div></div>
     <div class="painel"><div class="tit">Batalha</div><div id="batalha"></div></div>
     <div class="painel" id="hab"></div>
+    </div><div class="colR">
+    <div class="painel"><div class="tit">Equipamento</div><div id="equip"></div></div>
+    <div class="painel"><div class="tit">Mochila</div><div id="mochila"></div></div>
     <div class="painel" style="display:flex;gap:4px;flex-wrap:wrap"><button id="bAjuda">Ajuda</button><button id="bNovo">Novo personagem</button></div>
-  </div>
+  </div></div>
 </div>
 <div id="menuItem" class="janela esc"></div>
 <div id="cobre" class="esc"><div class="caixa" id="cobreBox"></div></div>
@@ -1665,12 +1684,21 @@ window.addEventListener("beforeunload",salvar);
 // ---------------------------------------------------------------- MODO CELULAR (estilo Tibia mobile)
 let MOBILE=false;
 function definirModo(m){
-  MOBILE=m; document.body.classList.toggle("mobile",m);
+  MOBILE=m; document.body.classList.toggle("mobile",m); $("#lado").classList.remove("uma");
   try{ localStorage.setItem(KEY+"_modo",m?"m":"d"); }catch(e){}
   fecharGavetas(); ajustarTela();
 }
 function ajustarTela(){
-  if(!MOBILE){ cv.style.width=""; cv.style.height=""; return; }
+  if(!MOBILE){
+    // PC: tudo cabe na janela, sem rolagem
+    const lado=$("#lado"), W=window.innerWidth, H=window.innerHeight;
+    lado.classList.remove("uma"); let ladoW=2*228+6;
+    if(W-ladoW-24 < VW*TS*.9){ lado.classList.add("uma"); ladoW=228; }
+    const hot=($("#hotbar").offsetHeight||30)+6, consMin=Math.max(120,Math.min(190,H*.2));
+    const s=Math.max(.55,Math.min((W-ladoW-24)/(VW*TS),(H-18-hot-consMin)/(VH*TS)));
+    cv.style.width=Math.floor(VW*TS*s)+"px"; cv.style.height=Math.floor(VH*TS*s)+"px";
+    return;
+  }
   const W=window.innerWidth, H=window.innerHeight, retrato=H>W;
   const s=Math.min(W/(VW*TS), (retrato?H*.6:H)/(VH*TS));
   cv.style.width=Math.floor(VW*TS*s)+"px"; cv.style.height=Math.floor(VH*TS*s)+"px";
