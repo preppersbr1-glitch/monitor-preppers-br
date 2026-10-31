@@ -45,7 +45,7 @@ body{font-family:Verdana,Tahoma,sans-serif;font-size:12px;-webkit-user-select:no
 #batalha .mb i{display:block;height:4px}
 #log{height:120px;overflow-y:auto;background:#1a1a1a;border:1px solid #000;padding:3px 5px;font-size:12px;line-height:1.35;-webkit-user-select:text;user-select:text}
 #log p{margin:0}
-.c-eu{color:#ffff66}.c-npc{color:#7ac8ff}.c-sis{color:#fff}.c-verde{color:#4bd16b}.c-verm{color:#ff6a5a}.c-cinza{color:#999}.c-ouro{color:#e8c060}
+.c-eu{color:#ffff66}.c-ouvir{color:#f0e68c}.c-npc{color:#7ac8ff}.c-sis{color:#fff}.c-verde{color:#4bd16b}.c-verm{color:#ff6a5a}.c-cinza{color:#999}.c-ouro{color:#e8c060}
 #linhaChat{display:flex;gap:4px;margin-top:4px}
 #chat{flex:1;font:inherit;background:#111;color:#fff;border:1px solid #000;padding:5px;-webkit-user-select:text;user-select:text}
 button{font:inherit;font-size:11px;background:linear-gradient(#4d4d4d,#363636);color:#eee;border:1px solid;border-color:#6a6a6a #151515 #151515 #6a6a6a;padding:4px 8px;cursor:pointer}
@@ -148,6 +148,11 @@ body:not(.mobile) #hotbar{margin-top:4px}
 body:not(.mobile) #hotbar button{padding:4px}
 body.mobile #lado{flex-direction:column}
 body.mobile .colL,body.mobile .colR{width:auto}
+#cobre .online{border:1px solid #3a6a3a;background:rgba(40,80,40,.18);padding:10px;margin:10px 0}
+#cobre .tit2{color:#4bd16b;font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:4px}
+#cobre .tit2 span{color:#999;font-weight:normal;letter-spacing:0;font-size:12px}
+#cobre .online input{margin:3px 0 6px}
+#onMsg{margin-top:6px;font-size:12px;min-height:14px}
 </style>
 </head>
 <body>
@@ -494,6 +499,7 @@ function livre(m,x,y,ignorar,monstro){
   if(monstro && (pzEm(m,x,y) || tl===T.BUEIRO || tl===T.ESCADA)) return false;
   for(const c of CRI) if(c!==ignorar && c.mapa===m && c.x===x && c.y===y) return false;
   for(const n of NPCS) if(n.mapa===m && n.x===x && n.y===y) return false;
+  if(ONLINE) for(const o of OUTROS) if(o.mapa===m && o.x===x && o.y===y) return false;
   if(P && P!==ignorar && P.mapa===m && P.x===x && P.y===y) return false;
   return true;
 }
@@ -561,6 +567,7 @@ function largarNoChao(id,q){
   const ex=ITENS[id].st && pilha.itens.find(s=>s.id===id); if(ex) ex.q+=q; else pilha.itens.push({id,q});
 }
 function usarItem(idx){
+  if(ONLINE){ if(P.inv[idx]) netEnviar({t:"usar",i:idx}); return; }
   const s=P.inv[idx]; if(!s) return; const it=ITENS[s.id];
   if(it.slot){ return equipar(idx); }
   if(it.t==="comida"){ if(P.fome>=98){ log("Você está cheio.","c-cinza"); return; } P.fome=Math.min(100,P.fome+it.fome); if(it.rad) P.rad+=it.rad; if(it.sede) P.sede=Math.min(100,P.sede+it.sede); textoFlut(P,"Nhac","#e8c060"); }
@@ -591,6 +598,7 @@ function equipar(idx){
   log(`Você equipou: ${it.n}.`,"c-cinza"); atualizarInv(); atualizarStatus();
 }
 function desequipar(slot){
+  if(ONLINE) return netEnviar({t:"deseq",slot});
   if(!P.eq[slot]) return; if(P.inv.length>=MAX_INV){ log("Mochila cheia.","c-verm"); return; }
   const id=P.eq[slot]; P.eq[slot]=null; darItem(id,1);
 }
@@ -693,17 +701,26 @@ function update(now, dt){
     let d = dirSegurada || dirTeclado();
     if(d){ P.caminho=[]; P.acao=null;
       const nx=P.x+d[0], ny=P.y+d[1];
-      if(livre(P.mapa,nx,ny,P)) { passo(P,d[0],d[1],velP()*(d[0]&&d[1]?1.4:1),now); fecharJanelasLonge(); }
+      if(livre(P.mapa,nx,ny,P)) { passoP(d[0],d[1],velP()*(d[0]&&d[1]?1.4:1),now); fecharJanelasLonge(); }
       else P.dir = d[1]>0?0:d[1]<0?1:d[0]<0?2:3;
     } else if(P.caminho.length){
       const [nx,ny]=P.caminho[0];
-      if(livre(P.mapa,nx,ny,P)){ P.caminho.shift(); passo(P,nx-P.x,ny-P.y,velP(),now); fecharJanelasLonge(); }
+      if(livre(P.mapa,nx,ny,P)){ P.caminho.shift(); passoP(nx-P.x,ny-P.y,velP(),now); fecharJanelasLonge(); }
       else { const dst=P.caminhoDest; P.caminho = dst ? (caminho(P.mapa,P.x,P.y,dst[0],dst[1],dst[2],30,P)||[]) : []; }
     } else if(P.acao){ executarAcao(); }
     else if(P.alvo && !(ITENS[P.eq.arma]&&ITENS[P.eq.arma].alc) && cheb(P,P.alvo)>1 && P.alvo.mapa===P.mapa && !pzEm(P.mapa,P.x,P.y)){
       // modo perseguir (corpo a corpo)
-      if(now>(P.proxPers||0)){ P.proxPers=now+200; const c=caminho(P.mapa,P.x,P.y,P.alvo.x,P.alvo.y,true,12,P); if(c&&c.length) passo(P,c[0][0]-P.x,c[0][1]-P.y,velP(),now); }
+      if(now>(P.proxPers||0)){ P.proxPers=now+200; const c=caminho(P.mapa,P.x,P.y,P.alvo.x,P.alvo.y,true,12,P); if(c&&c.length) passoP(c[0][0]-P.x,c[0][1]-P.y,velP(),now); }
     }
+  }
+  if(ONLINE){
+    for(const c of CRI) if(c.mv && now>=c.mv.t0+c.mv.dur) c.mv=null;
+    for(const o of OUTROS) if(o.mv && now>=o.mv.t0+o.mv.dur) o.mv=null;
+    if(lootAberto && !CORPOS_ID.has(lootAberto.id)) fecharLoot();
+    TXT=TXT.filter(t=>now-t.t0<(t.fala?3500:1100)); PROJ=PROJ.filter(p=>now-p.t0<p.dur); FX=FX.filter(f=>now-f.t0<500);
+    if(now-ultUI>250){ ultUI=now; atualizarStatus(); atualizarBatalha(); }
+    if(now-ultSalvar>15000){ ultSalvar=now; salvar(); }
+    return;
   }
   ataquePlayer(now);
   // --- monstros
@@ -750,7 +767,7 @@ function update(now, dt){
   if(lootAberto && !CORPOS.includes(lootAberto)) fecharLoot();
   // --- npc foco
   if(npcFoco && (npcFoco.mapa!==P.mapa || cheb(P,npcFoco)>4)){ log(`${npcFoco.nome}: Até mais, ${P.nome}.`,"c-npc"); npcFoco=null; fecharTrade(); atualizarChips(); }
-  TXT=TXT.filter(t=>now-t.t0<1100); PROJ=PROJ.filter(p=>now-p.t0<p.dur); FX=FX.filter(f=>now-f.t0<500);
+  TXT=TXT.filter(t=>now-t.t0<(t.fala?3500:1100)); PROJ=PROJ.filter(p=>now-p.t0<p.dur); FX=FX.filter(f=>now-f.t0<500);
   if(now-ultUI>250){ ultUI=now; atualizarStatus(); atualizarBatalha(); }
   if(now-ultSalvar>15000){ ultSalvar=now; salvar(); }
 }
@@ -789,6 +806,7 @@ function dirTeclado(){
   return null;
 }
 function aoChegar(){
+  if(ONLINE){ marcarVisto(); return; }
   const tl=tileEm(P.mapa,P.x,P.y);
   if(tl===T.BUEIRO){ teleportar("esg",5,5,"Você desce pelo bueiro. O cheiro é insuportável..."); }
   else if(tl===T.ESCADA){ teleportar("sup",77,30,"Você sobe a escada de volta à superfície."); }
@@ -807,6 +825,7 @@ function executarAcao(){
   const a=P.acao; P.acao=null;
   if(a.tipo==="corpo"){ if(CORPOS.includes(a.c) && cheb(P,a.c)<=1) abrirLoot(a.c); }
   if(a.tipo==="npc"){ if(cheb(P,a.n)<=3){ falarNpc(a.n,"oi"); } }
+  if(a.tipo==="poco" && ONLINE){ netEnviar({t:"poco",x:a.x,y:a.y}); return; }
   if(a.tipo==="poco"){ if(cheb(P,a)<=1){ P.sede=100; textoFlut(P,"Gulp","#7ac8ff"); log("Você bebe a água fresca do poço. Sede saciada.","c-npc"); } }
 }
 
@@ -821,7 +840,9 @@ function clicarTela(ev){
   const tx=Math.floor((sx+ox)/TS), ty=Math.floor((sy+oy)/TS);
   // criatura?
   const m=CRI.find(c=>c.mapa===P.mapa && c.x===tx && c.y===ty);
-  if(m){ P.alvo = P.alvo===m ? null : m; if(P.alvo) { m.aggro=true; log(`Atacando: ${MONS[m.tipo].n}.`,"c-cinza"); } atualizarBatalha(); return; }
+  if(m){ definirAlvo(P.alvo===m ? null : m); if(P.alvo) log(`Atacando: ${MONS[m.tipo].n}.`,"c-cinza"); return; }
+  const outro=ONLINE && OUTROS.find(o=>o.x===tx&&o.y===ty);
+  if(outro){ log(`Você vê ${outro.nome} (nível ${outro.lvl}).`,"c-cinza"); return; }
   const n=NPCS.find(n=>n.mapa===P.mapa && n.x===tx && n.y===ty);
   if(n){ if(cheb(P,n)<=3) falarNpc(n,"oi"); else irPara(n.x,n.y,true,{tipo:"npc",n}); return; }
   const c=[...CORPOS].reverse().find(c=>c.mapa===P.mapa && c.x===tx && c.y===ty);
@@ -838,9 +859,10 @@ function irPara(x,y,adj,acao){
 }
 
 // ---------------------------------------------------------------- NPC / CHAT
-function falarNpc(n,txt){ if(!rodando) return; log(`${P.nome}: ${txt}`,"c-eu"); processarFala(txt,n); }
+function falarNpc(n,txt){ if(!rodando) return; if(ONLINE) return netEnviar({t:"fala",txt}); log(`${P.nome}: ${txt}`,"c-eu"); processarFala(txt,n); }
 function enviarChat(){
   const inp=$("#chat"); const txt=inp.value.trim(); inp.value=""; inp.blur(); if(!txt||!rodando) return;
+  if(ONLINE) return netEnviar({t:"fala",txt});
   log(`${P.nome}: ${txt}`,"c-eu"); TXT.push({x:P.x,y:P.y,mapa:P.mapa,txt,cor:"#ffff66",t0:performance.now(),fala:1});
   processarFala(txt,null);
 }
@@ -861,21 +883,23 @@ function atualizarChips(){
   const el=$("#chips"); el.innerHTML="";
   const n=npcFoco;
   const lista = n ? n.chips : (NPCS.some(n=>n.mapa===P.mapa&&cheb(P,n)<=3) ? ["oi"] : []);
-  for(const c of lista){ const b=document.createElement("button"); b.textContent=c; b.onclick=()=>{ log(`${P.nome}: ${c}`,"c-eu"); processarFala(c,null); }; el.appendChild(b); }
-  const em=$("#chipsM"); if(em){ em.innerHTML=""; for(const c of lista){ const b=document.createElement("button"); b.textContent=c; b.onclick=()=>{ log(`${P.nome}: ${c}`,"c-eu"); processarFala(c,null); }; em.appendChild(b); } }
+  for(const c of lista){ const b=document.createElement("button"); b.textContent=c; b.onclick=()=>falarChip(c); el.appendChild(b); }
+  const em=$("#chipsM"); if(em){ em.innerHTML=""; for(const c of lista){ const b=document.createElement("button"); b.textContent=c; b.onclick=()=>falarChip(c); em.appendChild(b); } }
 }
 
 // ---------------------------------------------------------------- JANELAS
 function abrirLoot(c){
+  if(ONLINE && !c._cont){ netEnviar({t:"abrir",id:c.id}); return; }
   lootAberto=c; const el=$("#loot"); el.classList.remove("esc");
   const slots=c.itens.map((s,i)=>`<div class="slot" data-l="${i}" title="${ITENS[s.id].n}">${ITENS[s.id].ic}${s.q>1?`<span class="q">${s.q}</span>`:""}</div>`).join("");
   el.innerHTML=`<div class="cab"><span>${c.nome}</span><button id="fxL">x</button></div>
     ${c.itens.length?`<div class="grade">${slots}</div><div style="margin-top:6px"><button id="pegaTudo">Pegar tudo</button></div>`:'<div class="c-cinza">Nada aqui.</div>'}`;
   $("#fxL").onclick=fecharLoot;
   el.querySelectorAll("[data-l]").forEach(s=>s.onclick=()=>pegarLoot(+s.dataset.l));
-  const pt=$("#pegaTudo"); if(pt) pt.onclick=()=>{ while(lootAberto && lootAberto.itens.length){ if(!pegarLoot(0,true)) break; } if(lootAberto) abrirLoot(lootAberto); };
+  const pt=$("#pegaTudo"); if(pt) pt.onclick=()=>{ if(ONLINE) return netEnviar({t:"pegarTudo",id:c.id}); while(lootAberto && lootAberto.itens.length){ if(!pegarLoot(0,true)) break; } if(lootAberto) abrirLoot(lootAberto); };
 }
 function pegarLoot(i,silencioso){
+  if(ONLINE){ if(lootAberto) netEnviar({t:"pegar",id:lootAberto.id,i}); return false; }
   const c=lootAberto; if(!c||cheb(P,c)>1||P.mapa!==c.mapa){ fecharLoot(); return false; }
   const s=c.itens[i]; if(!s) return false;
   if(!ITENS[s.id].st || !P.inv.find(x=>x.id===s.id)){ if(P.inv.length>=MAX_INV){ log("Sua mochila está cheia.","c-verm"); return false; } }
@@ -911,11 +935,13 @@ function renderTrade(){
   el.querySelectorAll("[data-vt]").forEach(b=>b.onclick=()=>vender(b.dataset.vt,contar(b.dataset.vt)));
 }
 function comprar(id,q){
+  if(ONLINE) return netEnviar({t:"comprar",npc:tradeAberto.id,id,q});
   const p=PRECO[id]*q; if(!temItem("tampinha",p)) return;
   if(!ITENS[id].st && P.inv.length>=MAX_INV){ log("Mochila cheia.","c-verm"); return; }
   tirarItem("tampinha",p); darItem(id,q); log(`Você comprou ${q}× ${ITENS[id].n} por ${p} tampinhas.`,"c-cinza"); renderTrade();
 }
 function vender(id,q){
+  if(ONLINE) return netEnviar({t:"vender",npc:tradeAberto.id,id,q});
   const n=tradeAberto; const pr=precoCompraNpc(n,id); if(!pr||contar(id)<q) return;
   // não vender equipado: só itens da mochila contam
   tirarItem(id,q); darItem("tampinha",pr*q); log(`Você vendeu ${q}× ${ITENS[id].n} por ${pr*q} tampinhas.`,"c-cinza"); renderTrade();
@@ -953,7 +979,7 @@ function atualizarInv(){
       d.onclick=ev=>{ const ac=[];
         if(it.slot) ac.push(["Equipar",()=>usarItem(P.inv.indexOf(s))]);
         else if(it.t) ac.push([it.t==="comida"?"Comer":it.t==="bebida"?"Beber":"Usar",()=>usarItem(P.inv.indexOf(s))]);
-        ac.push(["Largar",()=>{ const idx=P.inv.indexOf(s); if(idx<0) return; P.inv.splice(idx,1); largarNoChao(s.id,s.q); atualizarInv(); log(`Você largou ${ITENS[s.id].n}.`,"c-cinza"); }]);
+        ac.push(["Largar",()=>largarIdx(P.inv.indexOf(s))]);
         abrirMenuItem(ev,`<b>${it.n}${s.q>1?" ×"+s.q:""}</b><div class="ds">${descItem(s.id)}</div>`,ac); };
     } else d.classList.add("vazio");
     mo.appendChild(d);
@@ -991,13 +1017,13 @@ function atualizarBatalha(){
   for(const c of vis){ const d=MONS[c.tipo], p=c.hp/d.hp;
     const div=document.createElement("div"); if(P.alvo===c) div.className="alvo";
     div.innerHTML=`<span style="width:110px;font-size:11px;overflow:hidden;white-space:nowrap">${d.n}</span><span class="mb"><i style="width:${p*100}%;background:${corVida(p)}"></i></span>`;
-    div.onclick=()=>{ P.alvo = P.alvo===c?null:c; c.aggro=true; batalhaCache=""; atualizarBatalha(); };
+    div.onclick=()=>definirAlvo(P.alvo===c?null:c);
     el.appendChild(div); }
 }
 function proximoAlvo(){
   const vis=CRI.filter(c=>c.mapa===P.mapa && cheb(c,P)<=7).sort((a,b)=>cheb(a,P)-cheb(b,P));
   if(!vis.length){ log("Nenhum inimigo por perto.","c-cinza"); return; }
-  const i=vis.indexOf(P.alvo); P.alvo=vis[(i+1)%vis.length]; P.alvo.aggro=true; batalhaCache=""; atualizarBatalha();
+  const i=vis.indexOf(P.alvo); definirAlvo(vis[(i+1)%vis.length]);
 }
 const corVida = p => p>.75?"#00c000":p>.5?"#60c060":p>.25?"#c0c000":p>.1?"#c03030":"#600000";
 function atualizarTudo(){ atualizarInv(); atualizarStatus(); atualizarHab(); batalhaCache=""; atualizarBatalha(); atualizarChips(); desenharMini(); }
@@ -1423,8 +1449,9 @@ const LOOKS={
   cida:{pele:"#8a5a3a",cabelo:"#999999",estilo:"coque",camisa:"#3a3a3a",calca:"#2a2a2a",corpo:"avental",arma:"martelo"},
   rocha:{pele:"#7a5038",cabelo:"#111111",estilo:"curto",camisa:"#4a5a2a",calca:"#3a4a2a",cabeca:"boina",bigode:1,corpo:"colete_bal"}
 };
-function lookPlayer(){
-  const e=P.eq, L={pele:"#d8a87a",cabelo:"#3a2412",estilo:"curto",camisa:"#c8b89a",calca:"#8a7a5a",bota:"#2a2018",mochila:1};
+function lookPlayer(){ return lookEq(P.eq); }
+function lookEq(e){
+  const L={pele:"#d8a87a",cabelo:"#3a2412",estilo:"curto",camisa:"#c8b89a",calca:"#8a7a5a",bota:"#2a2018",mochila:1};
   if(e.corpo){ L.camisa=ITENS[e.corpo].cor; L.corpo=e.corpo; }
   if(e.pernas) L.calca=ITENS[e.pernas].cor;
   if(e.pes) L.bota = e.pes==="tenis" ? "#c8c8c8" : "#1a1a14";
@@ -1483,6 +1510,7 @@ function render(now){
   for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){ if(x<0||y<0||x>=M.W||y>=M.H) continue; const tl=M.t[y*M.W+x]; if(TP[tl].obj) lista.push({y,t:0,x,tl}); }
   for(const m of CRI){ if(m.mapa!==P.mapa) continue; const p=posR(m,now); if(Math.abs(p.x-cam.x)>9||Math.abs(p.y-cam.y)>7) continue; lista.push({y:p.y+.01,t:1,m,p}); }
   for(const n of NPCS){ if(n.mapa!==P.mapa) continue; if(Math.abs(n.x-cam.x)>9||Math.abs(n.y-cam.y)>7) continue; lista.push({y:n.y+.01,t:2,n}); }
+  if(ONLINE) for(const o of OUTROS){ const p=posR(o,now); if(Math.abs(p.x-cam.x)>9||Math.abs(p.y-cam.y)>7) continue; lista.push({y:p.y+.015,t:4,o,p}); }
   lista.push({y:cam.y+.02,t:3});
   lista.sort((a,b)=>a.y-b.y);
   const fase = e => movendo(e,now) ? (Math.floor((now-e.mv.t0)/(e.mv.dur/2))%2)+1 : 0;
@@ -1497,6 +1525,7 @@ function render(now){
       const topo={rato:36,barata:38,cao:28,escorp:24,hum:16}[d.spr];
       rotulos.push({sx,sy:sy+30-(58-topo)*e,nome:d.n,p:o.m.hp/d.hp}); }
     else if(o.t===2){ const sx=o.n.x*TS-ox, sy=o.n.y*TS-oy; ent(sprHumano("npc:"+o.n.id,LOOKS[o.n.id],o.n.dir,0),sx,sy,1); rotulos.push({sx,sy:sy-8,nome:o.n.nome,npc:1}); }
+    else if(o.t===4){ const sx=Math.round(o.p.x*TS-ox), sy=Math.round(o.p.y*TS-oy); ent(sprOutro(o.o,o.o.dir,fase(o.o)),sx,sy,1); rotulos.push({sx,sy:sy-8,nome:o.o.nome,p:o.o.hpp/100}); }
     else { const sx=Math.round(cam.x*TS-ox), sy=Math.round(cam.y*TS-oy); ent(sprPlayer(P.dir,fase(P)),sx,sy,1); rotulos.push({sx,sy:sy-8,nome:P.nome,p:P.hp/hpMax(),eu:1}); }
   }
   // projéteis (rastro)
@@ -1581,6 +1610,121 @@ function desenharMini(){
   g.fillStyle="#fff"; g.fillRect(offx+P.x*esc-1.5,offy+P.y*esc-1.5,4,4);
 }
 
+// ---------------------------------------------------------------- MODO ONLINE (multiplayer)
+const SERVIDOR_PADRAO = "wss://zona-morta-servidor.onrender.com";
+let ONLINE=false, WS=null, OUTROS=[], credOnline=null;
+const CRI_ID=new Map(), OUTROS_ID=new Map(), CORPOS_ID=new Map();
+function servidorURL(){
+  try{ const q=new URLSearchParams(location.search).get("servidor"); if(q && /^wss?:\/\//.test(q)) localStorage.setItem("zm_servidor",q); }catch(e){}
+  try{ const s=localStorage.getItem("zm_servidor"); if(s && /^wss?:\/\//.test(s)) return s; }catch(e){}
+  return SERVIDOR_PADRAO;
+}
+function netEnviar(m){ if(WS && WS.readyState===1) WS.send(JSON.stringify(m)); }
+function passoP(dx,dy,dur,now){ passo(P,dx,dy,dur,now); if(ONLINE) netEnviar({t:"p",x:P.x,y:P.y}); }
+function definirAlvo(m){
+  P.alvo=m||null; if(m && !ONLINE) m.aggro=true;
+  if(ONLINE) netEnviar({t:"alvo",id:m?m.id:null});
+  batalhaCache=""; atualizarBatalha();
+}
+function falarChip(c){ if(ONLINE) return netEnviar({t:"fala",txt:c}); log(`${P.nome}: ${c}`,"c-eu"); processarFala(c,null); }
+function largarIdx(idx){
+  if(idx<0) return; if(ONLINE) return netEnviar({t:"largar",i:idx});
+  const s=P.inv[idx]; P.inv.splice(idx,1); largarNoChao(s.id,s.q); atualizarInv(); log(`Você largou ${ITENS[s.id].n}.`,"c-cinza");
+}
+function desconectarOnline(){ ONLINE=false; if(WS){ WS.onclose=null; try{ WS.close(); }catch(e){} } WS=null; }
+const dec64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+function msgOnline(txt){ const el=$("#onMsg"); if(el) el.textContent=txt; }
+function conectar(nome,senha){
+  desconectarOnline(); credOnline={nome,senha};
+  msgOnline("Conectando... (o servidor gratuito pode levar até 1 minuto para acordar)");
+  let ws; try{ ws=new WebSocket(servidorURL()); }catch(e){ msgOnline("Não foi possível abrir a conexão neste navegador."); return; }
+  WS=ws; let ok=false;
+  ws.onopen=()=>{ let backup=null; try{ backup=JSON.parse(localStorage.getItem("zm_backup_"+norm(nome))||"null"); }catch(e){}
+    ws.send(JSON.stringify({t:"login",nome,senha,backup})); };
+  ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(_){ return; }
+    if(m.t==="ok"){ ok=true; iniciarOnline(m,nome); }
+    else if(m.t==="erro"){ if(ONLINE) log(m.msg,"c-verm"); else msgOnline(m.msg); }
+    else if(ONLINE) netMsg(m); };
+  ws.onclose=()=>{
+    if(ONLINE){ ONLINE=false; rodando=false; salvar();
+      mostrarCobre(`<h1 style="font-size:26px;color:#ff5a4a">DESCONECTADO</h1><p style="text-align:center">A conexão com o servidor caiu.</p>
+        <p style="text-align:center"><button id="bRecon">Reconectar</button> <button id="bMenuIni">Menu inicial</button></p>`);
+      $("#bRecon").onclick=()=>{ telaInicial(); conectar(credOnline.nome,credOnline.senha); };
+      $("#bMenuIni").onclick=telaInicial;
+    } else if(!ok) msgOnline("Não foi possível conectar ao servidor. Ele pode estar acordando ou fora do ar — tente de novo em instantes.");
+  };
+}
+function iniciarOnline(m,nome){
+  CRI=[]; CORPOS=[]; OUTROS=[]; TXT=[]; PROJ=[]; FX=[]; SPAWNS=[]; CRI_ID.clear(); OUTROS_ID.clear(); CORPOS_ID.clear();
+  npcFoco=null; fecharJanelas();
+  for(const k of ["sup","esg"]){ const d=m.mapas[k], M=mk(d.W,d.H); M.t=dec64(d.t); M.pz=dec64(d.pz); MAPA[k]=M; }
+  calcularChao(MAPA.sup,false); calcularChao(MAPA.esg,true);
+  try{ const v=JSON.parse(localStorage.getItem("zm_visto_"+norm(nome))||"null");
+    if(v) for(const k of ["sup","esg"]) if(v[k]) for(let i=0;i<v[k].length&&i<MAPA[k].visto.length;i++) MAPA[k].visto[i]=v[k].charCodeAt(i)-48; }catch(e){}
+  P=Object.assign(novoJogador(m.eu.nome), m.eu); P.alvo=null; P.caminho=[]; P.acao=null; P.mv=null;
+  tJogo=m.tj; ONLINE=true; rodando=true;
+  try{ localStorage.setItem("zm_ultimo_nome",m.eu.nome); }catch(e){}
+  $("#log").innerHTML=""; esconderCobre(); marcarVisto(); atualizarTudo();
+  log(`Conectado à Zona Morta online. ${m.online.length} sobrevivente(s) no mundo: ${m.online.join(", ")}.`,"c-verde");
+  if(m.novo){
+    log(`Bem-vindo, ${P.nome}. Sua conta foi criada — guarde sua senha.`,"c-ouro");
+    log("Você está no Abrigo Esperança. Fale com o Sargento Rocha (digite OI perto dele) para pegar uma MISSÃO.","c-verde");
+    log("Tudo que você digita no chat é ouvido por quem estiver perto. Cacem juntos: o XP é dividido pelo dano de cada um.","c-sis");
+  }
+}
+function netEventos(evs,now){
+  for(const e of evs){
+    switch(e[0]){
+      case "log": log(e[1],e[2]); break;
+      case "txt": TXT.push({x:e[1],y:e[2],mapa:P.mapa,txt:e[3],cor:e[4],t0:now,fala:!!e[5]}); break;
+      case "fx": efeito(e[1],e[2],e[3]); break;
+      case "proj": PROJ.push({mapa:P.mapa,x0:e[1],y0:e[2],x1:e[3],y1:e[4],t0:now,dur:200,cor:e[5]}); break;
+      case "hit": { const c=CRI_ID.get(e[1]); if(c) c.hitT=now; break; }
+      case "alvo": P.alvo=null; batalhaCache=""; break;
+      case "npc": npcFoco = e[1] ? NPCS.find(n=>n.id===e[1]) : null;
+        if(npcFoco) npcFoco.dir = Math.abs(P.x-npcFoco.x)>=Math.abs(P.y-npcFoco.y)?(P.x>npcFoco.x?3:2):(P.y>npcFoco.y?0:1);
+        else fecharTrade(); atualizarChips(); break;
+      case "trade": abrirTrade(e[1]); break;
+      case "pos": { const mudou=P.mapa!==e[1]; P.mapa=e[1]; P.x=e[2]; P.y=e[3]; P.mv=null; P.caminho=[]; P.acao=null;
+        if(mudou){ CRI=[]; CRI_ID.clear(); OUTROS=[]; OUTROS_ID.clear(); CORPOS=[]; CORPOS_ID.clear(); fecharJanelas(); efeito(P.x,P.y,"#ffd23a"); }
+        marcarVisto(); break; }
+      case "morte": rodando=false; P.alvo=null; fecharJanelas(); npcFoco=null; atualizarChips();
+        mostrarCobre(`<h1 style="color:#ff5a4a">VOCÊ MORREU</h1><p style="text-align:center">Você foi morto ${e[1]}.</p>
+          <p style="text-align:center">Perdeu ${e[2]} de experiência${e[3]?` e ${e[3]} tampinhas`:""}. Você acorda no Abrigo Esperança.</p>
+          <p style="text-align:center"><button id="bReviver">Levantar</button></p>`);
+        $("#bReviver").onclick=()=>{ esconderCobre(); rodando=true; }; break;
+    }
+  }
+}
+function netMsg(m){
+  const now=performance.now();
+  if(m.t==="cont"){ const c=CORPOS_ID.get(m.id); abrirLoot({id:m.id,nome:m.nome,itens:m.itens,_cont:1,mapa:P.mapa,x:c?c.x:P.x,y:c?c.y:P.y}); return; }
+  if(m.t!=="s") return;
+  tJogo=m.tj;
+  if(m.e) netEventos(m.e,now);
+  const [hp,fome,sede,rad,xp,lvl]=m.eu; P.hp=hp; P.fome=fome; P.sede=sede; P.rad=rad; P.xp=xp; P.lvl=lvl;
+  const mover=(o,x,y,dur)=>{ if(o.x===x&&o.y===y) return; if(Math.abs(o.x-x)<=1&&Math.abs(o.y-y)<=1) o.mv={fx:o.x,fy:o.y,t0:now,dur}; else o.mv=null; if(x!==o.x) o.lado=x<o.x?2:3; o.x=x; o.y=y; };
+  const vc=new Set();
+  for(const [id,tipo,x,y,dir,h] of m.c){ vc.add(id); let c=CRI_ID.get(id);
+    if(!c){ c={id,tipo,mapa:P.mapa,x,y,dir,lado:dir===2?2:3,mv:null,hp:h}; CRI_ID.set(id,c); CRI.push(c); }
+    else { mover(c,x,y,MONS[tipo].vel); c.dir=dir; c.hp=h; c.mapa=P.mapa; } }
+  if(CRI.length!==vc.size){ CRI=CRI.filter(c=>vc.has(c.id)); for(const id of [...CRI_ID.keys()]) if(!vc.has(id)) CRI_ID.delete(id); }
+  if(P.alvo && !vc.has(P.alvo.id)) P.alvo=null;
+  const vj=new Set();
+  for(const [id,nome,x,y,dir,hpp,lv,vel,eq] of m.j){ vj.add(id); let o=OUTROS_ID.get(id);
+    const eqo={arma:eq[0],escudo:eq[1],cabeca:eq[2],corpo:eq[3],pernas:eq[4],pes:eq[5]};
+    if(!o){ o={id,nome,mapa:P.mapa,x,y,dir,mv:null,hpp,lvl:lv,eq:eqo}; OUTROS_ID.set(id,o); OUTROS.push(o); }
+    else { mover(o,x,y,vel*(o.x!==x&&o.y!==y?1.4:1)); o.dir=dir; o.hpp=hpp; o.lvl=lv; o.eq=eqo; o.mapa=P.mapa; } }
+  if(OUTROS.length!==vj.size){ OUTROS=OUTROS.filter(o=>vj.has(o.id)); for(const id of [...OUTROS_ID.keys()]) if(!vj.has(id)) OUTROS_ID.delete(id); }
+  const vk=new Set();
+  for(const [id,x,y,tipo,tem,pilha] of m.k){ vk.add(id); let c=CORPOS_ID.get(id);
+    if(!c){ c={id,mapa:P.mapa,x,y,tipo:tipo||null,itens:[],pilha:!!pilha,nome:""}; CORPOS_ID.set(id,c); CORPOS.push(c); }
+    c.itens = tem ? [{id:"tampinha",q:1}] : []; c.mapa=P.mapa; }
+  if(CORPOS.length!==vk.size){ CORPOS=CORPOS.filter(c=>vk.has(c.id)); for(const id of [...CORPOS_ID.keys()]) if(!vk.has(id)) CORPOS_ID.delete(id); }
+  if(m.p){ Object.assign(P,m.p); atualizarInv(); atualizarHab(); }
+}
+function sprOutro(o,dir,fase){ const e=o.eq; return sprHumano("p:"+[e.arma,e.escudo,e.cabeca,e.corpo,e.pernas,e.pes].join(","), lookEq(e), dir, fase); }
+
 // ---------------------------------------------------------------- LOOP
 let ultT=0;
 function loop(t){
@@ -1593,6 +1737,8 @@ function loop(t){
 // ---------------------------------------------------------------- SALVAR / CARREGAR
 function salvar(){
   if(!P) return;
+  if(ONLINE){ try{ const k=norm(P.nome); const b={}; for(const c of ["nome","mapa","x","y","dir","lvl","xp","hp","fome","sede","rad","sk","inv","eq","quest","mortes"]) b[c]=P[c];
+    localStorage.setItem("zm_backup_"+k,JSON.stringify(b)); localStorage.setItem("zm_visto_"+k,JSON.stringify({sup:Array.from(MAPA.sup.visto).join(""),esg:Array.from(MAPA.esg.visto).join("")})); }catch(e){} return; }
   try{ const s={...P, alvo:null, acao:null, caminho:[], mv:null};
     localStorage.setItem(KEY, JSON.stringify({P:s, t:tJogo, visto:{sup:Array.from(MAPA.sup.visto).join(""), esg:Array.from(MAPA.esg.visto).join("")}})); }catch(e){}
 }
@@ -1606,13 +1752,21 @@ function telaInicial(){
   mostrarCobre(`<h1>ZONA MORTA</h1><p style="text-align:center;color:#999;margin-top:0">RPG de sobrevivência pós-apocalíptica</p>
     <p>O mundo acabou há dois anos. As cidades viraram ruínas, a mata engoliu as estradas e o deserto do sul brilha de radiação.</p>
     <p>No <b style="color:#e8c060">Abrigo Esperança</b>, um punhado de sobreviventes resiste atrás de muros de concreto. Lá fora, ratos mutantes, cães raivosos, saqueadores — e coisas piores.</p>
+    <div class="online"><div class="tit2">● JOGAR ONLINE <span>com outros sobreviventes</span></div>
+      <input id="onNome" maxlength="14" placeholder="Nome do personagem" value="${(()=>{try{return localStorage.getItem("zm_ultimo_nome")||""}catch(e){return ""}})()}">
+      <input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">
+      <button id="bOnline">Entrar no servidor</button><div id="onMsg" class="c-ouro"></div></div>
+    <div class="tit2" style="margin-top:14px">○ JOGAR OFFLINE <span>sozinho, sem internet</span></div>
     ${s?`<p><button id="bCont">▶ Continuar com ${s.P.nome} (nível ${s.P.lvl})</button></p>`:""}
     <p style="margin-bottom:0">Nome do seu sobrevivente:</p><input id="nomeIn" maxlength="14" value="${s?"":"Julio"}" placeholder="Seu nome">
     <button id="bComecar">${s?"Criar novo personagem":"Começar"}</button>`);
   if(s) $("#bCont").onclick=()=>iniciar(s);
+  const entrar=()=>{ const n=$("#onNome").value.trim(), se=$("#onSenha").value; if(!n||!se) return msgOnline("Preencha nome e senha."); conectar(n,se); };
+  $("#bOnline").onclick=entrar; $("#onSenha").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
   $("#bComecar").onclick=()=>{ const n=($("#nomeIn").value.trim()||"Sobrevivente").slice(0,14); iniciar(null,n); };
 }
 function iniciar(save,nome){
+  desconectarOnline();
   CRI=[]; CORPOS=[]; TXT=[]; PROJ=[]; FX=[]; npcFoco=null; fecharJanelas();
   MAPA.sup=gerarSup(); MAPA.esg=gerarEsg(); calcularChao(MAPA.sup,false); calcularChao(MAPA.esg,true);
   if(save){ P=Object.assign(novoJogador(save.P.nome), save.P); P.alvo=null; P.caminho=[]; P.acao=null; P.mv=null; P.proxAtk=0;
@@ -1662,7 +1816,7 @@ document.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].includes(k)){ teclas[k]=true; e.preventDefault(); }
   if(k==="1") usarMelhor("cura"); if(k==="2") usarMelhor("comida"); if(k==="3") usarMelhor("bebida"); if(k==="4") usarMelhor("antirad");
   if(k==="Tab"){ e.preventDefault(); proximoAlvo(); }
-  if(k==="Escape"){ P.alvo=null; P.caminho=[]; fecharJanelas(); batalhaCache=""; atualizarBatalha(); }
+  if(k==="Escape"){ definirAlvo(null); P.caminho=[]; fecharJanelas(); batalhaCache=""; atualizarBatalha(); }
 });
 document.addEventListener("keyup",e=>{ const k = e.key.length===1 ? e.key.toLowerCase() : e.key; teclas[k]=false; });
 window.addEventListener("blur",()=>{ teclas={}; dirSegurada=null; });
@@ -1672,7 +1826,7 @@ $("#hbCura").onclick=()=>rodando&&usarMelhor("cura"); $("#hbComer").onclick=()=>
 $("#hbBeber").onclick=()=>rodando&&usarMelhor("bebida"); $("#hbRad").onclick=()=>rodando&&usarMelhor("antirad");
 $("#hbAlvo").onclick=()=>rodando&&proximoAlvo();
 $("#bAjuda").onclick=ajuda;
-$("#bNovo").onclick=()=>{ salvar(); telaInicial(); };
+$("#bNovo").onclick=()=>{ salvar(); desconectarOnline(); telaInicial(); };
 document.querySelectorAll("#dpad button").forEach(b=>{
   const d=b.dataset.d.split(",").map(Number);
   b.addEventListener("pointerdown",e=>{ e.preventDefault(); dirSegurada=d; });
