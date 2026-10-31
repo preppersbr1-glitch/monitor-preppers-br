@@ -8,12 +8,12 @@
 <meta name="color-scheme" content="dark">
 <title>Zona Morta — RPG de Sobrevivência</title>
 <meta name="description" content="Zona Morta: RPG de sobrevivência pós-apocalíptica estilo Tibia, direto no navegador. Um jogo do canal Preppers BR.">
-<meta name="theme-color" content="#0c0a06">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icone-192.png">
 <link rel="apple-touch-icon" href="icone-192.png">
 <meta name="apple-mobile-web-app-title" content="Zona Morta">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
 :root{--pedra:#2f2f2f;--borda1:#5c5c5c;--borda2:#141414;--txt:#d8d8d8;--ouro:#e8c060;--verde:#4bd16b;--verm:#ff5a4a;--azul:#7ac8ff}
 html,body{background:#121212!important;color:var(--txt)!important;margin:0;padding:0}
@@ -91,7 +91,7 @@ button:disabled{opacity:.4;cursor:default}
 body.mobile{overflow:hidden;position:fixed;inset:0;touch-action:none;background:#000!important}
 body.mobile #raiz{display:block;padding:0;max-width:none}
 body.mobile #areaJogo{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
-body.mobile.retrato #areaJogo{align-items:flex-start;padding-top:calc(env(safe-area-inset-top) + 92px);box-sizing:border-box}
+body.mobile.retrato #areaJogo{align-items:flex-start;padding-top:calc(max(env(safe-area-inset-top),10px) + 92px);box-sizing:border-box}
 body.mobile #tela{border:none;width:auto}
 body.mobile #hotbar,body.mobile #dpad{display:none!important}
 body.mobile #hudM{display:block}
@@ -106,13 +106,13 @@ body.mobile #loot{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-
 body.mobile #loot .slot{width:36px;height:36px}
 body.mobile #menuItem{position:fixed!important}
 body.mobile #menuItem button{font-size:14px;padding:9px}
-#mBars{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:calc(env(safe-area-inset-left) + 6px);width:150px;z-index:15;pointer-events:none;background:rgba(0,0,0,.45);padding:4px;border-radius:4px}
+#mBars{position:fixed;top:calc(max(env(safe-area-inset-top),4px) + 6px);left:calc(env(safe-area-inset-left) + 6px);width:150px;z-index:15;pointer-events:none;background:rgba(0,0,0,.45);padding:4px;border-radius:4px}
 #mBars .nm{font-size:11px;color:#e8c060;margin-bottom:2px}
 #mBars .barra{height:12px;margin:1px 0} #mBars .barra>span{line-height:12px}
 #mBars .xp{height:3px} #mBars .pz{color:#4bd16b;font-size:10px;margin-top:2px}
-#alvoM{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:50%;transform:translateX(-50%);z-index:15;background:rgba(60,0,0,.55);padding:3px 10px;border:1px solid #a33;border-radius:4px;font-size:11px;text-align:center;min-width:120px;pointer-events:none;display:none}
+#alvoM{position:fixed;top:calc(max(env(safe-area-inset-top),4px) + 6px);left:50%;transform:translateX(-50%);z-index:15;background:rgba(60,0,0,.55);padding:3px 10px;border:1px solid #a33;border-radius:4px;font-size:11px;text-align:center;min-width:120px;pointer-events:none;display:none}
 #alvoM .barra{height:5px}
-#mTopo{position:fixed;top:calc(env(safe-area-inset-top) + 6px);right:calc(env(safe-area-inset-right) + 6px);display:flex;gap:6px;z-index:15;align-items:flex-start}
+#mTopo{position:fixed;top:calc(max(env(safe-area-inset-top),4px) + 6px);right:calc(env(safe-area-inset-right) + 6px);display:flex;gap:6px;z-index:15;align-items:flex-start}
 #miniM{border:2px solid #555;border-radius:3px;background:#000;image-rendering:pixelated}
 #mTopo .col{display:flex;flex-direction:column;gap:5px}
 .bM{width:42px;height:42px;border-radius:50%;background:rgba(30,30,30,.6);border:2px solid rgba(220,220,220,.35);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;padding:0;touch-action:none;-webkit-tap-highlight-color:transparent}
@@ -128,6 +128,8 @@ body.mobile #menuItem button{font-size:14px;padding:9px}
 #chipsM button{font-size:14px;padding:8px 12px;border-radius:16px;background:rgba(20,50,80,.85);color:#bfe6ff;border-color:#4a8ab0}
 #logM{position:fixed;left:calc(env(safe-area-inset-left) + 160px);right:210px;bottom:calc(env(safe-area-inset-bottom) + 60px);z-index:14;pointer-events:none;font-size:11px;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000}
 #logM p{margin:1px 0}
+body.retrato #mTopo .col{display:grid;grid-template-columns:repeat(2,40px);gap:5px}
+body.retrato #mTopo .bM{width:40px;height:40px;font-size:18px}
 body.retrato #logM{left:10px;right:10px;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 104px)}
 body.retrato #chipsM{max-width:90vw;bottom:auto;top:calc(env(safe-area-inset-top) + 74vw + 240px)}
 
@@ -1863,7 +1865,7 @@ function ajustarTela(){
     cv.style.width=Math.floor(VW*TS*s)+"px"; cv.style.height=Math.floor(VH*TS*s)+"px";
     return;
   }
-  const W=window.innerWidth, H=window.innerHeight, retrato=H>W;
+  const W=window.innerWidth, H=(window.visualViewport&&window.visualViewport.height)||window.innerHeight, retrato=H>W;
   const s=Math.min(W/(VW*TS), (retrato?H*.6:H)/(VH*TS));
   cv.style.width=Math.floor(VW*TS*s)+"px"; cv.style.height=Math.floor(VH*TS*s)+"px";
   document.body.classList.toggle("retrato",retrato);
@@ -1938,6 +1940,9 @@ $("#mCura").onclick=()=>rodando&&usarMelhor("cura"); $("#mComer").onclick=()=>ro
 $("#mBeber").onclick=()=>rodando&&usarMelhor("bebida"); $("#mRad").onclick=()=>rodando&&usarMelhor("antirad");
 document.querySelectorAll("#hudM button").forEach(b=>b.addEventListener("pointerdown",e=>e.stopPropagation()));
 window.addEventListener("resize",ajustarTela);
+window.addEventListener("orientationchange",()=>{ ajustarTela(); setTimeout(ajustarTela,250); setTimeout(ajustarTela,700); });
+if(window.visualViewport) window.visualViewport.addEventListener("resize",ajustarTela);
+window.addEventListener("load",()=>{ setTimeout(ajustarTela,100); setTimeout(ajustarTela,600); });
 setInterval(()=>{ if(MOBILE&&P){ atualizarHudM(); desenharMiniM(); } },300);
 (function(){ let pref=null; try{ pref=localStorage.getItem(KEY+"_modo"); }catch(e){}
   definirModo(pref ? pref==="m" : (window.matchMedia("(pointer:coarse)").matches || window.innerWidth<820)); })();
