@@ -16,6 +16,8 @@ const PORT = process.env.PORT || 8080;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "dados");
 const ORIGENS = (process.env.ORIGENS || "").split(",").map(s => s.trim()).filter(Boolean);
 const MAX_JOGADORES = +(process.env.MAX_JOGADORES || 150);
+const EXIGIR_CONTA = (process.env.EXIGIR_CONTA || "1") !== "0";          // só entra quem tem conta no site
+const FIREBASE_PROJETO = process.env.FIREBASE_PROJETO || "comunidade-preppers-br-f5253";
 const TEMPLO = { mapa: "sup", x: 17, y: 36 };
 const MAX_INV = 24;
 const VISAO_X = 10, VISAO_Y = 8;
@@ -45,6 +47,36 @@ function gravarContas() {
 }
 setInterval(gravarContas, 20000);
 const hashSenha = (senha, salt) => crypto.scryptSync(senha, salt, 32).toString("hex");
+
+// ---------------------------------------------------------------- CONTA DO SITE (Firebase Auth)
+// Confere o "ID token" do Firebase que o navegador manda: assinatura RSA do Google, projeto e validade.
+const https = require("https");
+let CERTS = null, certsAte = 0;
+function baixarCerts() {
+  if (process.env.TESTE_CERT) return Promise.resolve({ teste: fs.readFileSync(process.env.TESTE_CERT, "utf8") });
+  if (CERTS && Date.now() < certsAte) return Promise.resolve(CERTS);
+  return new Promise((ok, falha) => {
+    https.get("https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com", res => {
+      let d = ""; res.on("data", c => d += c);
+      res.on("end", () => { try {
+        CERTS = JSON.parse(d); const m = /max-age=(\d+)/.exec(res.headers["cache-control"] || "");
+        certsAte = Date.now() + (m ? +m[1] : 3600) * 1000; ok(CERTS); } catch (e) { falha(e); } });
+    }).on("error", falha);
+  });
+}
+async function verificarToken(token) {
+  const p = String(token || "").split("."); if (p.length !== 3) throw new Error("token inválido");
+  const cab = JSON.parse(Buffer.from(p[0], "base64url").toString()), dados = JSON.parse(Buffer.from(p[1], "base64url").toString());
+  if (cab.alg !== "RS256") throw new Error("algoritmo inválido");
+  const certs = await baixarCerts(); const cert = process.env.TESTE_CERT ? certs.teste : certs[cab.kid];
+  if (!cert) throw new Error("chave desconhecida");
+  const ok = crypto.createVerify("RSA-SHA256").update(p[0] + "." + p[1]).verify(cert, Buffer.from(p[2], "base64url"));
+  const agoraS = Math.floor(Date.now() / 1000);
+  if (!ok) throw new Error("assinatura inválida");
+  if (dados.aud !== FIREBASE_PROJETO || dados.iss !== "https://securetoken.google.com/" + FIREBASE_PROJETO) throw new Error("projeto errado");
+  if (!(dados.exp > agoraS) || dados.iat > agoraS + 300 || !dados.sub) throw new Error("token vencido");
+  return { uid: dados.sub, email: dados.email || "" };
+}
 
 // ---------------------------------------------------------------- PERSONAGEM
 const CAMPOS = ["nome", "mapa", "x", "y", "dir", "lvl", "xp", "hp", "fome", "sede", "rad", "sk", "inv", "eq", "quest", "mortes"];
@@ -463,19 +495,33 @@ function salvarJogador(j) {
 }
 setInterval(() => { for (const j of JOG.values()) salvarJogador(j); }, 30000);
 
-function login(ws, msg, ip) {
+function nomeEmUso(n, exceto) { const k = norm(n); return Object.entries(CONTAS).some(([ch, c]) => ch !== exceto && c.save && norm(c.save.nome || "") === k); }
+function login(ws, msg, ip, site) {
   const nome = String(msg.nome || "").trim().replace(/\s+/g, " ");
   const senha = String(msg.senha || "");
-  if (!/^[A-Za-zÀ-ÿ0-9 ]{3,14}$/.test(nome)) return { erro: "Nome deve ter de 3 a 14 letras ou números." };
-  if (senha.length < 4 || senha.length > 64) return { erro: "A senha precisa ter pelo menos 4 caracteres." };
   if (JOG.size >= MAX_JOGADORES) return { erro: "Servidor lotado. Tente daqui a pouco." };
-  const chave = norm(nome);
-  let c = CONTAS[chave], novo = false;
-  if (c) { if (hashSenha(senha, c.salt) !== c.hash) return { erro: "Senha incorreta para este nome." }; }
-  else {
-    const salt = crypto.randomBytes(12).toString("hex");
-    const save = msg.backup && msg.backup.nome && norm(msg.backup.nome) === chave ? sanear(msg.backup, nome) : novoPersonagem(nome);
-    c = CONTAS[chave] = { salt, hash: hashSenha(senha, salt), save, criado: Date.now() }; contasSujas = true; novo = true;
+  let chave, c, novo = false;
+  const backupOk = n => msg.backup && msg.backup.nome && norm(msg.backup.nome) === norm(n);
+  if (site) {                                       // conta do site preppersbr.com
+    chave = "fb:" + site.uid; c = CONTAS[chave];
+    if (!c) {
+      if (!/^[A-Za-zÀ-ÿ0-9 ]{3,14}$/.test(nome)) return { erro: "Escolha um nome de personagem com 3 a 14 letras ou números." };
+      if (nomeEmUso(nome, chave)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
+      c = CONTAS[chave] = { email: site.email, save: backupOk(nome) ? sanear(msg.backup, nome) : novoPersonagem(nome), criado: Date.now() };
+      contasSujas = true; novo = true;
+    }
+  } else {                                          // nome + senha (só se EXIGIR_CONTA=0)
+    if (EXIGIR_CONTA) return { erro: "Entre com sua conta do site preppersbr.com para jogar online." };
+    if (!/^[A-Za-zÀ-ÿ0-9 ]{3,14}$/.test(nome)) return { erro: "Nome deve ter de 3 a 14 letras ou números." };
+    if (senha.length < 4 || senha.length > 64) return { erro: "A senha precisa ter pelo menos 4 caracteres." };
+    chave = norm(nome); c = CONTAS[chave];
+    if (c) { if (!c.salt || hashSenha(senha, c.salt) !== c.hash) return { erro: "Senha incorreta para este nome." }; }
+    else {
+      if (nomeEmUso(nome, chave)) return { erro: "Esse nome de personagem já existe. Escolha outro." };
+      const salt = crypto.randomBytes(12).toString("hex");
+      c = CONTAS[chave] = { salt, hash: hashSenha(senha, salt), save: backupOk(nome) ? sanear(msg.backup, nome) : novoPersonagem(nome), criado: Date.now() };
+      contasSujas = true; novo = true;
+    }
   }
   for (const o of JOG.values()) if (o.conta === chave) { enviar(o, { t: "erro", msg: "Sua conta entrou em outro lugar." }); o.ws.close(); desconectar(o); }
   const s = Object.assign(novoPersonagem(c.save.nome || nome), c.save);
@@ -528,18 +574,24 @@ const wss = new WebSocketServer({ server: servidor, maxPayload: 16 * 1024,
   verifyClient: info => !ORIGENS.length || ORIGENS.includes(info.origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(info.origin || "") || info.origin === "null" });
 wss.on("connection", (ws, req) => {
   const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
-  let j = null, cont = 0, janela = Date.now();
+  let j = null, cont = 0, janela = Date.now(), entrando = false;
   ws.isAlive = true; ws.on("pong", () => { ws.isAlive = true; });
   ws.on("message", raw => {
     const n = Date.now(); if (n - janela > 1000) { janela = n; cont = 0; } if (++cont > 60) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; } if (!m || typeof m.t !== "string") return;
     if (!j) {
-      if (m.t !== "login") return;
-      const r = login(ws, m, ip);
-      if (r.erro) { ws.send(JSON.stringify({ t: "erro", msg: r.erro })); return; }
-      j = r.j;
-      ws.send(JSON.stringify({ t: "ok", id: j.id, novo: r.novo, mapas: MAPAS_ENVIO, tj: Math.round(tJogo),
-        eu: Object.fromEntries(CAMPOS.map(k => [k, j[k]])), online: [...JOG.values()].map(o => o.nome) }));
+      if (m.t !== "login" || entrando) return;
+      entrando = true;
+      (m.token ? verificarToken(m.token) : Promise.resolve(null)).then(site => {
+        if (ws.readyState !== 1) return;
+        const r = login(ws, m, ip, site);
+        entrando = false;
+        if (r.erro) { ws.send(JSON.stringify({ t: "erro", msg: r.erro })); return; }
+        j = r.j;
+        ws.send(JSON.stringify({ t: "ok", id: j.id, novo: r.novo, mapas: MAPAS_ENVIO, tj: Math.round(tJogo),
+          eu: Object.fromEntries(CAMPOS.map(k => [k, j[k]])), online: [...JOG.values()].map(o => o.nome) }));
+      }).catch(e => { entrando = false; console.log("token recusado:", e.message);
+        if (ws.readyState === 1) ws.send(JSON.stringify({ t: "erro", msg: "Não consegui confirmar sua conta do site. Saia e entre de novo em preppersbr.com/membros.html." })); });
       return;
     }
     if (j.vivo) tratar(j, m);

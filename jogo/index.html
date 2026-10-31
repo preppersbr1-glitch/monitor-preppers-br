@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="color-scheme" content="dark">
 <title>Zona Morta — RPG de Sobrevivência</title>
+<script src="../nivel.js" data-nivel="sentinela"></script>
 <meta name="description" content="Zona Morta: RPG de sobrevivência pós-apocalíptica estilo Tibia, direto no navegador. Um jogo do canal Preppers BR.">
 <meta name="theme-color" content="#0c0a06">
 <link rel="manifest" href="manifest.webmanifest">
@@ -153,6 +154,7 @@ body.mobile .colL,body.mobile .colR{width:auto}
 #cobre .tit2 span{color:#999;font-weight:normal;letter-spacing:0;font-size:12px}
 #cobre .online input{margin:3px 0 6px}
 #onMsg{margin-top:6px;font-size:12px;min-height:14px}
+#cobre .peqC{font-size:12px;color:#9ab;margin:2px 0 6px}
 </style>
 </head>
 <body>
@@ -1634,13 +1636,18 @@ function largarIdx(idx){
 function desconectarOnline(){ ONLINE=false; if(WS){ WS.onclose=null; try{ WS.close(); }catch(e){} } WS=null; }
 const dec64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 function msgOnline(txt){ const el=$("#onMsg"); if(el) el.textContent=txt; }
-function conectar(nome,senha){
-  desconectarOnline(); credOnline={nome,senha};
+// conta do site (nivel.js / Firebase): devolve um ID token novo, ou null fora do site
+function tokenSite(){
+  if(!window.PBR) return Promise.resolve(null);
+  return window.PBR.ready.then(r=>{ if(!r||!r.user) throw new Error("sem conta"); return r.user.getIdToken(); });
+}
+function conectar(nome,senha,token){
+  desconectarOnline(); credOnline={nome,senha,site:!!token};
   msgOnline("Conectando... (o servidor gratuito pode levar até 1 minuto para acordar)");
   let ws; try{ ws=new WebSocket(servidorURL()); }catch(e){ msgOnline("Não foi possível abrir a conexão neste navegador."); return; }
   WS=ws; let ok=false;
   ws.onopen=()=>{ let backup=null; try{ backup=JSON.parse(localStorage.getItem("zm_backup_"+norm(nome))||"null"); }catch(e){}
-    ws.send(JSON.stringify({t:"login",nome,senha,backup})); };
+    ws.send(JSON.stringify({t:"login",nome,senha,token,backup})); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(_){ return; }
     if(m.t==="ok"){ ok=true; iniciarOnline(m,nome); }
     else if(m.t==="erro"){ if(ONLINE) log(m.msg,"c-verm"); else msgOnline(m.msg); }
@@ -1649,7 +1656,7 @@ function conectar(nome,senha){
     if(ONLINE){ ONLINE=false; rodando=false; salvar();
       mostrarCobre(`<h1 style="font-size:26px;color:#ff5a4a">DESCONECTADO</h1><p style="text-align:center">A conexão com o servidor caiu.</p>
         <p style="text-align:center"><button id="bRecon">Reconectar</button> <button id="bMenuIni">Menu inicial</button></p>`);
-      $("#bRecon").onclick=()=>{ telaInicial(); conectar(credOnline.nome,credOnline.senha); };
+      $("#bRecon").onclick=()=>{ telaInicial(); if(credOnline.site) tokenSite().then(t=>conectar(credOnline.nome,null,t)).catch(()=>msgOnline("Entre de novo na sua conta do site.")); else conectar(credOnline.nome,credOnline.senha); };
       $("#bMenuIni").onclick=telaInicial;
     } else if(!ok) msgOnline("Não foi possível conectar ao servidor. Ele pode estar acordando ou fora do ar — tente de novo em instantes.");
   };
@@ -1754,15 +1761,19 @@ function telaInicial(){
     <p>No <b style="color:#e8c060">Abrigo Esperança</b>, um punhado de sobreviventes resiste atrás de muros de concreto. Lá fora, ratos mutantes, cães raivosos, saqueadores — e coisas piores.</p>
     <div class="online"><div class="tit2">● JOGAR ONLINE <span>com outros sobreviventes</span></div>
       <input id="onNome" maxlength="14" placeholder="Nome do personagem" value="${(()=>{try{return localStorage.getItem("zm_ultimo_nome")||""}catch(e){return ""}})()}">
-      <input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">
+      ${window.PBR?`<div class="peqC" id="onConta">Você entra com a sua conta do site Preppers BR.</div>`:`<input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">`}
       <button id="bOnline">Entrar no servidor</button><div id="onMsg" class="c-ouro"></div></div>
     <div class="tit2" style="margin-top:14px">○ JOGAR OFFLINE <span>sozinho, sem internet</span></div>
     ${s?`<p><button id="bCont">▶ Continuar com ${s.P.nome} (nível ${s.P.lvl})</button></p>`:""}
     <p style="margin-bottom:0">Nome do seu sobrevivente:</p><input id="nomeIn" maxlength="14" value="${s?"":"Julio"}" placeholder="Seu nome">
     <button id="bComecar">${s?"Criar novo personagem":"Começar"}</button>`);
   if(s) $("#bCont").onclick=()=>iniciar(s);
-  const entrar=()=>{ const n=$("#onNome").value.trim(), se=$("#onSenha").value; if(!n||!se) return msgOnline("Preencha nome e senha."); conectar(n,se); };
-  $("#bOnline").onclick=entrar; $("#onSenha").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
+  const entrar=()=>{ const n=$("#onNome").value.trim();
+    if(window.PBR){ msgOnline("Confirmando sua conta do site..."); tokenSite().then(t=>conectar(n,null,t)).catch(()=>msgOnline("Entre na sua conta do site (página Membros) para jogar online.")); return; }
+    const se=$("#onSenha").value; if(!n||!se) return msgOnline("Preencha nome e senha."); conectar(n,se); };
+  $("#bOnline").onclick=entrar; ($("#onSenha")||$("#onNome")).addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
+  if(window.PBR) window.PBR.ready.then(r=>{ if(!r||!r.user) return; const el=$("#onConta"); if(el) el.textContent=`Conta do site: ${r.user.email||r.user.displayName||"conectada"}. No primeiro acesso, o nome abaixo vira o nome do seu personagem.`;
+    const nm=$("#onNome"); if(nm && !nm.value) nm.value=(r.user.displayName||"").replace(/[^A-Za-zÀ-ÿ0-9 ]/g,"").slice(0,14); });
   $("#bComecar").onclick=()=>{ const n=($("#nomeIn").value.trim()||"Sobrevivente").slice(0,14); iniciar(null,n); };
 }
 function iniciar(save,nome){

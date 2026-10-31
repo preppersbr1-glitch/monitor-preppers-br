@@ -7,6 +7,8 @@
 (function () {
   var script = document.currentScript;
   var NEED = (script && script.dataset.nivel) || 'sentinela';
+  // pasta onde está o nivel.js (raiz do site): links funcionam também em páginas de subpastas, como /jogo/
+  var BASE = (script && script.src) ? script.src.replace(/nivel\.js(\?.*)?$/, '') : '';
   var RANK = { visitante: 0, sentinela: 1, operador: 2, comando: 3, admin: 9 };
   var NAMES = { sentinela: 'SENTINELA (conta grátis)', operador: 'OPERADOR', comando: 'COMANDO', admin: 'ADMIN' };
   var ADMIN_EMAIL = 'preppersbr1@gmail.com';
@@ -36,7 +38,11 @@
   var resolveReady;
   window.PBR = { need: NEED, ready: new Promise(function (r) { resolveReady = r; }) };
 
-  function back() { return encodeURIComponent(location.pathname.split('/').pop() + location.search + location.hash); }
+  function back() {
+    var p = location.pathname, b = BASE ? new URL(BASE, location.href).pathname : '/';
+    var rel = p.indexOf(b) === 0 ? p.slice(b.length) : p.split('/').pop();
+    return encodeURIComponent(rel + location.search + location.hash);
+  }
   function gate(icon, title, text, buttons, note) {
     function show() {
       var g = document.createElement('div');
@@ -89,7 +95,7 @@
       if (!user) {
         clearTimeout(timer);
         gate('🔒', 'ÁREA DE MEMBROS', 'Esta página é exclusiva para membros. Crie sua conta <b>grátis</b> ou entre para continuar.',
-          '<a class="pbr-btn p" href="membros.html?entrar=1&volta=' + back() + '">ENTRAR / CRIAR CONTA</a><a class="pbr-btn g" href="index.html">VOLTAR AO INÍCIO</a>',
+          '<a class="pbr-btn p" href="' + BASE + 'membros.html?entrar=1&volta=' + back() + '">ENTRAR / CRIAR CONTA</a><a class="pbr-btn g" href="' + BASE + 'index.html">VOLTAR AO INÍCIO</a>',
           'NÍVEL NECESSÁRIO: ' + NAMES[NEED]);
         resolveReady({ user: null, level: 'visitante', ok: false });
         return;
@@ -112,7 +118,7 @@
         window.PBR.user = user; window.PBR.level = level;
         if (ok) { open(); loadContent(); }
         else gate('⭐', 'CONTEÚDO ' + NAMES[NEED], 'Seu plano atual é <b>' + (NAMES[level] || level) + '</b>. Este conteúdo faz parte do plano <b>' + NAMES[NEED] + '</b> ou superior.',
-          '<a class="pbr-btn p" href="membros.html">VER PLANOS</a><a class="pbr-btn g" href="cursos.html">VOLTAR</a>');
+          '<a class="pbr-btn p" href="' + BASE + 'membros.html">VER PLANOS</a><a class="pbr-btn g" href="' + BASE + 'cursos.html">VOLTAR</a>');
         resolveReady({ user: user, level: level, ok: ok });
       });
     });
