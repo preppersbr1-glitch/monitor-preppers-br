@@ -1573,97 +1573,127 @@ function peca(par,geo,w,h,d,x,y,z,c,mats,glow){
   const me=new THREE.Mesh(GEO[geo],mt); me.scale.set(w,h,d); me.position.set(x,y,z); me.castShadow=true; par.add(me); return me;
 }
 function pivo(par,x,y,z){ const g=new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; }
+// formas arredondadas (cápsulas e esferas), com cache de geometria
+const GEO_CACHE=new Map();
+function geoCap(r,len){ const k=r.toFixed(3)+"|"+len.toFixed(3); let g=GEO_CACHE.get(k); if(!g){ g=new THREE.CapsuleGeometry(r,len,6,14); GEO_CACHE.set(k,g); } return g; }
+const GEO_MEIA=new THREE.SphereGeometry(1,18,10,0,Math.PI*2,0,Math.PI/2);
+const GEO_BOLA=new THREE.SphereGeometry(1,18,14);
+const GEO_DISCO=new THREE.CylinderGeometry(1,1,1,20);
+function malha(par,geo,c,mats,glow){ const mt=glow?new THREE.MeshBasicMaterial({color:c,toneMapped:false}):new THREE.MeshLambertMaterial({color:c}); if(!glow) mats.push(mt);
+  const me=new THREE.Mesh(geo,mt); me.castShadow=true; par.add(me); return me; }
+function cap(par,r,len,x,y,z,c,mats,sx=1,sz=1){ const me=malha(par,geoCap(r,len),c,mats); me.position.set(x,y,z); me.scale.set(sx,1,sz); return me; }
+function bola(par,rx,ry,rz,x,y,z,c,mats,glow){ const me=malha(par,GEO_BOLA,c,mats,glow); me.scale.set(rx,ry,rz); me.position.set(x,y,z); return me; }
+function meia(par,rx,ry,rz,x,y,z,c,mats){ const me=malha(par,GEO_MEIA,c,mats); me.scale.set(rx,ry,rz); me.position.set(x,y,z); return me; }
+function disco(par,r,h,x,y,z,c,mats){ const me=malha(par,GEO_DISCO,c,mats); me.scale.set(r,h,r); me.position.set(x,y,z); return me; }
 const COR_ITEM_CAB={bandana:"#a82222",boina:"#3a2a1a",bone:"#c33",caveira:"#d8d0c0"};
 function humanoide(L){
   // L = aparência no formato LOOKS do jogo original
   const g=new THREE.Group(), mats=[], P2={};
-  const pele=L.pele||"#d8a87a", roupa=L.semCamisa?pele:(L.corpo&&ITENS[L.corpo]?ITENS[L.corpo].cor:(L.camisa||"#8a8a7a")), calca=L.calca||"#5a5a4a", bota=L.bota||"#2a2622";
-  P2.lL=pivo(g,-.11,.72,0); peca(P2.lL,"box",.15,.62,.17,0,-.31,0,calca,mats); peca(P2.lL,"box",.16,.1,.24,0,-.66,.03,bota,mats);
-  P2.lR=pivo(g,.11,.72,0); peca(P2.lR,"box",.15,.62,.17,0,-.31,0,calca,mats); peca(P2.lR,"box",.16,.1,.24,0,-.66,.03,bota,mats);
-  peca(g,"box",.44,.52,.25,0,.98,0,roupa,mats); peca(g,"box",.42,.06,.26,0,.73,0,"#2a2018",mats);
-  if(L.corpo==="avental") peca(g,"box",.36,.5,.02,0,.9,.13,"#d8d0c0",mats);
-  if(L.mochila) peca(g,"box",.32,.36,.14,0,1.0,-.19,"#5a4a2a",mats);
-  P2.aL=pivo(g,-.29,1.19,0); peca(P2.aL,"box",.13,.5,.15,0,-.24,0,roupa,mats); peca(P2.aL,"box",.11,.11,.12,0,-.53,0,pele,mats);
-  P2.aR=pivo(g,.29,1.19,0); peca(P2.aR,"box",.13,.5,.15,0,-.24,0,roupa,mats); peca(P2.aR,"box",.11,.11,.12,0,-.53,0,pele,mats);
-  P2.cab=pivo(g,0,1.27,0);
-  peca(P2.cab,"box",.31,.31,.3,0,.16,0,pele,mats);
-  const olho=L.olhoVerm?"#ff2020":"#111";
-  peca(P2.cab,"box",.06,.05,.02,-.07,.19,.152,olho,mats,!!L.olhoVerm); peca(P2.cab,"box",.06,.05,.02,.07,.19,.152,olho,mats,!!L.olhoVerm);
-  if(L.barba) peca(P2.cab,"box",.31,.1,.04,0,.05,.15,L.cabelo||"#333",mats);
-  if(L.bigode) peca(P2.cab,"box",.16,.04,.03,0,.1,.155,L.cabelo||"#333",mats);
-  const cab=L.cabeca;
-  if(L.estilo!=="careca" && L.cabelo && !(cab && ITENS[cab] && ITENS[cab].slot==="cabeca" && cab!=="bone")){
-    peca(P2.cab,"box",.33,.09,.32,0,.33,-.01,L.cabelo,mats); peca(P2.cab,"box",.33,L.estilo==="longo"?.42:.2,.08,0,L.estilo==="longo"?.1:.2,-.13,L.cabelo,mats);
-    if(L.estilo==="coque") peca(P2.cab,"sph",.08,.08,.08,0,.4,-.1,L.cabelo,mats); }
-  if(cab){ if(cab==="mascara") peca(P2.cab,"box",.22,.16,.08,0,.09,.16,"#222",mats);
-    else if(cab==="oculos") peca(P2.cab,"box",.27,.07,.03,0,.19,.16,"#0a0a0a",mats);
-    else if(cab==="bandana") peca(P2.cab,"box",.335,.07,.32,0,.27,0,"#a82222",mats);
-    else if(cab==="boina") peca(P2.cab,"box",.36,.07,.36,.03,.34,0,"#3a2a1a",mats);
-    else if(cab==="caveira") peca(P2.cab,"box",.34,.34,.33,0,.17,.0,"#d8d0c0",mats);
-    else if(cab==="bone"){ peca(P2.cab,"box",.34,.1,.34,0,.34,0,"#c33",mats); peca(P2.cab,"box",.3,.03,.18,0,.3,.22,"#c33",mats); }
-    else if(ITENS[cab]) peca(P2.cab,"box",.36,.16,.36,0,.36,0,ITENS[cab].cor||"#555",mats); }
-  if(L.espinhos) for(const s of [-1,1]) for(let k=0;k<3;k++) peca(g,"cone",.05,.18,.05,s*(.18+k*.05),1.3,-.02,"#bbb",mats);
-  if(L.arma){ const a=ITENS[L.arma]; const longa=a?(a.alc||a.maos2):0;
-    peca(P2.aR,"box",.05,.05,longa?.75:.45,0,-.55,longa?.3:.2,!a?"#7a7a7a":a.alc?"#2a2a2a":(a.atk>20?"#9aa0a6":"#7a5a3a"),mats); }
-  if(L.escudo) peca(P2.aL,"box",.06,.42,.36,-.08,-.38,.06,L.escudo==="tampa"?"#8a8a8a":"#4a5a6a",mats);
-  if(L.luz){ peca(P2.aL,"cyl",.04,.25,.04,0,-.6,.12,"#5a3a1a",mats); peca(P2.aL,"sph",.07,.09,.07,0,-.45,.12,L.luz==="tocha"?"#ff9a30":"#fff8c0",mats,true); }
+  const pele=L.pele||"#d8a87a", roupa=L.semCamisa?pele:(L.corpo&&ITENS[L.corpo]&&ITENS[L.corpo].cor?ITENS[L.corpo].cor:(L.camisa||"#8a8a7a")),
+    calca=L.calca||"#5a5a4a", bota=L.bota||"#2a2622", cab=L.cabeca;
+  // pernas
+  for(const [k,s] of [["lL",-1],["lR",1]]){ const p=P2[k]=pivo(g,s*.1,.74,0);
+    cap(p,.078,.4,0,-.3,0,calca,mats); bola(p,.085,.065,.13,0,-.67,.035,bota,mats); }
+  // tronco, quadril e cinto
+  bola(g,.2,.14,.16,0,.8,0,calca,mats);
+  cap(g,.19,.26,0,1.02,0,roupa,mats,1.08,.78);
+  disco(g,.2,.05,0,.8,0,"#2a2018",mats).scale.z=.17;
+  if(L.corpo==="avental") bola(g,.17,.24,.05,0,.95,.13,"#d8d0c0",mats);
+  if(L.corpo==="colete_bal"||L.corpo==="colete_sucata"||L.corpo==="armadura_tat") cap(g,.2,.18,0,1.04,0,ITENS[L.corpo].cor,mats,1.12,.86);
+  if(L.mochila){ cap(g,.13,.14,0,1.03,-.2,"#5a4a2a",mats,1.05,.6); }
+  // braços
+  for(const [k,s] of [["aL",-1],["aR",1]]){ const p=P2[k]=pivo(g,s*.27,1.2,0);
+    bola(p,.085,.085,.085,0,0,0,roupa,mats); cap(p,.062,.32,0,-.24,0,roupa,mats); bola(p,.068,.068,.068,0,-.5,0,pele,mats); }
+  // cabeça
+  P2.cab=pivo(g,0,1.28,0);
+  bola(P2.cab,.05,.06,.05,0,.04,0,pele,mats);
+  bola(P2.cab,.19,.2,.185,0,.21,0,pele,mats);
+  bola(P2.cab,.03,.03,.03,0,.19,.185,pele,mats);
+  const olho=L.olhoVerm?"#ff2020":"#141414";
+  for(const s of [-1,1]){ bola(P2.cab,.03,.036,.02,s*.07,.25,.165,olho,mats,!!L.olhoVerm); bola(P2.cab,.035,.035,.03,s*.185,.21,0,pele,mats); }
+  if(L.barba) bola(P2.cab,.16,.1,.1,0,.1,.09,L.cabelo||"#333",mats);
+  if(L.bigode) cap(P2.cab,.018,.1,0,.15,.18,L.cabelo||"#333",mats).rotation.z=Math.PI/2;
+  const capacete = cab && ITENS[cab] && ITENS[cab].slot==="cabeca" && cab!=="bone" && cab!=="mascara";
+  if(L.estilo!=="careca" && L.cabelo && !capacete && cab!=="caveira"){
+    meia(P2.cab,.2,.17,.2,0,.25,-.01,L.cabelo,mats);
+    if(L.estilo==="longo") cap(P2.cab,.16,.18,0,.13,-.08,L.cabelo,mats,1.15,.6);
+    if(L.estilo==="coque") bola(P2.cab,.08,.08,.08,0,.38,-.12,L.cabelo,mats); }
+  if(cab){
+    if(cab==="mascara"){ bola(P2.cab,.14,.11,.08,0,.15,.14,"#2a2a2a",mats); for(const s of [-1,1]) disco(P2.cab,.045,.07,s*.1,.1,.2,"#555",mats).rotation.x=Math.PI/2;
+      for(const s of [-1,1]) bola(P2.cab,.045,.04,.02,s*.07,.25,.17,"#7ac8ff",mats); }
+    else if(cab==="oculos"){ for(const s of [-1,1]) bola(P2.cab,.045,.035,.02,s*.07,.25,.175,"#0a0a0a",mats); }
+    else if(cab==="bandana"){ const t=malha(P2.cab,new THREE.TorusGeometry(.19,.03,6,20),"#a82222",mats); t.rotation.x=Math.PI/2; t.position.y=.3; }
+    else if(cab==="boina"){ const b=bola(P2.cab,.21,.06,.21,.04,.37,0,"#3a2a1a",mats); b.rotation.z=-.2; }
+    else if(cab==="caveira"){ bola(P2.cab,.205,.215,.2,0,.22,0,"#d8d0c0",mats); for(const s of [-1,1]) bola(P2.cab,.045,.05,.02,s*.07,.24,.185,"#111",mats); }
+    else if(cab==="bone"){ meia(P2.cab,.205,.14,.205,0,.27,0,"#c33",mats); bola(P2.cab,.14,.02,.1,0,.27,.17,"#c33",mats); }
+    else if(ITENS[cab]){ const c=ITENS[cab].cor||"#555"; meia(P2.cab,.225,.2,.225,0,.24,0,c,mats);
+      if(cab==="capacete_obra") disco(P2.cab,.25,.02,0,.25,0,c,mats); if(cab==="capacete_mil") disco(P2.cab,.235,.03,0,.24,0,c,mats); }
+  }
+  if(L.espinhos) for(const s of [-1,1]) for(let k=0;k<3;k++){ const e=malha(g,GEO.cone,"#bbb",mats); e.scale.set(.04,.16,.04); e.position.set(s*(.17+k*.05),1.28,-.02); }
+  if(L.arma){ const a=ITENS[L.arma]; const longa=a?(a.alc||a.maos2):0, cor=!a?"#7a7a7a":a.alc?"#2a2a2a":(a.atk>20?"#9aa0a6":"#7a5a3a");
+    const w=malha(P2.aR,GEO.box,cor,mats); w.scale.set(.05,.05,longa?.75:.45); w.position.set(0,-.53,longa?.3:.2);
+    if(a&&a.alc){ const cabo=malha(P2.aR,GEO.box,"#5a3a1a",mats); cabo.scale.set(.05,.14,.06); cabo.position.set(0,-.6,.02); } }
+  if(L.escudo){ const d=disco(P2.aL,.2,.04,-.09,-.38,.06,L.escudo==="tampa"?"#8a8a8a":"#4a5a6a",mats); d.rotation.z=Math.PI/2; }
+  if(L.luz){ cap(P2.aL,.025,.2,0,-.62,.1,"#5a3a1a",mats); bola(P2.aL,.07,.09,.07,0,-.45,.1,L.luz==="tocha"?"#ff9a30":"#fff8c0",mats,true); }
   g.userData.mats=mats; return {g,P:P2,tipo:"hum",alt:1.75};
 }
 function animal(spr,coroa){
   const g=new THREE.Group(), mats=[], P2={pernas:[]};
-  const perna=(x,z,c,len=.2,w=.05)=>{ const p=pivo(g,x,len,z); peca(p,"box",w,len,w,0,-len/2,0,c,mats); P2.pernas.push(p); };
+  const perna=(x,z,c,len=.2,r=.035)=>{ const p=pivo(g,x,len,z); cap(p,r,Math.max(.01,len-r*2),0,-len/2,0,c,mats); P2.pernas.push(p); };
   let alt=.6;
   if(spr==="rato"){
-    peca(g,"sph",.24,.18,.38,0,.22,0,"#6a5a4a",mats); peca(g,"sph",.14,.13,.16,0,.27,.36,"#7a6a5a",mats);
-    peca(g,"sph",.05,.05,.02,-.08,.4,.34,"#c99",mats); peca(g,"sph",.05,.05,.02,.08,.4,.34,"#c99",mats);
-    peca(g,"sph",.025,.025,.02,-.06,.31,.5,"#ff2020",mats,true); peca(g,"sph",.025,.025,.02,.06,.31,.5,"#ff2020",mats,true);
-    P2.cauda=pivo(g,0,.2,-.34); peca(P2.cauda,"cyl",.025,.5,.025,0,0,-.24,"#c99a8a",mats).rotation.x=Math.PI/2;
-    for(const [x,z] of [[-.14,.18],[.14,.18],[-.14,-.18],[.14,-.18]]) perna(x,z,"#5a4a3a",.12);
-    if(coroa){ peca(g,"cyl",.12,.08,.12,0,.45,.34,"#e8c060",mats,true); for(let k=0;k<5;k++){ const a=k/5*Math.PI*2; peca(g,"cone",.03,.1,.03,Math.cos(a)*.1,.53,.34+Math.sin(a)*.1,"#ffd860",mats,true); } }
+    bola(g,.24,.19,.38,0,.22,0,"#6a5a4a",mats); bola(g,.15,.14,.17,0,.28,.35,"#7a6a5a",mats); bola(g,.05,.04,.06,0,.27,.52,"#c99",mats);
+    for(const s of [-1,1]){ bola(g,.06,.06,.02,s*.09,.41,.33,"#c99",mats); bola(g,.025,.025,.02,s*.06,.33,.49,"#ff2020",mats,true); }
+    P2.cauda=pivo(g,0,.2,-.34); cap(P2.cauda,.022,.46,0,0,-.25,"#c99a8a",mats).rotation.x=Math.PI/2;
+    for(const [x,z] of [[-.14,.18],[.14,.18],[-.14,-.18],[.14,-.18]]) perna(x,z,"#5a4a3a",.13,.03);
+    if(coroa){ disco(g,.12,.08,0,.47,.33,"#e8c060",mats); for(let k=0;k<5;k++){ const a=k/5*Math.PI*2, c=malha(g,GEO.cone,"#ffd860",mats,true); c.scale.set(.03,.1,.03); c.position.set(Math.cos(a)*.1,.55,.33+Math.sin(a)*.1); } }
     alt=.55;
   } else if(spr==="barata"){
-    peca(g,"sph",.26,.12,.4,0,.17,0,"#4a2a12",mats); peca(g,"sph",.12,.09,.1,0,.17,.38,"#3a1e0a",mats);
-    for(const z of [.2,0,-.2]) for(const s of [-1,1]){ const p=pivo(g,s*.2,.17,z); peca(p,"box",.3,.03,.03,s*.15,-.06,0,"#2a1508",mats).rotation.z=s*.5; P2.pernas.push(p); }
-    for(const s of [-1,1]) peca(g,"box",.02,.02,.4,s*.06,.25,.62,"#3a1e0a",mats).rotation.y=s*.3;
+    bola(g,.26,.12,.4,0,.17,0,"#4a2a12",mats); bola(g,.13,.09,.11,0,.17,.38,"#3a1e0a",mats);
+    for(const z of [.2,0,-.2]) for(const s of [-1,1]){ const p=pivo(g,s*.2,.17,z); const c=cap(p,.018,.26,s*.15,-.06,0,"#2a1508",mats); c.rotation.z=Math.PI/2+s*.5; P2.pernas.push(p); }
+    for(const s of [-1,1]){ const c=cap(g,.01,.38,s*.06,.25,.62,"#3a1e0a",mats); c.rotation.x=Math.PI/2; c.rotation.y=s*.3; }
     alt=.4;
   } else if(spr==="cao"){
-    peca(g,"box",.28,.28,.66,0,.5,0,"#6a4a2a",mats); P2.cab=pivo(g,0,.66,.36);
-    peca(P2.cab,"box",.25,.24,.28,0,.04,.08,"#6a4a2a",mats); peca(P2.cab,"box",.14,.12,.16,0,-.02,.28,"#4a321a",mats);
-    peca(P2.cab,"box",.06,.1,.04,-.09,.2,.02,"#4a321a",mats); peca(P2.cab,"box",.06,.1,.04,.09,.2,.02,"#4a321a",mats);
-    peca(P2.cab,"box",.04,.04,.02,-.07,.09,.225,"#ff3020",mats,true); peca(P2.cab,"box",.04,.04,.02,.07,.09,.225,"#ff3020",mats,true);
-    P2.cauda=pivo(g,0,.58,-.33); peca(P2.cauda,"box",.05,.05,.3,0,.08,-.13,"#5a3a1a",mats).rotation.x=-.6;
-    for(const [x,z] of [[-.1,.24],[.1,.24],[-.1,-.24],[.1,-.24]]) perna(x,z,"#5a3a1a",.38,.08);
+    const corpo=cap(g,.16,.42,0,.52,0,"#6a4a2a",mats); corpo.rotation.x=Math.PI/2;
+    P2.cab=pivo(g,0,.68,.36);
+    bola(P2.cab,.15,.14,.15,0,.04,.06,"#6a4a2a",mats); bola(P2.cab,.08,.07,.11,0,-.01,.22,"#4a321a",mats); bola(P2.cab,.03,.025,.02,0,.02,.33,"#111",mats);
+    for(const s of [-1,1]){ const o=malha(P2.cab,GEO.cone,"#4a321a",mats); o.scale.set(.05,.12,.04); o.position.set(s*.09,.2,.02); o.rotation.z=-s*.25;
+      bola(P2.cab,.025,.025,.015,s*.06,.09,.19,"#ff3020",mats,true); }
+    P2.cauda=pivo(g,0,.6,-.33); const c=cap(P2.cauda,.035,.24,0,.08,-.12,"#5a3a1a",mats); c.rotation.x=-.9;
+    for(const [x,z] of [[-.09,.22],[.09,.22],[-.09,-.22],[.09,-.22]]) perna(x,z,"#5a3a1a",.4,.045);
     alt=.9;
   } else if(spr==="escorp"){
-    peca(g,"sph",.3,.14,.38,0,.2,0,"#7a8a30",mats); peca(g,"sph",.2,.12,.18,0,.2,.36,"#6a7a28",mats);
-    for(const s of [-1,1]){ peca(g,"box",.06,.06,.3,s*.22,.2,.5,"#6a7a28",mats).rotation.y=-s*.4; peca(g,"box",.14,.08,.16,s*.32,.2,.66,"#8a9a38",mats); }
+    bola(g,.3,.14,.38,0,.2,0,"#7a8a30",mats); bola(g,.2,.12,.18,0,.2,.36,"#6a7a28",mats);
+    for(const s of [-1,1]){ const b=cap(g,.04,.24,s*.22,.2,.5,"#6a7a28",mats); b.rotation.x=Math.PI/2; b.rotation.y=-s*.4; bola(g,.09,.06,.11,s*.32,.2,.68,"#8a9a38",mats); }
     P2.cauda=pivo(g,0,.25,-.3); let py=0,pz=0;
-    for(let k=0;k<4;k++){ peca(P2.cauda,"sph",.11-k*.01,.11-k*.01,.11-k*.01,0,py,pz,"#7a8a30",mats); py+=.15; pz-=.1-k*.05; }
-    peca(P2.cauda,"cone",.05,.16,.05,0,py+.02,pz+.12,"#7aff3a",mats,true).rotation.x=2.2;
-    for(const z of [.15,-.05,-.22]) for(const s of [-1,1]){ const p=pivo(g,s*.25,.2,z); peca(p,"box",.28,.03,.03,s*.13,-.07,0,"#5a6a20",mats).rotation.z=s*.55; P2.pernas.push(p); }
+    for(let k=0;k<4;k++){ bola(P2.cauda,.11-k*.01,.11-k*.01,.11-k*.01,0,py,pz,"#7a8a30",mats); py+=.15; pz-=.1-k*.05; }
+    const fer=malha(P2.cauda,GEO.cone,"#7aff3a",mats,true); fer.scale.set(.05,.16,.05); fer.position.set(0,py+.02,pz+.12); fer.rotation.x=2.2;
+    for(const z of [.15,-.05,-.22]) for(const s of [-1,1]){ const p=pivo(g,s*.25,.2,z); const c=cap(p,.02,.24,s*.13,-.07,0,"#5a6a20",mats); c.rotation.z=Math.PI/2+s*.55; P2.pernas.push(p); }
     alt=.8;
   } else if(spr==="morcego"){
     P2.corpo=pivo(g,0,1.1,0);
-    peca(P2.corpo,"sph",.16,.18,.16,0,0,0,"#3a2a3a",mats); peca(P2.corpo,"sph",.11,.1,.1,0,.14,.08,"#2a1a2a",mats);
-    peca(P2.corpo,"sph",.025,.025,.02,-.04,.16,.17,"#ff4040",mats,true); peca(P2.corpo,"sph",.025,.025,.02,.04,.16,.17,"#ff4040",mats,true);
-    P2.asaE=pivo(P2.corpo,-.12,0,0); peca(P2.asaE,"box",.55,.02,.3,-.27,0,0,"#4a2a3a",mats);
-    P2.asaD=pivo(P2.corpo,.12,0,0); peca(P2.asaD,"box",.55,.02,.3,.27,0,0,"#4a2a3a",mats);
+    bola(P2.corpo,.16,.18,.16,0,0,0,"#3a2a3a",mats); bola(P2.corpo,.11,.1,.1,0,.14,.08,"#2a1a2a",mats);
+    for(const s of [-1,1]){ bola(P2.corpo,.025,.025,.02,s*.04,.16,.17,"#ff4040",mats,true); const o=malha(P2.corpo,GEO.cone,"#2a1a2a",mats); o.scale.set(.04,.1,.03); o.position.set(s*.06,.25,.06); }
+    P2.asaE=pivo(P2.corpo,-.12,0,0); bola(P2.asaE,.3,.015,.17,-.27,0,0,"#4a2a3a",mats);
+    P2.asaD=pivo(P2.corpo,.12,0,0); bola(P2.asaD,.3,.015,.17,.27,0,0,"#4a2a3a",mats);
     alt=1.5;
   } else if(spr==="aranha"){
-    peca(g,"sph",.24,.2,.24,0,.42,.15,"#2a1a2a",mats); peca(g,"sph",.36,.32,.42,0,.5,-.3,"#3a1a3a",mats); peca(g,"sph",.2,.03,.2,0,.79,-.3,"#a02020",mats);
-    for(let k=0;k<4;k++) peca(g,"sph",.03,.03,.02,-.05-k*.03,.5,.38,"#ff3030",mats,true);
-    for(let k=0;k<4;k++) for(const s of [-1,1]){ const p=pivo(g,s*.18,.45,.25-k*.15); peca(p,"box",.55,.04,.04,s*.25,.05,0,"#1a0a1a",mats).rotation.z=s*-.35; peca(p,"box",.04,.5,.04,s*.5,-.2,0,"#1a0a1a",mats); P2.pernas.push(p); }
+    bola(g,.24,.2,.24,0,.42,.15,"#2a1a2a",mats); bola(g,.36,.32,.42,0,.5,-.3,"#3a1a3a",mats); bola(g,.2,.03,.2,0,.79,-.3,"#a02020",mats);
+    for(let k=0;k<4;k++) bola(g,.03,.03,.02,-.05-k*.03+.06,.5,.38,"#ff3030",mats,true);
+    for(let k=0;k<4;k++) for(const s of [-1,1]){ const p=pivo(g,s*.18,.45,.25-k*.15);
+      const a=cap(p,.025,.45,s*.25,.08,0,"#1a0a1a",mats); a.rotation.z=Math.PI/2-s*.35; cap(p,.022,.42,s*.48,-.18,0,"#1a0a1a",mats); P2.pernas.push(p); }
     alt=1.0;
   } else if(spr==="drone"){
     P2.corpo=pivo(g,0,1.3,0);
-    peca(P2.corpo,"box",.5,.18,.5,0,0,0,"#40464e",mats); peca(P2.corpo,"box",.16,.1,.08,0,-.04,.27,"#111",mats); peca(P2.corpo,"sph",.05,.05,.03,0,-.04,.31,"#5ad1ff",mats,true);
+    bola(P2.corpo,.26,.1,.26,0,0,0,"#40464e",mats); bola(P2.corpo,.1,.07,.06,0,-.04,.24,"#111",mats); bola(P2.corpo,.05,.05,.03,0,-.04,.29,"#5ad1ff",mats,true);
     P2.rot=[];
-    for(const [x,z] of [[-.35,-.35],[.35,-.35],[-.35,.35],[.35,.35]]){ peca(P2.corpo,"box",.25,.04,.04,x/2,0,z/2,"#2a2e33",mats).rotation.y=Math.atan2(x,z)+Math.PI/2;
-      const r=pivo(P2.corpo,x,.06,z); peca(r,"cyl",.2,.01,.2,0,0,0,"#888",mats); P2.rot.push(r); }
+    for(const [x,z] of [[-.35,-.35],[.35,-.35],[-.35,.35],[.35,.35]]){ const b=cap(P2.corpo,.025,.3,x/2,0,z/2,"#2a2e33",mats); b.rotation.z=Math.PI/2; b.rotation.y=Math.atan2(x,z)+Math.PI/2;
+      const r=pivo(P2.corpo,x,.06,z); disco(r,.2,.01,0,0,0,"#888",mats); P2.rot.push(r); }
     alt=1.7;
   }
   g.userData.mats=mats; return {g,P:P2,tipo:spr,alt};
 }
+
 function modeloDe(tipo){
   const d=MONS[tipo]; let mo;
   if(d.spr==="hum"){ const L=Object.assign({},LOOKS[tipo]||{pele:d.c?d.c.pele:"#7f9a6e",camisa:d.c?d.c.roupa:"#4a4a4a",calca:d.c?d.c.calca:"#333",cabelo:d.c?d.c.cabelo:"#222"}); mo=humanoide(L); }
