@@ -1,0 +1,16 @@
+{
+  "name": "Zona Morta — RPG de Sobrevivência",
+  "short_name": "Zona Morta",
+  "description": "RPG de sobrevivência pós-apocalíptica estilo Tibia, do canal Preppers BR.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#0c0a06",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
