@@ -209,8 +209,11 @@ body.mobile .colL,body.mobile .colR{width:auto}
 <div id="menuItem" class="janela esc"></div>
 <div id="cobre" class="esc"><div class="caixa" id="cobreBox"></div></div>
 
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.164.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.1/examples/jsm/"}}</script>
 <script type="module">
-import * as THREE from "https://unpkg.com/three@0.164.1/build/three.module.js";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 // ======================================================================
 //  ZONA MORTA — RPG de sobrevivência pós-apocalíptica estilo Tibia
 // ======================================================================
@@ -1613,7 +1616,8 @@ function bola(par,rx,ry,rz,x,y,z,c,mats,glow){ const me=malha(par,GEO_BOLA,c,mat
 function meia(par,rx,ry,rz,x,y,z,c,mats){ const me=malha(par,GEO_MEIA,c,mats); me.scale.set(rx,ry,rz); me.position.set(x,y,z); return me; }
 function disco(par,r,h,x,y,z,c,mats){ const me=malha(par,GEO_DISCO,c,mats); me.scale.set(r,h,r); me.position.set(x,y,z); return me; }
 const COR_ITEM_CAB={bandana:"#a82222",boina:"#3a2a1a",bone:"#c33",caveira:"#d8d0c0"};
-function humanoide(L){
+function humanoide(L){ return MODELO ? humanoideAnimado(L) : humanoideSimples(L); }
+function humanoideSimples(L){
   // L = aparência no formato LOOKS do jogo original
   const g=new THREE.Group(), mats=[], P2={};
   const pele=L.pele||"#d8a87a", roupa=L.semCamisa?pele:(L.corpo&&ITENS[L.corpo]&&ITENS[L.corpo].cor?ITENS[L.corpo].cor:(L.camisa||"#8a8a7a")),
@@ -1721,14 +1725,132 @@ function animal(spr,coroa){
   g.userData.mats=mats; return {g,P:P2,tipo:spr,alt};
 }
 
+// ---- personagens animados (boneco CC0 do KayKit, de Kay Lousberg, com esqueleto e animações)
+let MODELO=null;
+const ESC_MOD=.8;                       // o boneco tem 2,2 de altura; 0,8 deixa com ~1,75
+new GLTFLoader().load("modelos/sobrevivente.glb", g=>{
+  const clips=new Map(g.animations.map(a=>[a.name,a]));
+  g.scene.updateMatrixWorld(true);
+  let cabeca=null; g.scene.traverse(o=>{ if(o.isMesh && /Head/.test(o.name)) cabeca=o; });
+  const bb=new THREE.Box3().setFromObject(cabeca), centro=bb.getCenter(new THREE.Vector3()), tam=bb.getSize(new THREE.Vector3());
+  MODELO={cena:g.scene, clips, cabC:centro, cabS:tam.clone().multiplyScalar(.5), tex:cabeca.material.map};
+  // troca os bonecos simples já na tela pelos animados
+  for(const [ent,v] of [...VIS]) if(v.mo.tipo==="hum"||v.mo.tipo==="corpo"){ GRUPO_ENT.remove(v.mo.g); VIS.delete(ent); }
+}, undefined, e=>console.warn("Modelo animado indisponível; usando bonecos simples.", e));
+
+// material que pinta regiões do boneco (camisa/pele, calça/bota) pela posição original do vértice
+function matRegiao(corA,corB,eixo,lim,acima){
+  const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.75,metalness:0});
+  const u={uA:{value:new THREE.Color(corA)},uB:{value:new THREE.Color(corB)},uEixo:{value:new THREE.Vector3(...eixo)},uLim:{value:lim},uSin:{value:acima?1:-1}};
+  m.userData.reg=u;
+  m.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,u);
+    sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vBind;").replace("#include <begin_vertex>","#include <begin_vertex>\nvBind=position;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vBind;\nuniform vec3 uA,uB,uEixo;\nuniform float uLim,uSin;")
+      .replace("#include <color_fragment>","#include <color_fragment>\n{ float v=dot(abs(vBind),uEixo); float k=smoothstep(-.015,.015,(v-uLim)*uSin); diffuseColor.rgb*=mix(uA,uB,k); }"); };
+  m.customProgramCacheKey=()=>"zmRegiao";
+  return m;
+}
+function humanoideAnimado(L){
+  const pele=L.pele||"#d8a87a", roupa=L.semCamisa?pele:(L.corpo&&ITENS[L.corpo]&&ITENS[L.corpo].cor?ITENS[L.corpo].cor:(L.camisa||"#8a8a7a")),
+    calca=L.calca||"#5a5a4a", bota=L.bota||"#2a2622", cab=L.cabeca;
+  const raiz=SkeletonUtils.clone(MODELO.cena); raiz.scale.setScalar(ESC_MOD);
+  const g=new THREE.Group(); g.add(raiz); const mats=[];
+  raiz.traverse(o=>{ if(!o.isMesh) return; o.castShadow=true; o.frustumCulled=false; let m;
+    if(/Head/.test(o.name)){ m=new THREE.MeshStandardMaterial({map:MODELO.tex,color:new THREE.Color(pele).multiplyScalar(1.18),roughness:.7}); }
+    else if(/Arm/.test(o.name)) m=matRegiao(roupa,pele,[1,0,0],.74,true);
+    else if(/Body/.test(o.name)) m=matRegiao(roupa,calca,[0,1,0],.6,false);
+    else m=matRegiao(calca,bota,[0,1,0],.13,false);
+    o.material=m; mats.push(m); });
+  raiz.updateMatrixWorld(true);
+  const osso=n=>raiz.getObjectByName(n);
+  // prende um grupo a um osso, alinhado com o corpo na pose original
+  const qRaiz=raiz.getWorldQuaternion(new THREE.Quaternion());
+  const prender=(nome,pontoModelo,escala)=>{ const b=osso(nome); const gr=new THREE.Group(); if(!b) return gr;
+    const pw=raiz.localToWorld(pontoModelo.clone()); b.add(gr); gr.position.copy(b.worldToLocal(pw));
+    gr.quaternion.copy(b.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(qRaiz));
+    const sb=b.getWorldScale(new THREE.Vector3()).x; if(escala.isVector3) gr.scale.copy(escala).multiplyScalar(ESC_MOD/sb); else gr.scale.setScalar(escala*ESC_MOD/sb); return gr; };
+  // cabeça: cabelo, chapéus, máscara (em "raios de cabeça")
+  const C=prender("head",MODELO.cabC,MODELO.cabS.clone().multiplyScalar(1.18));
+  const capacete = cab && ITENS[cab] && ITENS[cab].slot==="cabeca" && cab!=="bone" && cab!=="mascara";
+  if(L.estilo!=="careca" && L.cabelo && !capacete && cab!=="caveira"){
+    meia(C,1.1,.95,1.1,0,.07,-.05,L.cabelo,mats);
+    if(L.estilo==="longo") cap(C,.75,.5,0,-.35,-.42,L.cabelo,mats,1.2,.55);
+    if(L.estilo==="coque") bola(C,.32,.32,.32,0,.75,-.55,L.cabelo,mats);
+    bola(C,1.02,.6,.9,0,-.08,-.22,L.cabelo,mats); }
+  if(L.barba) bola(C,.7,.42,.45,0,-.62,.5,L.cabelo||"#333",mats);
+  if(L.bigode) cap(C,.08,.4,0,-.38,.92,L.cabelo||"#333",mats).rotation.z=Math.PI/2;
+  if(cab){
+    if(cab==="mascara"){ bola(C,.62,.5,.4,0,-.38,.78,"#2a2a2a",mats); for(const s of [-1,1]) disco(C,.2,.3,s*.42,-.55,.95,"#555",mats).rotation.x=Math.PI/2;
+      for(const s of [-1,1]) bola(C,.2,.17,.08,s*.3,-.05,.95,"#7ac8ff",mats); }
+    else if(cab==="oculos"){ for(const s of [-1,1]) bola(C,.2,.15,.08,s*.3,-.05,.97,"#0a0a0a",mats); cap(C,.03,.5,0,-.05,1,"#0a0a0a",mats).rotation.z=Math.PI/2; }
+    else if(cab==="bandana"){ const t=malha(C,new THREE.TorusGeometry(1.0,.1,6,22),"#a82222",mats); t.rotation.x=Math.PI/2; t.position.y=.32; }
+    else if(cab==="boina"){ const b=bola(C,1.05,.3,1.05,.15,.78,0,"#3a2a1a",mats); b.rotation.z=-.2; }
+    else if(cab==="caveira"){ bola(C,1.04,1.05,1.04,0,0,0,"#d8d0c0",mats); for(const s of [-1,1]) bola(C,.22,.25,.1,s*.32,-.02,.95,"#111",mats); }
+    else if(cab==="bone"){ meia(C,1.06,.75,1.06,0,.18,0,"#c33",mats); bola(C,.75,.08,.55,0,.2,.9,"#c33",mats); }
+    else if(ITENS[cab]){ const c=ITENS[cab].cor||"#555"; meia(C,1.1,.95,1.1,0,.12,0,c,mats);
+      if(cab==="capacete_obra") disco(C,1.25,.08,0,.14,0,c,mats); if(cab==="capacete_mil") disco(C,1.16,.12,0,.12,0,c,mats); }
+  }
+  if(L.olhoVerm) for(const s of [-1,1]) bola(C,.13,.15,.06,s*.3,-.05,.97,"#ff2020",mats,true);
+  if(L.espinhos) for(const s of [-1,1]) for(let k=0;k<3;k++){ const ch=prender("chest",new THREE.Vector3(s*(.22+k*.07),1.18,-.05),.1); const e=malha(ch,GEO.cone,"#bbb",mats); e.scale.set(.5,1.7,.5); }
+  if(L.mochila){ const m=prender("chest",new THREE.Vector3(0,.95,-.3),.22); cap(m,.8,.6,0,0,0,"#5a4a2a",mats,1.1,.6); }
+  if(L.corpo==="avental"){ const m=prender("chest",new THREE.Vector3(0,.8,.27),.2); bola(m,1.4,1.8,.25,0,0,0,"#d8d0c0",mats); }
+  // arma na mão direita, escudo e luz na esquerda (a mão está no fim do braço em T)
+  const maoD=prender("handr",new THREE.Vector3(-.88,1.1,0),.12), maoE=prender("handl",new THREE.Vector3(.88,1.1,0),.12);
+  if(L.arma){ const a=ITENS[L.arma]; const longa=a?(a.alc||a.maos2):0, cor=!a?"#7a7a7a":a.alc?"#2a2a2a":(a.atk>20?"#9aa0a6":"#7a5a3a");
+    const w=malha(maoD,GEO.box,cor,mats); w.scale.set(.45,.45,longa?6.5:4); w.position.set(0,0,longa?2.6:1.8);
+    const cabo=malha(maoD,GEO.box,"#4a3220",mats); cabo.scale.set(.5,.5,1.4); cabo.position.set(0,0,-.1); }
+  if(L.escudo){ const d=disco(maoE,2.2,.35,.6,0,.6,L.escudo==="tampa"?"#8a8a8a":"#4a5a6a",mats); d.rotation.z=Math.PI/2; }
+  if(L.luz){ cap(maoE,.25,1.6,0,.9,.4,"#5a3a1a",mats); bola(maoE,.6,.75,.6,0,2.1,.4,L.luz==="tocha"?"#ff9a30":"#fff8c0",mats,true); }
+  const mixer=new THREE.AnimationMixer(raiz);
+  g.userData.mats=mats;
+  return {g,P:{},tipo:"hum",alt:1.85,anim:{mixer,acoes:new Map(),base:null,baseNome:"",unico:null,
+    zumbi:!!L.zumbi, ataque:L.ataque||"Melee_1H_Attack_Chop"}};
+}
+function acao(A,nome){ let a=A.acoes.get(nome); if(!a){ const c=MODELO.clips.get(nome); if(!c) return null; a=A.mixer.clipAction(c); A.acoes.set(nome,a); } return a; }
+function animarBoneco(v,ent,now,dt,andando,inicioAtk,hitT){
+  const A=v.mo.anim;
+  if(andando) v.ultMov=now; const mov=now-(v.ultMov||-1e9)<140;
+  let vel=0; if(ent.mv&&ent.mv.dur) vel=1000/ent.mv.dur*(ent.mv.fx!==ent.x&&ent.mv.fy!==ent.y?1.4:1);
+  vel=vel||v.vel||3; if(ent.mv) v.vel=vel;
+  let nome, ts=1;
+  if(mov){ if(A.zumbi){ nome="Skeletons_Walking"; ts=clamp(vel/1.5,.7,1.7); } else if(vel>2.6){ nome="Running_A"; ts=clamp(vel/3.7,.75,1.35); } else { nome="Walking_A"; ts=clamp(vel/1.7,.7,1.5); } }
+  else nome=A.zumbi?"Skeletons_Idle":(A.ataque.startsWith("Melee_2H")&&!v.npc?"Melee_2H_Idle":"Idle_A");
+  // golpe e dano (uma vez)
+  if(inicioAtk && inicioAtk!==v.ultAtk && now-inicioAtk<400){ v.ultAtk=inicioAtk; unico(v,A.ataque,1.25,now); }
+  else if(hitT && hitT!==v.ultHit && now-hitT<300){ v.ultHit=hitT; if(!A.unico) unico(v,"Hit_A",1.4,now); }
+  if(A.unico && now>=A.unico.fim){ const prox=acao(A,nome); if(prox){ prox.reset().setEffectiveWeight(1).play(); A.unico.a.crossFadeTo(prox,.2,false); A.base=prox; A.baseNome=nome; } A.unico=null; }
+  if(!A.unico && A.baseNome!==nome){ const prox=acao(A,nome); if(prox){ prox.reset().setEffectiveWeight(1).play(); if(A.base) A.base.crossFadeTo(prox,.22,false); A.base=prox; A.baseNome=nome; } }
+  if(A.base) A.base.timeScale=ts;
+  A.mixer.update(dt/1000);
+}
+function unico(v,nome,ts,now){
+  const A=v.mo.anim, a=acao(A,nome); if(!a) return;
+  a.reset(); a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished=true; a.timeScale=ts; a.setEffectiveWeight(1); a.play();
+  const de=A.unico?A.unico.a:A.base; if(de && de!==a) de.crossFadeTo(a,.1,false);
+  A.unico={a,fim:now+a.getClip().duration*1000/ts-180};
+}
+function corpoAnimado(c,L,novo){
+  const mo=humanoideAnimado(L), A=mo.anim, a=acao(A,"Death_A");
+  if(a){ a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished=true; a.play(); if(!novo){ a.time=a.getClip().duration-.01; } A.mixer.update(novo?0:.001); }
+  for(const m of mo.g.userData.mats){ if(m.userData.reg){ m.userData.reg.uA.value.multiplyScalar(.6); m.userData.reg.uB.value.multiplyScalar(.6); } else m.color.multiplyScalar(.6); }
+  const sangue=new THREE.Mesh(GEO.disco,new THREE.MeshBasicMaterial({color:0x5a0808,transparent:true,opacity:.75,depthWrite:false}));
+  sangue.scale.setScalar(.55); sangue.position.set(0,.012,-.5); mo.g.add(sangue);
+  mo.g.rotation.y=(hash(c.x,c.y)%628)/100;
+  return {g:mo.g,P:{},tipo:"corpo",alt:.5,anim:A,corpo:true};
+}
+
+const ZUMBIS=new Set(["carnical","soldado","experimento"]);
+const ATAQUE_MON={carnical:"Melee_Unarmed_Attack_Punch_A",soldado:"Melee_Unarmed_Attack_Punch_A",experimento:"Melee_Unarmed_Attack_Punch_A",mutante:"Melee_2H_Attack_Chop",
+  saqueador:"Melee_1H_Attack_Chop",atirador:"Ranged_2H_Shoot",carnica:"Melee_2H_Attack_Chop"};
+function ataqueDaArma(id){ const a=ITENS[id]; if(!a) return "Melee_Unarmed_Attack_Punch_A"; if(a.alc) return a.maos2?"Ranged_2H_Shoot":"Ranged_1H_Shoot"; return a.maos2?"Melee_2H_Attack_Chop":"Melee_1H_Attack_Chop"; }
 function modeloDe(tipo){
   const d=MONS[tipo]; let mo;
-  if(d.spr==="hum"){ const L=Object.assign({},LOOKS[tipo]||{pele:d.c?d.c.pele:"#7f9a6e",camisa:d.c?d.c.roupa:"#4a4a4a",calca:d.c?d.c.calca:"#333",cabelo:d.c?d.c.cabelo:"#222"}); mo=humanoide(L); }
+  if(d.spr==="hum"){ const L=Object.assign({zumbi:ZUMBIS.has(tipo),ataque:ATAQUE_MON[tipo]},LOOKS[tipo]||{pele:d.c?d.c.pele:"#7f9a6e",camisa:d.c?d.c.roupa:"#4a4a4a",calca:d.c?d.c.calca:"#333",cabelo:d.c?d.c.cabelo:"#222"}); mo=humanoide(L); }
   else mo=animal(d.spr,d.coroa);
   const e=(d.esc||1)*((LOOKS[tipo]&&LOOKS[tipo].big)?1.25:1); mo.g.scale.setScalar(e); mo.alt*=e; return mo;
 }
 function lookChave(e){ return [e.arma,e.escudo,e.cabeca,e.corpo,e.pernas,e.pes,e.luz].join(","); }
-function lookEq3(e){ const L=lookEq(e); L.luz=e.luz; return L; }
+function lookEq3(e){ const L=lookEq(e); L.luz=e.luz; L.ataque=ataqueDaArma(e.arma); return L; }
 function lookEq(e){
   const L={pele:"#d8a87a",cabelo:"#3a2412",estilo:"curto",camisa:"#c8b89a",calca:"#8a7a5a",bota:"#2a2018",mochila:1};
   if(e.corpo&&ITENS[e.corpo]){ L.camisa=ITENS[e.corpo].cor; L.corpo=e.corpo; }
@@ -1753,6 +1875,12 @@ function animar3(v,ent,pos,now,dt,andando,atkK,hitT){
   if(ent.mv && andando){ const dx=ent.x-ent.mv.fx, dy=ent.y-ent.mv.fy; if(dx||dy) alvo=Math.atan2(dx,dy); }
   else if(v.rotFixa!==undefined) alvo=v.rotFixa;
   let dr=alvo-g.rotation.y; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); g.rotation.y+=dr*Math.min(1,dt*.015);
+  if(v.mo.anim){
+    if(ent===P){ if(v.ultHp!==undefined && P.hp<v.ultHp) v.hitP=now; v.ultHp=P.hp; hitT=v.hitP; }
+    const ini = ent===P ? (P.proxAtk||0)-1500 : (ent.proxAtk||0)-2000;
+    animarBoneco(v,ent,now,dt,andando,ini>0?ini:0,hitT); g.position.y=0;
+    const k=clamp(1-(now-(hitT||0))/140,0,1); if(k>0||v.flash){ v.flash=k>0; for(const m of g.userData.mats) if(m.emissive) m.emissive.setRGB(k*.22,k*.02,k*.02); }
+    return; }
   v.amp=(v.amp||0)+((andando?1:0)-(v.amp||0))*Math.min(1,dt*(andando?.02:.01));
   v.atk=(v.atk||0)+(atkK-(v.atk||0))*Math.min(1,dt*.03);
   v.fase+=dt*.0115*Math.max(v.amp,.15); const s=Math.sin(v.fase), resp=Math.sin(now*.0025+v.fase)*.012;
@@ -1770,6 +1898,10 @@ function animar3(v,ent,pos,now,dt,andando,atkK,hitT){
 function modeloCorpo(c){
   const g=new THREE.Group();
   if(c.pilha){ const mats=[]; peca(g,"box",.42,.3,.36,0,.15,0,"#8a6a3a",mats); peca(g,"sph",.18,.16,.18,.15,.25,.1,"#6a5a3a",mats); g.userData.mats=mats; return {g,P:{},tipo:"pilha",alt:.5}; }
+  if(MODELO && (c.tipo==="player" || (MONS[c.tipo] && MONS[c.tipo].spr==="hum"))){
+    const total=c.tipo==="player"?60000:(MONS[c.tipo].boss?240000:90000), novo=(c.ate-performance.now())>total-1500;
+    const L=c.tipo==="player"?{pele:"#d8a87a",cabelo:"#3a2412",camisa:"#8a8a7a",calca:"#5a5a4a",mochila:1}:Object.assign({},LOOKS[c.tipo]||{});
+    const mo=corpoAnimado(c,L,novo); const e=c.tipo==="player"?1:(MONS[c.tipo].esc||1)*((LOOKS[c.tipo]&&LOOKS[c.tipo].big)?1.25:1); mo.g.scale.setScalar(e); return mo; }
   const mo = c.tipo==="player" ? humanoide({pele:"#d8a87a",cabelo:"#3a2412",camisa:"#8a8a7a",calca:"#5a5a4a",mochila:1}) : (MONS[c.tipo]?modeloDe(c.tipo):humanoide({pele:"#888"}));
   const deit=new THREE.Group(); deit.add(mo.g); mo.g.rotation.z=Math.PI/2; mo.g.position.y=.12*(mo.g.scale.x);
   for(const m of mo.g.userData.mats) m.color.multiplyScalar(.55);
@@ -1844,7 +1976,7 @@ function render(now){
   if(ONLINE) for(const o of OUTROS){ const p=posR(o,now); const v=visDe(o,()=>humanoide(lookEq3(o.eq||{})),lookChave(o.eq||{})); animar3(v,o,p,now,dt,movendo(o,now),0,0); }
   // corpos e pilhas
   for(const c of CORPOS){ if(c.mapa!==P.mapa) continue; if(Math.abs(c.x-cam.x)>16||Math.abs(c.y-cam.y)>16) continue;
-    const v=visDe(c,()=>modeloCorpo(c)); v.mo.g.position.set(c.x,0,c.y); }
+    const v=visDe(c,()=>modeloCorpo(c)); v.mo.g.position.set(c.x,0,c.y); if(v.mo.anim) v.mo.anim.mixer.update(dt/1000); }
   for(const [ent,v] of VIS) if(!v.visto){ GRUPO_ENT.remove(v.mo.g); v.mo.g.traverse(o=>{ if(o.material) o.material.dispose(); }); VIS.delete(ent); }
   // alvo
   if(P.alvo && VIS.get(P.alvo)){ const g=VIS.get(P.alvo).mo.g, e=(MONS[P.alvo.tipo].esc||1)*.5; anel.visible=true; anel.position.set(g.position.x,.04,g.position.z); anel.scale.set(e,e,e); anel.rotation.y=now*.002; }
@@ -2131,7 +2263,7 @@ function ajuda(){
   <p><b>Atalhos:</b> 1 curar · 2 comer · 3 beber · 4 iodo · Tab próximo alvo · Enter conversar · Esc cancelar alvo.</p>
   <p class="c-cinza">O jogo salva sozinho neste navegador.</p>
   <p><b>Câmera 3D:</b> arraste a tela para girar a câmera, use a roda do mouse ou a pinça para zoom e o botão 🎥 para trocar a vista (clássica, de cima ou cinema). No PC: Q e E giram 45°, C troca a vista.</p>
-  <p class="c-cinza" style="font-size:11px">Gráficos 3D feitos com Three.js. Mundo, personagens e regras: Zona Morta.</p>
+  <p class="c-cinza" style="font-size:11px">Gráficos 3D feitos com Three.js. Boneco e animações: KayKit, de Kay Lousberg (kaylousberg.com), licença CC0. Mundo, personagens e regras: Zona Morta.</p>
   <p><b>No celular:</b> joystick à esquerda para andar (inclusive na diagonal), ⚔ escolhe o próximo alvo, ✋ usa o que estiver perto (corpo, NPC, poço), 🎒 abre mochila/equipamento, 💬 abre o chat, ⛶ tela cheia. Toque num monstro para atacar e no chão para andar até lá.</p>
   <button id="bFechaAj">Voltar ao jogo</button> <button id="bModo">${MOBILE?"Usar modo PC":"Usar modo celular"}</button>`);
   $("#bFechaAj").onclick=()=>{ esconderCobre(); rodando=true; };
