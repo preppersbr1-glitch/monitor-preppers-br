@@ -630,7 +630,12 @@ function applyPrice(){
 function initBuy(){
   var buy = document.querySelector('.js-buy');
   var modal = document.getElementById('pix-modal');
-  if(CHECKOUT_URL){ buy.href = CHECKOUT_URL; buy.target = '_blank'; buy.rel = 'noopener'; return; }
+  if(CHECKOUT_URL){
+    // Todos os botões de compra vão direto para o checkout
+    var ctas = document.querySelectorAll('.js-buy, a.btn[href="#oferta"]');
+    for(var i=0;i<ctas.length;i++) ctas[i].href = CHECKOUT_URL;
+    return;
+  }
   document.getElementById('pix-ig').textContent = '@'+INSTAGRAM;
   document.getElementById('pix-send').href = 'https://ig.me/m/'+INSTAGRAM;
   if(!PIX_KEY || PIX_KEY==='sua_chave_pix'){
