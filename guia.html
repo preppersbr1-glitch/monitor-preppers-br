@@ -224,6 +224,9 @@ footer a{color:var(--muted)}
 .steps li{list-style:none;counter-increment:s;padding:6px 0 6px 34px;position:relative;font-size:16px;color:#b5e2cc}
 .steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:22px;height:22px;border-radius:50%;background:var(--green3);color:var(--green);font-family:'Orbitron',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center}
 
+.til,.hero h1 span.til{position:relative;display:inline}
+.til::after{content:'';position:absolute;left:18%;right:18%;top:-0.02em;height:0.15em;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 12'%3E%3Cpath d='M3 9c4-6 9-6 14-3s10 3 14-3' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E") center/100% 100% no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 12'%3E%3Cpath d='M3 9c4-6 9-6 14-3s10 3 14-3' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E") center/100% 100% no-repeat}
+
 /* REVEAL */
 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}
 .rv.in{opacity:1;transform:none}
@@ -691,12 +694,37 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){ document.getElementById('lightbox').classList.remove('on'); document.getElementById('pix-modal').classList.remove('on'); }
 });
 
+// Orbitron desenha o til como um traço inclinado (Ã parece À): troca por um til desenhado em CSS
+function fixTilde(){
+  var map = {'\u00C3':'A','\u00D5':'O','\u00E3':'a','\u00F5':'o'};
+  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  var nodes = [], n;
+  while((n = walker.nextNode())){
+    if(!/[\u00C3\u00D5\u00E3\u00F5]/.test(n.nodeValue)) continue;
+    var el = n.parentNode;
+    if(!el || el.nodeName==='SCRIPT' || el.nodeName==='STYLE') continue;
+    if(getComputedStyle(el).fontFamily.indexOf('Orbitron') === -1) continue;
+    nodes.push(n);
+  }
+  for(var i=0;i<nodes.length;i++){
+    var t = nodes[i], frag = document.createDocumentFragment();
+    var parts = t.nodeValue.split(/([\u00C3\u00D5\u00E3\u00F5])/);
+    for(var j=0;j<parts.length;j++){
+      if(!parts[j]) continue;
+      if(map[parts[j]]){ var sp = document.createElement('span'); sp.className = 'til'; sp.textContent = map[parts[j]]; frag.appendChild(sp); }
+      else frag.appendChild(document.createTextNode(parts[j]));
+    }
+    t.parentNode.replaceChild(frag, t);
+  }
+}
+
 applyPrice();
 initToc();
 initBuy();
 initLightbox();
 initReveal();
 initSticky();
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fixTilde); else fixTilde();
 </script>
 </body>
 </html>
