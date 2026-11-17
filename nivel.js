@@ -81,7 +81,7 @@
       el.innerHTML = v.html;
       document.dispatchEvent(new CustomEvent('pbr-conteudo'));
     }, function () {
-      el.innerHTML = '<p style="padding:30px;text-align:center;color:#ff3333">Sem permissão para este conteúdo. Seu plano precisa ser Operador ou Comando.</p>';
+      el.innerHTML = '<p style="padding:30px;text-align:center;color:#ff3333">Sem permissão para este conteúdo. Seu plano não inclui este curso.</p>';
     });
   }
 
