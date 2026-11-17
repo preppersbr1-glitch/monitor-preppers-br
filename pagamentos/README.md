@@ -74,3 +74,9 @@ produção e troque `MP_WEBHOOK_SECRET` pela assinatura secreta dela.
 
 Edite `PLANOS` no `worker.js` (e o texto/`PRECOS` em `membros.html`). Vale para assinaturas novas; as existentes
 continuam com o valor contratado.
+
+## Publicação das aulas pagas (opcional)
+
+Com o secret `ADMIN_TOKEN` (mín. 32 caracteres, gere com `openssl rand -hex 32`), o Worker aceita
+`POST /admin/cursos` com `Authorization: Bearer <ADMIN_TOKEN>` e corpo `{ "<slug>": { "title", "html" } }`:
+grava só em `cursos/<slug>` no Firebase. `GET /admin/cursos` lista o que está publicado. Sem o secret a rota não existe.
