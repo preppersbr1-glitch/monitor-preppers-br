@@ -142,6 +142,57 @@
           ".validate": "!newData.exists() || (newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 24)"
         }
       }
+    },
+    "mentoria": {
+      ".read": "auth != null && (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true)",
+      "$uid": {
+        ".read": "auth != null && ((auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true) || (auth.uid == $uid && (root.child('members').child(auth.uid).child('level').val() == 'comando' && (!root.child('members').child(auth.uid).child('paidUntil').exists() || root.child('members').child(auth.uid).child('paidUntil').val() > now))))",
+        "msgs": {
+          ".indexOn": [
+            "ts"
+          ],
+          "$mid": {
+            ".write": "auth != null && ((!data.exists() && newData.exists() && (((auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true) && newData.child('from').val() == 'admin') || ((auth.uid == $uid && (root.child('members').child(auth.uid).child('level').val() == 'comando' && (!root.child('members').child(auth.uid).child('paidUntil').exists() || root.child('members').child(auth.uid).child('paidUntil').val() > now))) && newData.child('from').val() == 'membro'))) || (data.exists() && !newData.exists() && (auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true)))",
+            ".validate": "newData.hasChildren(['from','text','ts'])",
+            "from": {
+              ".validate": "newData.isString() && newData.val().matches(/^(admin|membro)$/)"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+            },
+            "ts": {
+              ".validate": "newData.val() == now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "info": {
+          ".write": "auth != null && ((auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true) || (auth.uid == $uid && (root.child('members').child(auth.uid).child('level').val() == 'comando' && (!root.child('members').child(auth.uid).child('paidUntil').exists() || root.child('members').child(auth.uid).child('paidUntil').val() > now))))",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "last": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "lastFrom": {
+            ".validate": "newData.isString() && newData.val().matches(/^(admin|membro)$/)"
+          },
+          "lidoAdmin": {
+            ".validate": "newData.isNumber() && newData.val() <= now && ((auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true) || newData.val() == data.val())"
+          },
+          "lidoMembro": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

@@ -51,12 +51,35 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
 .edit select,.edit input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:14px;padding:6px 8px;border-radius:3px}
 .saved{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green)}
 .rules{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);white-space:pre;overflow-x:auto;margin:10px 0;text-align:left}
+.ment{display:grid;grid-template-columns:280px 1fr;gap:0;min-height:420px;padding:0;overflow:hidden}
+.ment-list{border-right:1px solid var(--border);overflow-y:auto;max-height:560px}
+.ment-item{padding:11px 14px;border-bottom:1px solid rgba(26,61,42,0.5);cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ment-item:hover,.ment-item.on{background:rgba(255,179,0,0.07)}
+.ment-item .n{font-weight:700;font-size:16px}
+.ment-item .p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.badge{background:var(--amber);color:#000;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;border-radius:10px;padding:2px 7px}
+.ment-conv{display:flex;flex-direction:column;min-width:0}
+.ment-head{padding:10px 14px;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted)}
+.ment-head b{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--text)}
+.ment-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;max-height:440px;min-height:260px}
+.mm{max-width:80%;padding:8px 11px;border-radius:8px;font-size:16px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.mm small{display:block;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px}
+.mm.adm{align-self:flex-end;background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.3)}
+.mm.adm small{text-align:right}
+.mm.mem{align-self:flex-start;background:rgba(0,255,136,0.08);border:1px solid var(--green3)}
+.ment-send{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border)}
+.ment-send textarea{flex:1;resize:vertical;min-height:46px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:8px 10px;border-radius:3px;outline:none}
+.ment-vazio{margin:auto;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;text-align:center;padding:20px}
 .hidden{display:none!important}
 @media(max-width:800px){
   header{padding:10px 14px;height:auto;flex-wrap:wrap}
   .logo-text{font-size:14px;letter-spacing:2px}
   main{padding:14px}
   .stats{grid-template-columns:1fr 1fr}
+  .ment{grid-template-columns:1fr}
+  .ment-list{border-right:0;border-bottom:1px solid var(--border);max-height:220px}
+  .ment.aberta .ment-list{display:none}
+  .ment:not(.aberta) .ment-conv{display:none}
   thead{display:none}
   table,tbody,tr,td{display:block;width:100%}
   tr{border:1px solid var(--border);border-radius:6px;margin-bottom:10px;padding:6px 4px;background:var(--card)}
@@ -104,7 +127,19 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
 
   <!-- painel -->
   <div id="v-panel" class="hidden">
-    <div class="title">MEMBROS</div>
+    <!-- Sala de Mentoria: conversa privada com cada membro Comando (mentoria/<uid> no banco) -->
+    <div class="title" style="color:var(--amber)">🎖️ SALA DE MENTORIA <span class="badge hidden" id="ment-total"></span></div>
+    <div class="subtitle">MENSAGENS DIRETAS DOS MEMBROS COMANDO — SÓ VOCÊ E O MEMBRO VEEM</div>
+    <div class="card ment" id="ment">
+      <div class="ment-list" id="ment-list"><div class="ment-vazio">▋ CARREGANDO...</div></div>
+      <div class="ment-conv">
+        <div class="ment-head" id="ment-head">Escolha uma conversa</div>
+        <div class="ment-msgs" id="ment-msgs"><div class="ment-vazio">Escolha um membro na lista para ver e responder as mensagens.</div></div>
+        <div class="ment-send"><textarea id="ment-txt" maxlength="2000" placeholder="Responder..." disabled></textarea><button class="btn" id="ment-btn" onclick="mentEnviar()" disabled>ENVIAR</button></div>
+      </div>
+    </div>
+
+    <div class="title" style="margin-top:24px">MEMBROS</div>
     <div class="subtitle">ALTERE O PLANO DE CADA MEMBRO APÓS CONFIRMAR O PAGAMENTO</div>
     <div class="stats">
       <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">TOTAL</div></div>
@@ -256,7 +291,7 @@ function loadMembers(){
   show('v-panel');loadCourses();
   db.ref('members').on('value', function(snap){
     members = snap.val() || {};
-    render();
+    render(); mentStart(); mentLista();
   }, function(err){
     console.warn('Leitura negada', err);
     show('v-rules');
@@ -329,6 +364,73 @@ function save(uid){
     console.warn(e); show('v-panel', 'v-rules');
   });
 }
+
+// ── SALA DE MENTORIA ──
+var ment = {}, mentSel = null, mentRef = null;
+function mentNivel(m){ var lv = (m && m.level) || 'sentinela'; return lv !== 'sentinela' && m.paidUntil && m.paidUntil < Date.now() ? 'sentinela' : lv; }
+function mentHora(ts){ var d = new Date(ts); return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
+function mentNaoLida(t){ return t.info && t.info.lastFrom === 'membro' && (t.info.last || 0) > (t.info.lidoAdmin || 0); }
+function mentStart(){
+  if (mentRef) return;
+  mentRef = db.ref('mentoria');
+  mentRef.on('value', function(s){ ment = s.val() || {}; mentLista(); if (mentSel) mentConversa(); },
+    function(e){ console.warn(e); document.getElementById('ment-list').innerHTML = '<div class="ment-vazio" style="color:var(--red)">Sem permissão. Cole as regras novas do banco no Firebase.</div>'; });
+}
+function mentLista(){
+  var ids = {};
+  Object.keys(ment).forEach(function(u){ ids[u] = 1; });
+  Object.keys(members).forEach(function(u){ if (mentNivel(members[u]) === 'comando') ids[u] = 1; });
+  var lista = Object.keys(ids).map(function(u){
+    var t = ment[u] || {}, m = members[u] || {}, info = t.info || {}, msgs = t.msgs ? Object.keys(t.msgs).map(function(k){ return t.msgs[k]; }) : [];
+    msgs.sort(function(a, b){ return a.ts - b.ts; });
+    var ult = msgs[msgs.length - 1];
+    return { uid: u, nome: m.name || info.name || (m.email || info.email || u).split('@')[0], email: m.email || info.email || '', last: info.last || 0,
+      nao: mentNaoLida(t) ? msgs.filter(function(x){ return x.from === 'membro' && x.ts > (info.lidoAdmin || 0); }).length : 0,
+      prev: ult ? (ult.from === 'admin' ? 'Você: ' : '') + ult.text : 'Sem mensagens', comando: mentNivel(m) === 'comando' };
+  }).sort(function(a, b){ return (b.nao > 0) - (a.nao > 0) || b.last - a.last || a.nome.localeCompare(b.nome); });
+  var tot = lista.reduce(function(s, x){ return s + x.nao; }, 0), tb = document.getElementById('ment-total');
+  tb.textContent = tot + (tot === 1 ? ' NOVA' : ' NOVAS'); tb.classList.toggle('hidden', !tot);
+  document.title = (tot ? '(' + tot + ') ' : '') + 'Admin — PREPPERS BR';
+  document.getElementById('ment-list').innerHTML = lista.length ? lista.map(function(x){
+    return '<div class="ment-item' + (x.uid === mentSel ? ' on' : '') + '" onclick="mentAbrir(\'' + x.uid + '\')"><div style="min-width:0"><div class="n">' + esc(x.nome) +
+      (x.comando ? '' : ' <span style="font-size:11px;color:var(--red)">(sem plano)</span>') + '</div><div class="p">' + esc(x.prev) + '</div></div>' +
+      (x.nao ? '<span class="badge">' + x.nao + '</span>' : '') + '</div>';
+  }).join('') : '<div class="ment-vazio">Nenhum membro Comando ainda.</div>';
+}
+function mentAbrir(uid){
+  mentSel = uid; document.getElementById('ment').classList.add('aberta');
+  document.getElementById('ment-txt').disabled = false; document.getElementById('ment-btn').disabled = false;
+  mentLista(); mentConversa(true);
+}
+function mentFechar(){ mentSel = null; document.getElementById('ment').classList.remove('aberta'); mentLista(); }
+function mentConversa(rolar){
+  var t = ment[mentSel] || {}, m = members[mentSel] || {}, info = t.info || {};
+  var msgs = t.msgs ? Object.keys(t.msgs).map(function(k){ return t.msgs[k]; }) : [];
+  msgs.sort(function(a, b){ return a.ts - b.ts; });
+  document.getElementById('ment-head').innerHTML = '<button class="btn btn-ghost" style="padding:4px 10px;margin-right:8px" onclick="mentFechar()">←</button><b>' + esc(m.name || info.name || '—') + '</b> · ' + esc(m.email || info.email || '') +
+    ' · plano ' + esc(mentNivel(m).toUpperCase());
+  var box = document.getElementById('ment-msgs'), perto = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  box.innerHTML = msgs.length ? msgs.map(function(x){
+    return '<div class="mm ' + (x.from === 'admin' ? 'adm' : 'mem') + '">' + esc(x.text) + '<small>' + mentHora(x.ts) +
+      (x.from === 'admin' ? (info.lidoMembro >= x.ts ? ' <span style="color:var(--blue)">✓✓</span>' : ' ✓') : '') + '</small></div>';
+  }).join('') : '<div class="ment-vazio">Nenhuma mensagem ainda. Você pode começar a conversa.</div>';
+  if (rolar || perto) box.scrollTop = box.scrollHeight;
+  if (mentNaoLida(t) && !document.hidden) db.ref('mentoria/' + mentSel + '/info').update({ lidoAdmin: firebase.database.ServerValue.TIMESTAMP });
+}
+function mentEnviar(){
+  var el = document.getElementById('ment-txt'), txt = el.value.trim(), uid = mentSel; if (!txt || !uid) return;
+  var m = members[uid] || {}, btn = document.getElementById('ment-btn'), TS = firebase.database.ServerValue.TIMESTAMP;
+  btn.disabled = true;
+  db.ref('mentoria/' + uid + '/msgs').push({ from: 'admin', text: txt, ts: TS }).then(function(){
+    el.value = '';
+    var up = { last: TS, lastFrom: 'admin', lidoAdmin: TS };
+    if (m.name) up.name = String(m.name).slice(0, 80); if (m.email) up.email = String(m.email).slice(0, 120);
+    return db.ref('mentoria/' + uid + '/info').update(up);
+  }).catch(function(e){ console.warn(e); alert('Não foi possível enviar: sem permissão. Cole as regras novas do banco no Firebase.'); })
+    .then(function(){ btn.disabled = false; el.focus(); });
+}
+document.addEventListener('visibilitychange', function(){ if (!document.hidden && mentSel) mentConversa(); });
+document.getElementById('ment-txt').addEventListener('keydown', function(e){ if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); mentEnviar(); } });
 
 function copyRules(){
   navigator.clipboard.writeText(RULES).then(function(){ document.getElementById('rules-copied').textContent = '✓ copiado'; });
