@@ -52,7 +52,7 @@
     // telas de chat: no alto, para não cobrir a caixa de mensagem
     '.pga.topo{top:84px;bottom:auto;transform:translateY(-160%)}.pga.topo.on{transform:none}' +
     // faixa antes do rodapé
-    '.pgf{max-width:1100px;margin:28px auto;padding:0 16px}' +
+    '.pgf{max-width:1100px;width:100%;min-width:0;grid-column:1/-1;margin:28px auto;padding:0 16px}' +
     '.pgf-box{display:flex;align-items:center;gap:22px;padding:20px 22px;border:1px solid #1a3d2a;border-left:3px solid #00ff88;border-radius:6px;' +
       'background:linear-gradient(110deg,rgba(0,255,136,.07),rgba(10,22,16,.95) 45%,rgba(255,179,0,.05))}' +
     '.pgf-capa{width:96px;height:136px}' +
