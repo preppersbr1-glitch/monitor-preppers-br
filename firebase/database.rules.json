@@ -54,6 +54,9 @@
         ".write": "auth != null && auth.uid == $uid && newData.exists() && (data.exists() ? newData.child('level').val() == data.child('level').val() && newData.child('paidUntil').val() == data.child('paidUntil').val() : newData.child('level').val() == 'sentinela')",
         "level": {
           ".validate": "newData.isString() && newData.val().matches(/^(sentinela|operador|comando)$/)"
+        },
+        "sub": {
+          ".validate": "auth.token.email == 'preppersbr1@gmail.com' && auth.token.email_verified == true"
         }
       }
     },

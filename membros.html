@@ -98,8 +98,17 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 .modal-overlay.show{display:flex}
 .modal-box{background:var(--card);border:1px solid var(--green3);border-radius:6px;padding:28px;max-width:500px;width:92%;text-align:center}
 .modal-box h3{font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:3px;color:var(--green);margin-bottom:16px}
-.pix-key{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--amber);background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.2);padding:10px 20px;border-radius:3px;display:inline-block;cursor:pointer;letter-spacing:1px;transition:all 0.2s;margin:8px 0}
-.pix-key:hover{background:rgba(255,179,0,0.15)}
+.per-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 14px}
+.per-opt{background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:4px;padding:12px 8px;cursor:pointer;color:var(--text);font-family:'Share Tech Mono',monospace}
+.per-opt b{display:block;font-family:'Orbitron',sans-serif;font-size:19px;color:var(--text);margin:4px 0}
+.per-opt small{color:var(--muted);font-size:11px}
+.per-opt.on{border-color:var(--green2);background:rgba(0,255,136,0.08)}.per-opt.on b{color:var(--green)}
+.pay-go{display:block;width:100%;margin-top:6px;padding:14px;border:0;border-radius:3px;background:var(--green);color:#000;font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;cursor:pointer}
+.pay-go:disabled{opacity:.6;cursor:wait}
+.pay-msg{font-family:'Share Tech Mono',monospace;font-size:12px;min-height:16px;margin-top:10px;line-height:1.6}
+.sub-box{margin:0 0 16px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);line-height:1.8;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sub-box .st{color:var(--muted);font-size:12px}
+.sub-box.ok{border-color:rgba(0,255,136,0.35)}.sub-box.warn{border-color:rgba(255,179,0,0.4)}
 .pay-steps{text-align:left;max-width:400px;margin:16px auto 0;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);line-height:2.2;letter-spacing:0.5px}
 .pay-steps strong{color:var(--green2)}
 .btn-outline{background:transparent;border:1px solid var(--green3);color:var(--green2);font-family:'Share Tech Mono',monospace;font-size:12px;padding:7px 16px;border-radius:3px;cursor:pointer;letter-spacing:1px}.btn-outline:hover{background:rgba(0,255,136,0.1)}
@@ -148,15 +157,17 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 <div class="modal-overlay" id="payment-modal">
   <div class="modal-box">
     <h3 id="pay-title">ASSINAR PLANO</h3>
-    <div id="pay-price" style="font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--text);margin:10px 0"></div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:14px;letter-spacing:1px">PAGAMENTO VIA PIX</div>
-    <div class="pix-key" id="pix-display" onclick="copyPix()" title="Clique para copiar">—</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green2);margin-top:4px;display:none" id="pix-copied">✓ CHAVE COPIADA!</div>
+    <div class="per-opts">
+      <button class="per-opt on" id="per-mensal" onclick="setPeriodo('mensal')">MENSAL<b id="pr-mensal">—</b><small>cobrado todo mês</small></button>
+      <button class="per-opt" id="per-anual" onclick="setPeriodo('anual')">ANUAL<b id="pr-anual">—</b><small>17% de desconto</small></button>
+    </div>
+    <button class="pay-go" id="pay-go" onclick="irCheckout()">💳 PAGAR COM CARTÃO</button>
+    <div class="pay-msg" id="pay-msg"></div>
     <div class="pay-steps">
-      <strong>1.</strong> Copie a chave PIX acima<br>
-      <strong>2.</strong> Faça o pagamento do valor do plano<br>
-      <strong>3.</strong> Envie o comprovante para o Instagram <strong id="ig-handle">@preppers_br</strong><br>
-      <strong>4.</strong> Seu acesso será liberado em até 24h
+      <strong>•</strong> Pagamento seguro pelo <strong>Mercado Pago</strong>: o cartão não passa pelo nosso site<br>
+      <strong>•</strong> Cobrança recorrente automática no cartão de crédito<br>
+      <strong>•</strong> Acesso liberado assim que o pagamento é aprovado<br>
+      <strong>•</strong> Cancele quando quiser aqui na página: o acesso vale até o fim do período pago
     </div>
     <div style="margin-top:16px"><button class="btn-outline" onclick="closePayModal()">FECHAR</button></div>
   </div>
@@ -191,6 +202,8 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
     <button class="btn btn-green" id="btn-auth" onclick="showAuthScreen()">ENTRAR / CRIAR CONTA</button>
   </div>
 </div>
+
+<div class="sub-box" id="sub-box" style="display:none"></div>
 
 <!-- PLANS -->
 <div class="plans-grid">
@@ -280,11 +293,10 @@ var firebaseConfig = {
   projectId: "comunidade-preppers-br-f5253"
 };
 //
-// 2. CHAVE PIX (email, CPF, celular ou chave aleatória)
-var PIX_KEY = 'CONFIGURE_SUA_CHAVE_PIX';
-//
-// 3. SEU INSTAGRAM
-var INSTAGRAM = '@preppers_br';
+// 2. PAGAMENTOS: endereço do Worker da Cloudflare (pagamentos/worker.js), sem barra no fim.
+//    Vazio = botões de assinatura mostram "em configuração".
+var PAGAMENTOS_URL = '';
+var PRECOS = {operador:{mensal:29,anual:290},comando:{mensal:79,anual:790}};   // só exibição: quem cobra é o Worker
 //
 // ══════════════════════════════════════════════════════════
 
@@ -300,8 +312,6 @@ try{
   }
 }catch(e){console.log('Firebase init error',e)}
 
-document.getElementById('pix-display').textContent=PIX_KEY;
-document.getElementById('ig-handle').textContent=INSTAGRAM;
 
 function showErr(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';e.style.color='var(--red)'}
 function hideErr(id){document.getElementById(id).style.display='none'}
@@ -315,29 +325,39 @@ if(configured){
       var volta=new URLSearchParams(location.search).get('volta');
       if(volta&&/^([a-z0-9-]+\.html|[a-z0-9-]+\/(index\.html)?)([?#].*)?$/i.test(volta)){loadProfile();setTimeout(function(){location.replace(volta)},900);return}
       loadProfile()
-    }else{userData=null;renderUI(false);if(/[?&]entrar=1/.test(location.search))showAuthScreen()}
+    }else{if(profRef){profRef.off();profRef=null}userData=null;renderUI(false);if(/[?&]entrar=1/.test(location.search))showAuthScreen()}
   });
 }
 
+// Ao vivo: quando o Mercado Pago aprova, o Worker muda o nível no banco e a página atualiza sozinha
+var profRef=null;
 function loadProfile(){
-  db.ref('members/'+currentUser.uid).once('value').then(function(s){
+  if(profRef)profRef.off();
+  profRef=db.ref('members/'+currentUser.uid);
+  profRef.on('value',function(s){
     userData=s.val();
     if(!userData){
       userData={name:currentUser.displayName||currentUser.email.split('@')[0],email:currentUser.email,level:'sentinela',createdAt:Date.now()};
-      db.ref('members/'+currentUser.uid).set(userData).catch(function(e){console.warn('Perfil não salvo',e)});
+      profRef.set(userData).catch(function(e){console.warn('Perfil não salvo',e)});
     }
     renderUI(true);
-  }).catch(function(e){
+  },function(e){
     console.warn('Perfil não carregado',e);
     userData={name:currentUser.displayName||currentUser.email.split('@')[0],email:currentUser.email,level:'sentinela'};
     renderUI(true);
   });
 }
+// Nível que vale agora: plano pago vencido (paidUntil no passado) volta a Sentinela, como no nivel.js
+function nivelAtual(){
+  var u=userData||{},lv=u.level||'sentinela';
+  if(lv!=='sentinela'&&u.paidUntil&&u.paidUntil<Date.now())return 'sentinela';
+  return lv;
+}
 
 function renderUI(loggedIn){
   if(loggedIn&&currentUser){
     var name=userData?userData.name:currentUser.email;
-    var level=userData?userData.level:'sentinela';
+    var level=nivelAtual();
     document.getElementById('p-avatar').textContent=name.charAt(0).toUpperCase();
     document.getElementById('p-name').textContent=name.toUpperCase();
     document.getElementById('p-email').textContent=currentUser.email;
@@ -345,8 +365,9 @@ function renderUI(loggedIn){
     lv.textContent=level.toUpperCase();lv.className='profile-level level-'+level;
     var adminLink=(currentUser.email||'').toLowerCase()==='preppersbr1@gmail.com'?'<a class="btn btn-green" href="admin.html" style="margin-right:8px;text-decoration:none">⚙️ PAINEL ADMIN</a>':'';
     document.getElementById('auth-actions').innerHTML=adminLink+'<button class="btn btn-logout" onclick="doLogout()">SAIR DA CONTA</button>';
-    updateButtons(level);
+    updateButtons(level);renderSub();
   } else {
+    renderSub();
     document.getElementById('p-avatar').textContent='?';
     document.getElementById('p-name').textContent='VISITANTE';
     document.getElementById('p-email').textContent='Faça login para acessar';
@@ -443,26 +464,66 @@ function doResetPassword(){
 // ── LOGOUT ──
 function doLogout(){if(configured)auth.signOut()}
 
-// ── PLAN ACTIONS ──
+// ── PLAN ACTIONS (assinatura recorrente no cartão: Mercado Pago via Worker da Cloudflare) ──
+var planoEscolhido=null,periodo='mensal';
+function brl(v){return 'R$'+v.toLocaleString('pt-BR')}
 function handlePlan(plan){
   if(!currentUser){showAuthScreen();return}
-  var lv=userData?userData.level:'sentinela';
+  var lv=nivelAtual();
   if(lv===plan||plan==='sentinela')return;
   if(plan==='operador'&&lv==='comando')return;
-  var names={operador:'OPERADOR',comando:'COMANDO'};
-  var prices={operador:'R$29/mês ou R$290/ano',comando:'R$79/mês ou R$790/ano'};
-  document.getElementById('pay-title').textContent='ASSINAR '+names[plan];
-  document.getElementById('pay-price').textContent=prices[plan];
+  var s=userData&&userData.sub;
+  if(s&&s.status==='authorized'){alert('Você já tem uma assinatura ativa ('+s.plano+'). Para trocar de plano, cancele a atual na caixa "Minha assinatura" e assine o novo.');return}
+  planoEscolhido=plan;
+  document.getElementById('pay-title').textContent='ASSINAR '+plan.toUpperCase();
+  document.getElementById('pr-mensal').textContent=brl(PRECOS[plan].mensal)+'/mês';
+  document.getElementById('pr-anual').textContent=brl(PRECOS[plan].anual)+'/ano';
+  setPeriodo('mensal');
+  var m=document.getElementById('pay-msg');m.textContent='';
+  if(!PAGAMENTOS_URL){m.style.color='var(--amber)';m.textContent='Pagamento por cartão em configuração. Volte em breve!'}
+  document.getElementById('pay-go').disabled=!PAGAMENTOS_URL;
   document.getElementById('payment-modal').classList.add('show');
 }
-
+function setPeriodo(p){periodo=p;document.getElementById('per-mensal').classList.toggle('on',p==='mensal');document.getElementById('per-anual').classList.toggle('on',p==='anual')}
 function closePayModal(){document.getElementById('payment-modal').classList.remove('show')}
-
-function copyPix(){
-  navigator.clipboard.writeText(PIX_KEY).then(function(){
-    var e=document.getElementById('pix-copied');e.style.display='block';
-    setTimeout(function(){e.style.display='none'},3000);
-  }).catch(function(){});
+function chamarPagamentos(rota,corpo){
+  return currentUser.getIdToken().then(function(tk){
+    return fetch(PAGAMENTOS_URL+rota,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},body:JSON.stringify(corpo||{})});
+  }).then(function(r){return r.json().catch(function(){return {}}).then(function(j){if(!r.ok)throw new Error(j.erro||('Erro '+r.status));return j})});
+}
+function irCheckout(){
+  var b=document.getElementById('pay-go'),m=document.getElementById('pay-msg');
+  b.disabled=true;b.textContent='ABRINDO O MERCADO PAGO...';m.style.color='var(--muted)';m.textContent='';
+  chamarPagamentos('/assinar',{plano:planoEscolhido,periodo:periodo}).then(function(j){
+    if(!j.url)throw new Error('Resposta sem link de pagamento');
+    location.href=j.url;
+  }).catch(function(e){
+    b.disabled=false;b.textContent='💳 PAGAR COM CARTÃO';m.style.color='var(--red)';
+    m.textContent=/Failed to fetch|NetworkError|Load failed/i.test(e.message)?'Sem conexão com o sistema de pagamento. Tente de novo.':e.message;
+  });
+}
+// Caixa "Minha assinatura" (dados gravados pelo Worker em members/<uid>/sub)
+var STATUS_SUB={authorized:['ATIVA','ok'],pending:['AGUARDANDO PAGAMENTO','warn'],paused:['PAUSADA','warn'],cancelled:['CANCELADA','warn']};
+function dataBR(ms){return ms?new Date(ms).toLocaleDateString('pt-BR'):'—'}
+function renderSub(){
+  var box=document.getElementById('sub-box'),s=currentUser&&userData&&userData.sub;
+  var retorno=/[?&]assinatura=retorno/.test(location.search);
+  if(!s&&!retorno){box.style.display='none';return}
+  box.style.display='flex';
+  if(!s){box.className='sub-box warn';box.innerHTML='<div>⏳ <b>Confirmando seu pagamento...</b><div class="st">O Mercado Pago avisa em alguns segundos. Esta página atualiza sozinha.</div></div>';return}
+  var st=STATUS_SUB[s.status]||[String(s.status||'—').toUpperCase(),'warn'];
+  var pago=userData.paidUntil&&userData.paidUntil>Date.now();
+  var linha='💳 <b>Assinatura '+String(s.plano||'').toUpperCase()+' '+(s.periodo==='anual'?'ANUAL':'MENSAL')+'</b> · '+brl(s.valor||0)+(s.periodo==='anual'?'/ano':'/mês')+' · <b style="color:'+(st[1]==='ok'?'var(--green)':'var(--amber)')+'">'+st[0]+'</b>';
+  var info=s.status==='authorized'?'Próxima cobrança: '+dataBR(s.proxima)+' · acesso garantido até '+dataBR(userData.paidUntil)
+    :s.status==='pending'?(retorno?'Confirmando seu pagamento com o Mercado Pago... esta página atualiza sozinha.':'Pagamento não concluído. Clique no plano para tentar de novo.')
+    :pago?'Sem novas cobranças. Seu acesso continua até '+dataBR(userData.paidUntil)+'.':'Sem novas cobranças.';
+  box.className='sub-box '+st[1];
+  box.innerHTML='<div>'+linha+'<div class="st">'+info+'</div></div>'+(s.status==='authorized'||s.status==='paused'?'<button class="btn-outline" onclick="cancelarAssinatura()">CANCELAR ASSINATURA</button>':'');
+}
+function cancelarAssinatura(){
+  if(!confirm('Cancelar a assinatura?\n\nNão haverá novas cobranças no cartão. Você continua com acesso até o fim do período já pago.'))return;
+  chamarPagamentos('/cancelar').then(function(j){alert('Assinatura cancelada.'+(j.acessoAte?' Seu acesso continua até '+dataBR(j.acessoAte)+'.':''))})
+    .catch(function(e){alert('Não foi possível cancelar: '+e.message)});
 }
 </script>
 </body>

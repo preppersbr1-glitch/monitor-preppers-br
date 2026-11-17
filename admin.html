@@ -263,6 +263,13 @@ function loadMembers(){
   });
 }
 
+// Assinatura no cartão (Mercado Pago), gravada pelo Worker de pagamentos
+function subInfo(sub){
+  if (!sub || !sub.status) return '';
+  var st = { authorized: ['💳 ATIVA', 'var(--green)'], pending: ['💳 AGUARDANDO', 'var(--amber)'], paused: ['💳 PAUSADA', 'var(--amber)'], cancelled: ['💳 CANCELADA', 'var(--muted)'] }[sub.status] || ['💳 ' + String(sub.status).toUpperCase(), 'var(--muted)'];
+  return '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;margin-top:4px;color:' + st[1] + '">' + st[0] + ' · ' + esc(sub.periodo || '') + ' R$' + esc(sub.valor || '') +
+    (sub.status === 'authorized' && sub.proxima ? '<br><span style="color:var(--muted)">próx. ' + fmtDate(sub.proxima) + '</span>' : '') + '</div>';
+}
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
   var f = document.getElementById('f-level').value;
@@ -288,7 +295,7 @@ function render(){
     var dateVal = m.paidUntil ? new Date(m.paidUntil).toISOString().slice(0, 10) : '';
     return '<tr>' +
       '<td data-l="MEMBRO"><strong>' + esc(m.name || '—') + '</strong><div class="email">' + esc(m.email || m.uid) + '</div></td>' +
-      '<td data-l="PLANO ATUAL"><span class="lvl lvl-' + esc(m.level) + '">' + esc(m.level.toUpperCase()) + '</span></td>' +
+      '<td data-l="PLANO ATUAL"><span class="lvl lvl-' + esc(m.level) + '">' + esc(m.level.toUpperCase()) + '</span>' + subInfo(m.sub) + '</td>' +
       '<td data-l="PAGO ATÉ"><span class="due' + (late ? ' late' : '') + '">' + due + '</span></td>' +
       '<td data-l="DESDE"><span class="due">' + fmtDate(m.createdAt) + '</span></td>' +
       '<td data-l="ALTERAR PLANO"><div class="edit">' +
