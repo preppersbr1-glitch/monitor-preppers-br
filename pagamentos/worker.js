@@ -9,6 +9,8 @@
 //                      → { url } do checkout do Mercado Pago
 //    POST /cancelar    Authorization: Bearer <token>  → cancela a assinatura do próprio membro
 //    POST /webhook     avisos do Mercado Pago (assinaturas e cobranças)
+//    GET  /admin/cursos  lista as aulas pagas publicadas      } Authorization: Bearer <ADMIN_TOKEN>
+//    POST /admin/cursos  { "<slug>": { title, html }, ... }    } só grava em cursos/<slug>
 //
 //  Segredos (Cloudflare → Worker → Settings → Variables and Secrets, tipo "Secret")
 //    MP_ACCESS_TOKEN           Access Token do Mercado Pago (de teste ou de produção)
@@ -19,6 +21,7 @@
 //    FIREBASE_PRIVATE_KEY      o "private_key" do JSON (de -----BEGIN até END PRIVATE KEY-----)
 //  Opcionais (tipo "Text")
 //    MP_PAYER_EMAIL_TESTE      só em teste: e-mail do usuário comprador de teste do Mercado Pago
+//    ADMIN_TOKEN (Secret)      senha de publicação das aulas pagas (mín. 32 caracteres). Sem ela, /admin fica desligado.
 //    SITE_URL, FIREBASE_PROJECT_ID, FIREBASE_DB_URL, ORIGENS_EXTRAS (separadas por vírgula)
 //
 //  Nada aqui confia no site: o preço vem desta tabela e o nível só muda depois de
@@ -52,6 +55,7 @@ export default {
       if (req.method === 'POST' && url.pathname === '/assinar') return json(await assinar(req, env), 200, cors);
       if (req.method === 'POST' && url.pathname === '/cancelar') return json(await cancelar(req, env), 200, cors);
       if (req.method === 'POST' && url.pathname === '/webhook') return json(await webhook(req, env, url), 200, {});
+      if (url.pathname === '/admin/cursos' && (req.method === 'GET' || req.method === 'POST')) return json(await adminCursos(req, env), 200, {});
       return json({ erro: 'não encontrado' }, 404, cors);
     } catch (e) {
       const st = e.status || 500;
@@ -89,6 +93,7 @@ function status(env) {
     webhook_assinatura: env.MP_WEBHOOK_SECRET ? 'configurada' : 'FALTA MP_WEBHOOK_SECRET',
     firebase: sa ? 'configurado' : 'FALTA FIREBASE_SERVICE_ACCOUNT (JSON inteiro) ou FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY',
     comprador_teste: env.MP_PAYER_EMAIL_TESTE ? 'definido' : 'não definido',
+    publicacao_aulas: (env.ADMIN_TOKEN || '').length >= 32 ? 'ligada' : 'desligada (sem ADMIN_TOKEN)',
   };
 }
 const b64u = {
@@ -265,4 +270,30 @@ async function webhook(req, env, url) {
     return cobranca.preapproval_id ? sincronizar(env, cobranca.preapproval_id) : { ignorado: 'cobrança sem assinatura' };
   }
   return { ignorado: tipo || 'tipo desconhecido' };
+}
+
+// ── Publicação das aulas pagas (cursos/<slug>) com a senha de publicação ───
+async function adminCursos(req, env) {
+  const tk = env.ADMIN_TOKEN || '';
+  if (tk.length < 32) throw falha(404, 'não encontrado');
+  const m = (req.headers.get('Authorization') || '').match(/^Bearer (.+)$/);
+  const dado = new TextEncoder().encode(m ? m[1] : ''), certo = new TextEncoder().encode(tk);
+  let d = dado.length ^ certo.length;
+  for (let i = 0; i < certo.length; i++) d |= certo[i] ^ (dado[i] || 0);
+  if (d !== 0) throw falha(401, 'senha de publicação inválida');
+  if (req.method === 'GET') {
+    const c = (await db(env, 'GET', 'cursos')) || {};
+    return Object.fromEntries(Object.entries(c).map(([k, v]) => [k, { title: v.title || k, kb: Math.round(((v.html || '').length) / 1024), updatedAt: v.updatedAt || null }]));
+  }
+  let dados;
+  try { dados = await req.json(); } catch (e) { throw falha(400, 'JSON inválido'); }
+  const up = {}, nomes = [];
+  for (const [slug, c] of Object.entries(dados || {})) {
+    if (!/^[a-z0-9-]{2,60}$/.test(slug) || !c || typeof c.html !== 'string' || !c.html.trim() || c.html.length > 500000) throw falha(400, 'curso inválido: ' + slug);
+    up[slug] = { title: String(c.title || slug).slice(0, 120), html: c.html, updatedAt: Date.now() };
+    nomes.push(slug);
+  }
+  if (!nomes.length) throw falha(400, 'nenhum curso enviado');
+  await db(env, 'PATCH', 'cursos', up);
+  return { publicados: nomes };
 }
