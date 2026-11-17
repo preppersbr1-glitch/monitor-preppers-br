@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script src="../nivel.js" data-nivel="sentinela"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2019,9 +2020,12 @@ function largarIdx(idx){
 function desconectarOnline(){ ONLINE=false; if(WS){ WS.onclose=null; try{ WS.close(); }catch(e){} } WS=null; }
 const dec64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 function msgOnline(txt){ const el=$("#onMsg"); if(el) el.textContent=txt; }
+// O nivel.js só libera a página (conta Sentinela). O online usa o login próprio do jogo (nome + senha),
+// para não perder os personagens já criados. LOGIN_SITE = true passa a entrar com a conta do site.
+const LOGIN_SITE = false;
 // conta do site (nivel.js / Firebase): devolve um ID token novo, ou null fora do site
 function tokenSite(){
-  if(!window.PBR) return Promise.resolve(null);
+  if(!LOGIN_SITE || !window.PBR) return Promise.resolve(null);
   return window.PBR.ready.then(r=>{ if(!r||!r.user) throw new Error("sem conta"); return r.user.getIdToken(); });
 }
 function conectar(nome,senha,token){
@@ -2145,7 +2149,7 @@ function telaInicial(){
     <p>No <b style="color:#e8c060">Bunker 47</b>, um punhado de sobreviventes resiste debaixo da terra. Lá em cima: cidades em ruínas, mata fechada, um deserto radioativo — e, no subsolo, esgotos, metrô, cavernas e uma base militar que ninguém deveria abrir.</p>
     <div class="online"><div class="tit2">● JOGAR ONLINE <span>com outros sobreviventes</span></div>
       <input id="onNome" maxlength="14" placeholder="Nome do personagem" value="${(()=>{try{return localStorage.getItem("zm_ultimo_nome")||""}catch(e){return ""}})()}">
-      ${window.PBR?`<div class="peqC" id="onConta">Você entra com a sua conta do site Preppers BR.</div>`:`<input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">`}
+      ${LOGIN_SITE && window.PBR?`<div class="peqC" id="onConta">Você entra com a sua conta do site Preppers BR.</div>`:`<input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">`}
       <button id="bOnline">Entrar no servidor</button><div id="onMsg" class="c-ouro"></div></div>
     <div class="tit2" style="margin-top:14px">○ JOGAR OFFLINE <span>sozinho, sem internet</span></div>
     ${s?`<p><button id="bCont">▶ Continuar com ${s.P.nome} (nível ${s.P.lvl})</button></p>`:""}
@@ -2153,10 +2157,10 @@ function telaInicial(){
     <button id="bComecar">${s?"Criar novo personagem":"Começar"}</button>`);
   if(s) $("#bCont").onclick=()=>iniciar(s);
   const entrar=()=>{ const n=$("#onNome").value.trim();
-    if(window.PBR){ msgOnline("Confirmando sua conta do site..."); tokenSite().then(t=>conectar(n,null,t)).catch(()=>msgOnline("Entre na sua conta do site (página Membros) para jogar online.")); return; }
+    if(LOGIN_SITE && window.PBR){ msgOnline("Confirmando sua conta do site..."); tokenSite().then(t=>conectar(n,null,t)).catch(()=>msgOnline("Entre na sua conta do site (página Membros) para jogar online.")); return; }
     const se=$("#onSenha").value; if(!n||!se) return msgOnline("Preencha nome e senha."); conectar(n,se); };
   $("#bOnline").onclick=entrar; ($("#onSenha")||$("#onNome")).addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
-  if(window.PBR) window.PBR.ready.then(r=>{ if(!r||!r.user) return; const el=$("#onConta"); if(el) el.textContent=`Conta do site: ${r.user.email||r.user.displayName||"conectada"}. No primeiro acesso, o nome abaixo vira o nome do seu personagem.`;
+  if(LOGIN_SITE && window.PBR) window.PBR.ready.then(r=>{ if(!r||!r.user) return; const el=$("#onConta"); if(el) el.textContent=`Conta do site: ${r.user.email||r.user.displayName||"conectada"}. No primeiro acesso, o nome abaixo vira o nome do seu personagem.`;
     const nm=$("#onNome"); if(nm && !nm.value) nm.value=(r.user.displayName||"").replace(/[^A-Za-zÀ-ÿ0-9 ]/g,"").slice(0,14); });
   $("#bComecar").onclick=()=>{ const n=($("#nomeIn").value.trim()||"Sobrevivente").slice(0,14); iniciar(null,n); };
 }
