@@ -85,7 +85,7 @@
     '@media(max-width:1180px){.pm-a{padding:7px 8px;font-size:14px;letter-spacing:.5px}.pm-a i{display:none}}' +
     '@media(max-width:980px){.pm .pm-a{display:none}.pm{flex:0 1 auto;justify-content:flex-end;gap:10px}.pm-aqui{display:block}}' +
     '@media(max-width:980px){header{flex-wrap:nowrap!important;height:auto!important;min-height:56px;padding-top:8px!important;padding-bottom:8px!important}header .header-status{display:none!important}' +
-      'header .logo{min-width:0;flex:0 1 auto}header .logo-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}' +
+      'header .logo{min-width:0!important;flex:0 1 auto!important;overflow:hidden!important}header .logo>div{min-width:0!important;overflow:hidden!important}header .logo-text,header .logo-sub{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.pm{flex:none!important}}' +
     '@media(max-width:520px){.pm-aqui{display:none}.pm-btn{padding:9px 12px}.pm-grade{grid-template-columns:1fr 1fr;gap:8px}.pm-pain{top:8px;padding:14px 12px}' +
       '.pm-c{flex-direction:column;gap:8px;padding:11px}.pm-c .ic{width:40px;height:40px;font-size:21px}.pm-c .n{font-size:11px;letter-spacing:1.5px}.pm-c .d{font-size:13px}}';
   document.head.appendChild(css);
