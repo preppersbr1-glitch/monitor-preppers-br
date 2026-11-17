@@ -14,6 +14,9 @@
 //    MP_ACCESS_TOKEN           Access Token do Mercado Pago (de teste ou de produção)
 //    MP_WEBHOOK_SECRET         "Assinatura secreta" dos Webhooks do Mercado Pago
 //    FIREBASE_SERVICE_ACCOUNT  conteúdo inteiro do JSON da conta de serviço do Firebase
+//      ou, se o painel disser que é grande demais, em duas partes:
+//    FIREBASE_CLIENT_EMAIL     o "client_email" do JSON
+//    FIREBASE_PRIVATE_KEY      o "private_key" do JSON (de -----BEGIN até END PRIVATE KEY-----)
 //  Opcionais (tipo "Text")
 //    MP_PAYER_EMAIL_TESTE      só em teste: e-mail do usuário comprador de teste do Mercado Pago
 //    SITE_URL, FIREBASE_PROJECT_ID, FIREBASE_DB_URL, ORIGENS_EXTRAS (separadas por vírgula)
@@ -71,15 +74,20 @@ function corsHeaders(req, env) {
     ? { 'Access-Control-Allow-Origin': origem, 'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400', Vary: 'Origin' }
     : { Vary: 'Origin' };
 }
+// Conta de serviço: JSON inteiro ou as duas partes separadas
+function contaServico(env) {
+  if (env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) return { client_email: env.FIREBASE_CLIENT_EMAIL.trim(), private_key: env.FIREBASE_PRIVATE_KEY };
+  try { const j = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT || ''); if (j.client_email && j.private_key) return j; } catch (e) {}
+  return null;
+}
 function status(env) {
-  let sa = false;
-  try { const j = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT || ''); sa = !!(j.client_email && j.private_key); } catch (e) {}
+  const sa = !!contaServico(env);
   const tk = env.MP_ACCESS_TOKEN || '';
   return {
     servico: 'preppers-pagamentos',
     mercado_pago: tk ? (tk.startsWith('TEST-') ? 'configurado (chave TEST-)' : 'configurado (chave APP_USR-: produção ou vendedor de teste)') : 'FALTA MP_ACCESS_TOKEN',
     webhook_assinatura: env.MP_WEBHOOK_SECRET ? 'configurada' : 'FALTA MP_WEBHOOK_SECRET',
-    firebase: sa ? 'configurado' : 'FALTA FIREBASE_SERVICE_ACCOUNT (JSON inteiro)',
+    firebase: sa ? 'configurado' : 'FALTA FIREBASE_SERVICE_ACCOUNT (JSON inteiro) ou FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY',
     comprador_teste: env.MP_PAYER_EMAIL_TESTE ? 'definido' : 'não definido',
   };
 }
@@ -121,14 +129,14 @@ async function usuario(req, env) {
 let tokenAdm = { exp: 0, tk: '' };
 async function tokenFirebase(env) {
   if (tokenAdm.tk && Date.now() < tokenAdm.exp - 60e3) return tokenAdm.tk;
-  let sa;
-  try { sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { throw new Error('FIREBASE_SERVICE_ACCOUNT ausente ou inválido'); }
+  const sa = contaServico(env);
+  if (!sa) throw new Error('conta de serviço do Firebase ausente ou inválida');
   const agora = Math.floor(Date.now() / 1000);
   const corpo = b64u.encStr(JSON.stringify({ alg: 'RS256', typ: 'JWT' })) + '.' + b64u.encStr(JSON.stringify({
     iss: sa.client_email, aud: 'https://oauth2.googleapis.com/token', iat: agora, exp: agora + 3600,
     scope: 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email',
   }));
-  const pem = sa.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  const pem = sa.private_key.replace(/\\n/g, '\n').replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
   const chave = await crypto.subtle.importKey('pkcs8', b64u.dec(pem.replace(/\+/g, '-').replace(/\//g, '_')), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', chave, new TextEncoder().encode(corpo));
   const r = await fetch('https://oauth2.googleapis.com/token', {

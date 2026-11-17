@@ -40,6 +40,8 @@ console.firebase.google.com → projeto **comunidade-preppers-br** → ⚙️ **
 | `MP_ACCESS_TOKEN` | Access Token do Mercado Pago (de teste no passo 1.3, depois o de produção) |
 | `MP_WEBHOOK_SECRET` | "Assinatura secreta" dos webhooks (passo 4) |
 | `FIREBASE_SERVICE_ACCOUNT` | o conteúdo **inteiro** do arquivo `.json` do passo 2 |
+| ou, se o painel disser *too large*: `FIREBASE_CLIENT_EMAIL` | o valor de `"client_email"` do `.json` (sem aspas) |
+| e `FIREBASE_PRIVATE_KEY` | o valor de `"private_key"` do `.json`, de `-----BEGIN PRIVATE KEY-----` até `-----END PRIVATE KEY-----\n` (sem as aspas) |
 | `MP_PAYER_EMAIL_TESTE` (Text) | só durante o teste: e-mail do Comprador de teste. **Apague ao ir para produção.** |
 
 5. Abra o endereço do Worker (`https://preppers-pagamentos.<sua-conta>.workers.dev`). Deve mostrar algo como
