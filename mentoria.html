@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Sala de Mentoria — PREPPERS BR</title>
+<script src="nivel.js" data-nivel="comando"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a08;--bg2:#080f0c;--green:#00ff88;--green2:#00cc6a;--green3:#004422;--amber:#ffb300;--red:#ff3333;--text:#c8fce8;--muted:#4a7a60;--border:#1a3d2a;--card:#0a1610}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;display:flex;flex-direction:column;overflow-x:hidden}
+header{position:sticky;top:0;z-index:100;background:rgba(5,10,8,0.95);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:var(--green3);border:1px solid var(--green2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;letter-spacing:3px;color:var(--green)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--amber);letter-spacing:3px;margin-top:1px}
+.links{display:flex;gap:6px;flex-wrap:wrap}
+.links a{font-size:14px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--border);border-radius:3px}
+.links a:hover{color:var(--green);border-color:var(--green3)}
+main{flex:1;width:100%;max-width:820px;margin:0 auto;padding:18px 16px;display:flex;flex-direction:column;min-height:0}
+.title{font-family:'Orbitron',sans-serif;font-size:19px;letter-spacing:4px;color:var(--amber)}
+.sub{font-size:16px;color:var(--text);opacity:.85;line-height:1.5;margin:6px 0 14px}
+.chat{flex:1;min-height:320px;background:var(--card);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.vazio{margin:auto;text-align:center;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.8;max-width:420px}
+.msg{max-width:82%;padding:9px 12px;border-radius:8px;font-size:17px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.msg .meta{display:block;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--muted);margin-top:4px}
+.msg.eu{align-self:flex-end;background:rgba(0,255,136,0.1);border:1px solid var(--green3)}
+.msg.eu .meta{text-align:right}
+.msg.ele{align-self:flex-start;background:rgba(255,179,0,0.08);border:1px solid rgba(255,179,0,0.3)}
+.msg.ele .quem{display:block;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--amber);margin-bottom:3px}
+.lido{color:#00aaff}
+.dia{align-self:center;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--muted);padding:2px 10px;border:1px solid var(--border);border-radius:10px}
+.envio{display:flex;gap:8px;background:var(--bg2);border:1px solid var(--border);border-top:0;border-radius:0 0 6px 6px;padding:10px}
+.envio textarea{flex:1;resize:none;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:17px;padding:9px 11px;border-radius:4px;outline:none;min-height:46px;max-height:160px}
+.envio textarea:focus{border-color:var(--green3)}
+.envio button{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;padding:0 18px;border-radius:4px;border:1px solid var(--green2);background:rgba(0,255,136,0.12);color:var(--green);cursor:pointer}
+.envio button:disabled{opacity:.4;cursor:default}
+.aviso{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);margin-top:8px;min-height:16px}
+.aviso.err{color:var(--red)}
+@media(max-width:600px){header{padding:10px 14px}.logo-text{font-size:13px;letter-spacing:2px}.msg{max-width:90%}.title{font-size:16px;letter-spacing:3px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">🎖️</div><div><div class="logo-text">MONITOR PREPPERS BR</div><div class="logo-sub">SALA DE MENTORIA</div></div></div>
+  <div class="links"><a href="index.html">MONITOR</a><a href="cursos.html">CURSOS</a><a href="comunidade.html">COMUNIDADE</a><a href="membros.html">MEMBROS</a></div>
+</header>
+<main>
+  <div class="title">🎖️ SALA DE MENTORIA</div>
+  <div class="sub">Canal direto e privado entre você e o fundador do Preppers BR. Tire dúvidas, peça orientação sobre seu plano de preparação e acompanhe sua evolução. Só você e a administração veem estas mensagens.</div>
+  <div class="chat" id="chat"><div class="vazio">▋ CARREGANDO...</div></div>
+  <div class="envio">
+    <textarea id="txt" maxlength="2000" rows="1" placeholder="Escreva sua mensagem..." disabled></textarea>
+    <button id="btn" onclick="enviar()" disabled>ENVIAR</button>
+  </div>
+  <div class="aviso" id="aviso"></div>
+</main>
+<script>
+(function () {
+  var chat = document.getElementById('chat'), txt = document.getElementById('txt'), btn = document.getElementById('btn'), aviso = document.getElementById('aviso');
+  var db, uid, infoRef, msgsRef, user, nome = '', lidoAdmin = 0, msgs = [];
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function hora(ts) { return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+  function dia(ts) { var d = new Date(ts), h = new Date(); if (d.toDateString() === h.toDateString()) return 'HOJE';
+    h.setDate(h.getDate() - 1); if (d.toDateString() === h.toDateString()) return 'ONTEM'; return d.toLocaleDateString('pt-BR'); }
+  function msgAviso(t, err) { aviso.textContent = t || ''; aviso.className = 'aviso' + (err ? ' err' : ''); }
+
+  function render() {
+    if (!msgs.length) { chat.innerHTML = '<div class="vazio">Nenhuma mensagem ainda.<br>Escreva abaixo sua primeira pergunta — a resposta chega aqui mesmo.</div>'; return; }
+    var h = '', ultDia = '';
+    msgs.forEach(function (m) {
+      var d = dia(m.ts); if (d !== ultDia) { h += '<div class="dia">' + d + '</div>'; ultDia = d; }
+      if (m.from === 'membro') h += '<div class="msg eu">' + esc(m.text) + '<span class="meta">' + hora(m.ts) + ' ' +
+        (lidoAdmin >= m.ts ? '<span class="lido" title="Lida">✓✓</span>' : '<span title="Enviada">✓</span>') + '</span></div>';
+      else h += '<div class="msg ele"><span class="quem">MENTOR · PREPPERS BR</span>' + esc(m.text) + '<span class="meta">' + hora(m.ts) + '</span></div>';
+    });
+    var perto = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80;
+    chat.innerHTML = h;
+    if (perto || !render.feito) chat.scrollTop = chat.scrollHeight;
+    render.feito = true;
+  }
+  function marcarLido() {
+    if (!infoRef || document.hidden) return;
+    var ult = msgs.length ? msgs[msgs.length - 1] : null;
+    if (ult && ult.from === 'admin') infoRef.update({ lidoMembro: firebase.database.ServerValue.TIMESTAMP }).catch(function () {});
+  }
+
+  window.enviar = function () {
+    var t = txt.value.trim(); if (!t || !msgsRef) return;
+    btn.disabled = true; msgAviso('Enviando...');
+    var TS = firebase.database.ServerValue.TIMESTAMP;
+    msgsRef.push({ from: 'membro', text: t, ts: TS }).then(function () {
+      txt.value = ''; ajustar(); msgAviso('');
+      return infoRef.update({ name: nome.slice(0, 80), email: (user.email || '').slice(0, 120), last: TS, lastFrom: 'membro' });
+    }).catch(function (e) {
+      console.warn(e); msgAviso('Não foi possível enviar. Confira se seu plano Comando está ativo e tente de novo.', true);
+    }).then(function () { btn.disabled = false; txt.focus(); });
+  };
+  function ajustar() { txt.style.height = 'auto'; txt.style.height = Math.min(txt.scrollHeight, 160) + 'px'; }
+  txt.addEventListener('input', ajustar);
+  txt.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); window.enviar(); }
+  });
+  document.addEventListener('visibilitychange', marcarLido);
+
+  window.PBR.ready.then(function (r) {
+    if (!r || !r.ok) return;
+    user = r.user; uid = user.uid;
+    db = firebase.app().database(firebase.app().options.databaseURL);   // mesma forma do nivel.js
+    db.ref('members/' + uid + '/name').once('value').then(function (s) { nome = s.val() || user.displayName || (user.email || '').split('@')[0]; }, function () { nome = (user.email || '').split('@')[0]; });
+    infoRef = db.ref('mentoria/' + uid + '/info');
+    msgsRef = db.ref('mentoria/' + uid + '/msgs');
+    infoRef.child('lidoAdmin').on('value', function (s) { lidoAdmin = s.val() || 0; render(); });
+    msgsRef.orderByChild('ts').limitToLast(300).on('value', function (s) {
+      msgs = []; s.forEach(function (c) { var v = c.val(); if (v && v.ts) msgs.push(v); });
+      render(); marcarLido();
+      txt.disabled = false; btn.disabled = false;
+    }, function (e) {
+      console.warn(e);
+      chat.innerHTML = '<div class="vazio" style="color:var(--red)">Sem permissão para abrir a Sala de Mentoria.<br>Ela é exclusiva do plano COMANDO ativo.</div>';
+    });
+  });
+})();
+</script>
+</body>
+</html>
