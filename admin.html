@@ -8,6 +8,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#000000">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -75,6 +76,18 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
 .ment-send textarea{flex:1;resize:vertical;min-height:46px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:8px 10px;border-radius:3px;outline:none}
 .ment-vazio{margin:auto;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;text-align:center;padding:20px}
 .hidden{display:none!important}
+.al-resumo{font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.8;color:var(--text);margin-bottom:12px}
+.al-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+.al-linha{display:flex;gap:8px}.al-linha .input{flex:1}
+textarea.input{resize:vertical;font-family:'Rajdhani',sans-serif;font-size:16px}
+.al-nota{font-size:14px;color:var(--muted);line-height:1.5;margin-top:10px}.al-nota a{color:var(--green)}
+.al-sub{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.al-mini{padding:2px 8px;font-size:12px}
+.al-lista{font-size:14.5px;line-height:1.45;max-height:260px;overflow:auto}
+.al-i{border-left:3px solid var(--amber);padding:6px 9px;margin-bottom:6px;background:rgba(0,0,0,.2);border-radius:3px}
+.al-i b{color:#e8fff4}.al-i small{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11.5px}
+.al-i button{margin-top:5px;padding:4px 10px;font-size:10.5px}
+@media(max-width:800px){.al-grid{grid-template-columns:1fr}}
 @media(max-width:800px){
   header{padding:10px 14px;height:auto;flex-wrap:wrap}
   .logo-text{font-size:14px;letter-spacing:2px}
@@ -140,6 +153,35 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
         <div class="ment-head" id="ment-head">Escolha uma conversa</div>
         <div class="ment-msgs" id="ment-msgs"><div class="ment-vazio">Escolha um membro na lista para ver e responder as mensagens.</div></div>
         <div class="ment-send"><textarea id="ment-txt" maxlength="2000" placeholder="Responder..." disabled></textarea><button class="btn" id="ment-btn" onclick="mentEnviar()" disabled>ENVIAR</button></div>
+      </div>
+    </div>
+
+    <!-- Alertas push: enviados pelo Worker (pagamentos/worker.js) para Operador, Comando e você -->
+    <div class="title" style="margin-top:24px" id="alertas">🔔 ALERTAS PUSH</div>
+    <div class="subtitle">TERREMOTOS E TEMPESTADES SOLARES SAEM SOZINHOS · AQUI VOCÊ MANDA AVISOS DE CRISE</div>
+    <div class="card" style="padding:14px">
+      <div class="al-resumo" id="al-resumo">▋ CARREGANDO...</div>
+      <div class="al-grid">
+        <div>
+          <input class="input" id="al-titulo" maxlength="80" placeholder="Título (ex.: 🌧️ Chuva extrema no RS)">
+          <textarea class="input" id="al-texto" maxlength="300" rows="3" placeholder="Texto do alerta (até 300 letras): o que acontece, onde e o que fazer."></textarea>
+          <div class="al-linha">
+            <select class="input" id="al-link">
+              <option value="/">Abrir: Monitor (início)</option><option value="/defesa-civil.html">Abrir: Defesa Civil</option>
+              <option value="/solar.html">Abrir: Solar</option><option value="/monitor-global.html">Abrir: Monitor Global</option>
+              <option value="/comunidade.html">Abrir: Comunidade</option><option value="/guia.html">Abrir: Guia</option><option value="/cursos.html">Abrir: Cursos</option>
+            </select>
+            <select class="input" id="al-uf"><option value="">Para: todos os estados</option></select>
+          </div>
+          <button class="btn" id="al-btn" onclick="alertaEnviar()">📢 ENVIAR ALERTA</button> <span class="saved" id="al-msg"></span>
+          <p class="al-nota">Vai para os membros Operador e Comando que ativaram “Avisos do PREPPERS BR”. Escolhendo um estado, só quem marcou aquele estado recebe (quem não informou o estado não recebe avisos regionais). Para receber os alertas e as mensagens da Mentoria no seu celular, ative em <a href="membros.html#alertas">Membros → Alertas push</a>.</p>
+        </div>
+        <div>
+          <div class="al-sub">ALERTAS DO INMET AGORA <button class="btn btn-ghost al-mini" onclick="alertaInmet()">↻</button></div>
+          <div id="al-inmet" class="al-lista">▋ CARREGANDO...</div>
+          <div class="al-sub" style="margin-top:12px">ÚLTIMOS ENVIADOS</div>
+          <div id="al-hist" class="al-lista">—</div>
+        </div>
       </div>
     </div>
 
@@ -295,7 +337,7 @@ function loadMembers(){
   show('v-panel');loadCourses();
   db.ref('members').on('value', function(snap){
     members = snap.val() || {};
-    render(); mentStart(); mentLista();
+    render(); mentStart(); mentLista(); alertaIniciar();
   }, function(err){
     console.warn('Leitura negada', err);
     show('v-rules');
@@ -430,11 +472,93 @@ function mentEnviar(){
     var up = { last: TS, lastFrom: 'admin', lidoAdmin: TS };
     if (m.name) up.name = String(m.name).slice(0, 80); if (m.email) up.email = String(m.email).slice(0, 120);
     return db.ref('mentoria/' + uid + '/info').update(up);
-  }).catch(function(e){ console.warn(e); alert('Não foi possível enviar: sem permissão. Cole as regras novas do banco no Firebase.'); })
+  }).then(function(){ alertaApi('/push/mentoria', { uid: uid }).catch(function(){}); }).catch(function(e){ console.warn(e); alert('Não foi possível enviar: sem permissão. Cole as regras novas do banco no Firebase.'); })
     .then(function(){ btn.disabled = false; el.focus(); });
 }
 document.addEventListener('visibilitychange', function(){ if (!document.hidden && mentSel) mentConversa(); });
 document.getElementById('ment-txt').addEventListener('keydown', function(e){ if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); mentEnviar(); } });
+
+// ── Alertas push (Worker) ──
+var ALERTAS_API = 'https://preppers-pagamentos.preppersbr1.workers.dev';
+var TIPO_ALERTA = { sismo: '🌍 Terremotos', solar: '☀️ Solar', avisos: '📢 Avisos', mentoria: '🎖️ Mentoria' };
+function alertaApi(rota, corpo){
+  return auth.currentUser.getIdToken().then(function(tk){
+    return fetch(ALERTAS_API + rota, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tk }, body: JSON.stringify(corpo || {}) });
+  }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if (!r.ok) throw new Error(j.erro || ('Erro ' + r.status)); return j; }); });
+}
+var alertaIniciado = false;
+function alertaIniciar(){
+  if (alertaIniciado) return; alertaIniciado = true;
+  var uf = document.getElementById('al-uf');
+  'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').forEach(function(u){ uf.insertAdjacentHTML('beforeend', '<option value="' + u + '">Para: só ' + u + '</option>'); });
+  alertaResumo(); alertaInmet();
+}
+function quando(ts){ var d = new Date(ts); return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
+function alertaResumo(){
+  var el = document.getElementById('al-resumo');
+  alertaApi('/admin/push').then(function(r){
+    var tipos = Object.keys(TIPO_ALERTA).map(function(k){ return TIPO_ALERTA[k] + ' ' + (r.tipos[k] || 0); }).join(' · ');
+    var ufs = Object.keys(r.ufs || {}).sort().map(function(u){ return u + ' ' + r.ufs[u]; }).join(', ');
+    var e = r.estado, verif;
+    if (!e) verif = '<span style="color:var(--amber)">⚠️ A verificação automática ainda não rodou: confira o gatilho Cron do Worker na Cloudflare (pagamentos/README.md).</span>';
+    else {
+      var atraso = Date.now() - e.ts, erros = Object.keys(e.erros || {});
+      verif = (atraso > 15 * 60e3 ? '<span style="color:var(--amber)">⚠️ Última verificação automática há ' + Math.round(atraso / 60e3) + ' min: confira o gatilho Cron do Worker.</span>'
+        : '<span style="color:var(--green)">● Verificação automática funcionando</span> (última às ' + new Date(e.ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + ')') +
+        (erros.length ? ' · <span style="color:var(--amber)">fonte fora do ar: ' + esc(erros.join(', ').toUpperCase()) + '</span>' : '');
+    }
+    el.innerHTML = '<b>' + r.membros + '</b> membro' + (r.membros === 1 ? '' : 's') + ' com alertas ativos em <b>' + r.aparelhos + '</b> aparelho' + (r.aparelhos === 1 ? '' : 's') + ' · ' + tipos +
+      (ufs ? '<br>Estados: ' + esc(ufs) : '') + (r.filaPendente ? '<br>Entregando: ' + r.filaPendente + ' alerta(s) na fila' : '') + '<br>' + verif;
+    document.getElementById('al-hist').innerHTML = (r.ultimos || []).length ? r.ultimos.slice(0, 8).map(function(a){
+      return '<div class="al-i" style="border-left-color:var(--green2)"><small>' + quando(a.ts) + (a.uf ? ' · ' + esc(a.uf) : '') + '</small><br><b>' + esc(a.titulo) + '</b> — ' + esc(a.texto) + '</div>';
+    }).join('') : '<span style="color:var(--muted)">Nenhum alerta enviado ainda.</span>';
+  }).catch(function(e){
+    el.innerHTML = '<span style="color:var(--amber)">⚠️ O servidor de alertas não respondeu (' + esc(e.message) + '). Se você acabou de receber o código novo, cole o <b>pagamentos/worker.js</b> atualizado no Worker da Cloudflare e clique em Deploy.</span>';
+  });
+}
+function alertaEnviar(){
+  var t = document.getElementById('al-titulo'), x = document.getElementById('al-texto'), uf = document.getElementById('al-uf').value;
+  var msg = document.getElementById('al-msg'), btn = document.getElementById('al-btn');
+  if (!t.value.trim() || !x.value.trim()) { msg.style.color = 'var(--red)'; msg.textContent = 'Escreva o título e o texto.'; return; }
+  if (!confirm('Enviar este alerta agora para ' + (uf ? 'os membros do ' + uf : 'todos os membros com alertas') + '?\n\n' + t.value.trim() + '\n' + x.value.trim())) return;
+  btn.disabled = true; msg.style.color = 'var(--muted)'; msg.textContent = 'Enviando...';
+  alertaApi('/admin/alerta', { titulo: t.value.trim(), texto: x.value.trim(), link: document.getElementById('al-link').value, uf: uf }).then(function(r){
+    msg.style.color = 'var(--green)'; msg.textContent = r.alvos ? '✅ Enviado para ' + r.alvos + ' aparelho' + (r.alvos === 1 ? '' : 's') + '.' : 'Ninguém com alertas ativos para esse público ainda.';
+    t.value = ''; x.value = ''; alertaResumo();
+  }).catch(function(e){ msg.style.color = 'var(--red)'; msg.textContent = 'Erro: ' + e.message; }).then(function(){ btn.disabled = false; });
+}
+// INMET só responde a acessos do Brasil: por isso a lista vem do seu navegador, e você decide se vira alerta
+var inmetAvisos = [];
+function inmetUfs(a){
+  var t = [a.estados, a.estado, a.uf, a.municipios].map(function(v){ return Array.isArray(v) ? v.join(' ') : String(v || ''); }).join(' ');
+  var m = t.match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/g) || [];
+  return m.filter(function(u, i){ return m.indexOf(u) === i; }).sort();
+}
+function alertaInmet(){
+  var el = document.getElementById('al-inmet'); el.textContent = '▋ CONSULTANDO O INMET...';
+  fetch('https://apiprevmet3.inmet.gov.br/avisos/ativos', { signal: AbortSignal.timeout(15000) }).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }).then(function(d){
+    var vistos = {};
+    inmetAvisos = ((d && d.hoje) || []).filter(function(a){
+      var sv = String(a.severidade || '').toLowerCase(); if (a.encerrado || (sv !== 'grande perigo' && sv !== 'perigo')) return false;
+      var k = a.id || JSON.stringify(a).slice(0, 80); if (vistos[k]) return false; vistos[k] = 1; return true;
+    }).sort(function(a, b){ return (String(b.severidade).toLowerCase() === 'grande perigo') - (String(a.severidade).toLowerCase() === 'grande perigo'); });
+    el.innerHTML = inmetAvisos.length ? inmetAvisos.slice(0, 20).map(function(a, i){
+      var gp = String(a.severidade).toLowerCase() === 'grande perigo', ufs = inmetUfs(a);
+      return '<div class="al-i" style="border-left-color:' + (gp ? 'var(--red)' : '#ff8800') + '"><b>' + esc(a.descricao || 'Aviso') + '</b> · <span style="color:' + (gp ? 'var(--red)' : '#ff8800') + '">' + esc(String(a.severidade).toUpperCase()) + '</span><br>' +
+        '<small>' + esc(ufs.join(', ') || 'Brasil') + ' · até ' + (a.fim ? quando(a.fim) : '—') + '</small><br><button class="btn" onclick="alertaUsarInmet(' + i + ')">USAR NO ALERTA ▸</button></div>';
+    }).join('') : '<span style="color:var(--green)">✅ Nenhum alerta laranja ou vermelho do INMET agora.</span>';
+  }).catch(function(){ el.innerHTML = '<span style="color:var(--amber)">INMET fora do ar agora. Veja em <a href="https://alertas2.inmet.gov.br" target="_blank" rel="noopener" style="color:var(--green)">alertas2.inmet.gov.br</a>.</span>'; });
+}
+function alertaUsarInmet(i){
+  var a = inmetAvisos[i]; if (!a) return;
+  var gp = String(a.severidade).toLowerCase() === 'grande perigo', ufs = inmetUfs(a);
+  var instr = Array.isArray(a.instrucoes) ? a.instrucoes.join(' ') : String(a.instrucoes || '');
+  document.getElementById('al-titulo').value = (gp ? '🔴 ' : '🟠 ') + String(a.descricao || 'Alerta do INMET').slice(0, 50) + (ufs.length === 1 ? ' — ' + ufs[0] : '');
+  document.getElementById('al-texto').value = ('INMET: ' + String(a.severidade) + ' em ' + (ufs.join(', ') || 'parte do Brasil') + (a.fim ? ' até ' + quando(a.fim) : '') + '. ' + instr).slice(0, 300);
+  document.getElementById('al-uf').value = ufs.length === 1 ? ufs[0] : '';
+  document.getElementById('al-link').value = '/defesa-civil.html';
+  document.getElementById('al-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
 // Regras do banco: sempre a versão mais nova publicada no site (firebase/database.rules.json).
 // Baixa ao abrir a página: no iPhone/Safari a cópia precisa acontecer logo no toque do botão.

@@ -120,6 +120,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#000000">
 <script src="senha.js" defer></script>
 <link rel="stylesheet" href="ajustes.css">
@@ -211,6 +212,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 </div>
 
 <div class="sub-box" id="sub-box" style="display:none"></div>
+<div id="alertas"></div>
 
 <!-- PLANS -->
 <div class="plans-grid">
@@ -282,6 +284,7 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 </footer>
 
 <!-- FIREBASE SDK -->
+<script src="alertas.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -378,8 +381,10 @@ function renderUI(loggedIn){
     var mentLink=level==='comando'?'<a class="btn btn-green" href="mentoria.html" style="margin-right:8px;text-decoration:none">🎖️ SALA DE MENTORIA</a>':'';
     document.getElementById('auth-actions').innerHTML=mentLink+adminLink+'<button class="btn btn-logout" onclick="doLogout()">SAIR DA CONTA</button>';
     updateButtons(level);renderSub();
+    if(window.PBRAlertas)PBRAlertas.mostrar(currentUser,adminLink?'admin':level);
   } else {
     renderSub();
+    if(window.PBRAlertas)PBRAlertas.mostrar(null);
     document.getElementById('p-avatar').textContent='?';
     document.getElementById('p-name').textContent='VISITANTE';
     document.getElementById('p-email').textContent='Faça login para acessar';
