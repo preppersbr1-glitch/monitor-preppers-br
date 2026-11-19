@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="104" fill="#000"/>
+  <rect x="14" y="14" width="484" height="484" rx="92" fill="none" stroke="#39ff14" stroke-width="14" opacity=".35"/>
+  <!-- correias -->
+  <path d="M96 210 L30 180 M96 300 L30 330 M416 210 L482 180 M416 300 L482 330" stroke="#39ff14" stroke-width="22" stroke-linecap="round"/>
+  <!-- corpo da máscara -->
+  <path d="M256 62 C372 62 432 140 432 238 C432 318 396 372 340 402 L172 402 C116 372 80 318 80 238 C80 140 140 62 256 62 Z" fill="#39ff14"/>
+  <!-- lentes -->
+  <circle cx="182" cy="216" r="60" fill="#000"/>
+  <circle cx="330" cy="216" r="60" fill="#000"/>
+  <circle cx="182" cy="216" r="40" fill="none" stroke="#39ff14" stroke-width="8" opacity=".55"/>
+  <circle cx="330" cy="216" r="40" fill="none" stroke="#39ff14" stroke-width="8" opacity=".55"/>
+  <path d="M160 194 a30 30 0 0 1 22 -10 M308 194 a30 30 0 0 1 22 -10" stroke="#39ff14" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- filtro -->
+  <circle cx="256" cy="378" r="94" fill="#000"/>
+  <circle cx="256" cy="378" r="76" fill="#39ff14"/>
+  <circle cx="256" cy="378" r="52" fill="#000"/>
+  <path d="M222 360 H290 M216 378 H296 M222 396 H290" stroke="#39ff14" stroke-width="10" stroke-linecap="round"/>
+</svg>
