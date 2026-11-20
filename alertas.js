@@ -95,14 +95,7 @@
   function desenhar() {
     var box = $('alertas'); if (!box) return;
     if (!user) { box.innerHTML = ''; return; }
-    var pago = nivel === 'operador' || nivel === 'comando' || nivel === 'admin';
     var cab = function (st) { return '<div class="pal-cab"><span class="pal-tit">🔔 ALERTAS PUSH</span>' + (st || '') + '</div>'; };
-    if (!pago) {
-      box.innerHTML = '<div class="pal">' + cab('<span class="pal-st off">OPERADOR E COMANDO</span>') + '<div class="pal-c">' +
-        '<p class="pal-p">Receba no celular e no computador, na hora, <b>terremotos</b>, <b>tempestades solares</b> e <b>avisos de crise</b> — mesmo com o site fechado.</p>' +
-        '<div class="pal-acoes"><button class="pal-b p" onclick="handlePlan(\'operador\')">ASSINAR OPERADOR ▸</button></div>' + hist() + '</div></div>';
-      return;
-    }
     if (!estado) { box.innerHTML = '<div class="pal">' + cab() + '<div class="pal-c"><p class="pal-p">▋ Carregando seus alertas...</p></div></div>'; return; }
     var corpo = '';
     if (!suportado() && ios() && !instalado()) {
@@ -217,10 +210,9 @@
       if (!u) { estado = null; desenhar(); return; }
       if (!mudou) return;
       estado = null; desenhar();
-      if (!(nivel === 'operador' || nivel === 'comando' || nivel === 'admin')) return;
       Promise.all([chamar('/push/estado'), assinaturaAtual()]).then(function (r) {
         estado = r[0]; var s = r[1];
-        if (!estado.pode) { nivel = 'sentinela'; desenhar(); return; }
+        nivel = estado.nivel || nivel;
         assinado = !!s;
         desenhar();
         // renova o registro deste aparelho a cada visita (o navegador às vezes troca o endereço de entrega)
