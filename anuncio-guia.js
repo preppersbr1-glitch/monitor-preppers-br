@@ -62,10 +62,10 @@
     '.pgf-p{font-size:15px;line-height:1.45;color:#9fd8bf;margin:0}' +
     '.pgf-acao{text-align:center;flex:none}' +
     '.pgf-preco{font-family:Orbitron,sans-serif;font-weight:900;font-size:26px;color:#00ff88;margin-bottom:8px}' +
-    '.pgf-preco small{display:block;font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;color:#4a7a60;font-weight:400}' +
+    '.pgf-preco small{display:block;white-space:nowrap;font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;color:#4a7a60;font-weight:400}' +
     '.pgf .pgf-letra{margin-top:7px}' +
     '@media(max-width:700px){.pgf-box{flex-wrap:wrap;gap:12px 14px;padding:16px}.pgf-capa{width:70px;height:99px}.pgf-txt{flex:1 1 180px}.pgf-p{display:none}.pgf-g{font-size:17px;margin:0}' +
-      '.pgf-acao{flex:1 1 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}.pgf-preco{margin:0;font-size:22px}.pgf-h{font-size:16px}.pgf .pgf-letra{display:none}}';
+      '.pgf-preco small{letter-spacing:1px}.pgf-acao{flex:1 1 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}.pgf-preco{margin:0;font-size:22px}.pgf-h{font-size:16px}.pgf .pgf-letra{display:none}}';
   document.head.appendChild(css);
 
   function faixa() {
@@ -77,7 +77,7 @@
       '<div class="pgf-h">GUIA DEFINITIVO DE PREPARAÇÃO</div>' +
       '<p class="pgf-g">' + gancho + '</p>' +
       '<p class="pgf-p">41 capítulos e 20 diagramas práticos — água, comida, abrigo, energia, saúde, segurança e comunicação — adaptados à realidade brasileira. Em PDF e pronto para imprimir.</p></div>' +
-      '<div class="pgf-acao"><div class="pgf-preco">R$ 39,50<small>PAGAMENTO ÚNICO</small></div>' +
+      '<div class="pgf-acao"><div class="pgf-preco">R$ 39,50<small>OU 12X DE R$ 4,09</small></div>' +
       '<a class="pgf-cta" href="' + link('faixa') + '">QUERO MEU GUIA ▸</a><div class="pgf-letra">Garantia de 7 dias</div></div></div>';
     var rodape = document.querySelector('footer');
     if (rodape && rodape.parentNode) rodape.parentNode.insertBefore(f, rodape);
@@ -90,11 +90,11 @@
     c.className = 'pga'; c.setAttribute('aria-label', 'Guia Definitivo de Preparação');
     c.innerHTML = '<button class="pga-x" type="button" aria-label="Fechar anúncio" title="Fechar">×</button>' +
       '<a href="' + link('cartao') + '"><img class="pga-capa" src="' + CAPA + '" alt="Capa do Guia" width="78" height="110"></a>' +
-      '<div class="pga-txt"><div class="pga-tag">📕 GUIA DEFINITIVO · R$ 39,50</div>' +
+      '<div class="pga-txt"><div class="pga-tag">📕 GUIA DEFINITIVO · R$ 39,50</div>' +
       '<div class="pga-h">' + gancho + '</div>' +
       '<p class="pga-p">O manual passo a passo para proteger sua família, com o que se encontra no Brasil.</p>' +
       '<a class="pga-cta" href="' + link('cartao') + '">CONHECER O GUIA ▸</a>' +
-      '<span class="pga-letra">41 capítulos · PDF + impressão · garantia 7 dias</span></div>';
+      '<span class="pga-letra">ou 12x de R$ 4,09 · 41 capítulos · garantia 7 dias</span></div>';
     // dentro do Rádio (página aberta por cima, com o botão de voltar no canto): sobe um pouco no celular
     try { if (window.top !== window && innerWidth <= 600) c.classList.add('no-iframe-radio'); } catch (e) {}
     if (!FAIXA) c.classList.add('topo');
