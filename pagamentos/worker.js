@@ -47,8 +47,8 @@ const PADRAO = {
 
 // Preços em reais. Mudou aqui, muda para as próximas assinaturas (as já feitas mantêm o valor).
 const PLANOS = {
-  operador: { nome: 'Operador', mensal: 29, anual: 290 },
-  comando: { nome: 'Comando', mensal: 79, anual: 790 },
+  operador: { nome: 'Operador', mensal: 9.90, anual: 99 },
+  comando: { nome: 'Comando', mensal: 29.90, anual: 299 },
 };
 const MESES = { mensal: 1, anual: 12 };
 const TOLERANCIA_DIAS = 3;   // dias de acesso além da próxima cobrança (atraso de processamento do cartão)
