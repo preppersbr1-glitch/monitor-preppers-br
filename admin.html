@@ -160,7 +160,7 @@ textarea.input{resize:vertical;font-family:'Rajdhani',sans-serif;font-size:16px}
       </div>
     </div>
 
-    <!-- Alertas push: enviados pelo Worker (pagamentos/worker.js) para Operador, Comando e você -->
+    <!-- Alertas push: enviados pelo Worker (pagamentos/worker.js) para todas as contas (Sentinela, Operador, Comando) e você -->
     <div class="title" style="margin-top:24px" id="alertas">🔔 ALERTAS PUSH</div>
     <div class="subtitle">TERREMOTOS E TEMPESTADES SOLARES SAEM SOZINHOS · AQUI VOCÊ MANDA AVISOS DE CRISE</div>
     <div class="card" style="padding:14px">
@@ -178,7 +178,7 @@ textarea.input{resize:vertical;font-family:'Rajdhani',sans-serif;font-size:16px}
             <select class="input" id="al-uf"><option value="">Para: todos os estados</option></select>
           </div>
           <button class="btn" id="al-btn" onclick="alertaEnviar()">📢 ENVIAR ALERTA</button> <span class="saved" id="al-msg"></span>
-          <p class="al-nota">Vai para os membros Operador e Comando que ativaram “Avisos do PREPPERS BR”. Escolhendo um estado, só quem marcou aquele estado recebe (quem não informou o estado não recebe avisos regionais). Para receber os alertas e as mensagens da Mentoria no seu celular, ative em <a href="membros.html#alertas">Membros → Alertas push</a>.</p>
+          <p class="al-nota">Vai para todos os membros (Sentinela, Operador e Comando) que ativaram “Avisos do PREPPERS BR”. Escolhendo um estado, só quem marcou aquele estado recebe (quem não informou o estado não recebe avisos regionais). Para receber os alertas e as mensagens da Mentoria no seu celular, ative em <a href="membros.html#alertas">Membros → Alertas push</a>.</p>
         </div>
         <div>
           <div class="al-sub">ALERTAS DO INMET AGORA <button class="btn btn-ghost al-mini" onclick="alertaInmet()">↻</button></div>

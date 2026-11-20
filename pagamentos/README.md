@@ -81,7 +81,7 @@ Com o secret `ADMIN_TOKEN` (mín. 32 caracteres, gere com `openssl rand -hex 32`
 `POST /admin/cursos` com `Authorization: Bearer <ADMIN_TOKEN>` e corpo `{ "<slug>": { "title", "html" } }`:
 grava só em `cursos/<slug>` no Firebase. `GET /admin/cursos` lista o que está publicado. Sem o secret a rota não existe.
 
-## Alertas push (membros Operador e Comando)
+## Alertas push (todos os membros, desde Sentinela)
 
 O mesmo Worker envia os alertas push (notificações no celular e no computador, mesmo com o site fechado).
 Não precisa de chave nova nem de serviço extra: a chave dos alertas é criada sozinha na primeira vez e fica
@@ -93,7 +93,7 @@ no banco, num lugar que o site não consegue ler (`segredos/vapid`).
 2. **Settings → Triggers → Cron Triggers → Add** → em *Cron expression* coloque `* * * * *` (a cada minuto) → **Add**.
 
 Pronto: a cada minuto o Worker confere terremotos (USGS) e tempestades solares (NOAA) e entrega os alertas.
-O endereço do Worker deve mostrar `"alertas_push": "ligados (versão 1)"`.
+O endereço do Worker deve mostrar `"alertas_push": "ligados (versão 2)"`.
 
 - **Automáticos:** tremor no Brasil (M3+), terremoto forte na América do Sul (M6.5+), grande no mundo (M7+, com
   aviso de tsunami), tempestade geomagnética G3/G4/G5 e explosão solar classe X. No máximo 3 eventos novos por minuto.
@@ -101,7 +101,8 @@ O endereço do Worker deve mostrar `"alertas_push": "ligados (versão 1)"`.
   (o INMET não responde a servidores fora do Brasil), com o botão "USAR NO ALERTA".
 - **Sala de Mentoria:** o fundador recebe aviso quando um Comando escreve (no máximo um a cada 5 min por membro) e o
   membro recebe aviso quando o fundador responde.
-- Quem recebe: Operador e Comando com pagamento em dia (`paidUntil`) e o e-mail de admin verificado. Plano vencido
-  para de receber sozinho. Cada membro escolhe os tipos e o estado em **Membros → Alertas push**.
+- Quem recebe: qualquer conta do site (Sentinela grátis, Operador e Comando) que ativar os alertas, e o admin.
+  Os avisos da Sala de Mentoria continuam só para Comando em dia. Cada membro escolhe os tipos e o estado em
+  **Membros → Alertas push**.
 - iPhone/iPad: só com o site adicionado à Tela de Início (iOS 16.4+); a página Membros mostra o passo a passo.
 - Plano grátis da Cloudflare: cada execução entrega até 28 aparelhos; com mais gente, o resto sai nos minutos seguintes.

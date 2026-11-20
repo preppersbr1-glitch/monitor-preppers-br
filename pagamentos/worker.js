@@ -314,7 +314,8 @@ async function adminCursos(req, env) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  ALERTAS PUSH — membros Operador e Comando (e o administrador)
+//  ALERTAS PUSH — todas as contas do site (Sentinela, Operador, Comando) e o administrador.
+//  A Sala de Mentoria continua só para Comando em dia.
 //  Web Push padrão (RFC 8030/8291/8292): funciona no Chrome, Edge, Firefox, Android e,
 //  com o site adicionado à Tela de Início, no iPhone/iPad. A chave VAPID é criada
 //  sozinha na primeira vez e fica em segredos/vapid no Firebase (nenhum visitante lê).
@@ -324,7 +325,7 @@ async function adminCursos(req, env) {
 //    alertas/hist      histórico dos alertas enviados        alertas/fila   entregas pendentes
 //    alertas/vistos    eventos já avisados (não repete)      alertas/estado última verificação
 // ═══════════════════════════════════════════════════════════════════════════
-const VERSAO_ALERTAS = '1';
+const VERSAO_ALERTAS = '2';
 const ADMIN_EMAIL_PADRAO = 'preppersbr1@gmail.com';
 const TIPOS_PUSH = ['sismo', 'solar', 'avisos', 'mentoria'];
 const UFS = 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
@@ -426,18 +427,18 @@ async function quem(req, env) {
   const u = await usuario(req, env);
   const adm = ehAdmin(env, u);
   const m = adm ? null : await db(env, 'GET', 'members/' + u.uid);
-  const nivel = adm ? 'admin' : nivelPago(m);
+  // qualquer conta logada recebe alertas; plano pago vencido conta como Sentinela
+  const nivel = adm ? 'admin' : (nivelPago(m) || 'sentinela');
   return { u, adm, nivel };
 }
 const ROTAS_PUSH = {
   '/push/estado': async (req, env) => {
     const { u, nivel } = await quem(req, env);
     const p = (await db(env, 'GET', 'push/' + u.uid)) || {};
-    return { pode: !!nivel, nivel: nivel || 'sentinela', prefs: limparPrefs(null, p.prefs), aparelhos: Object.keys(p.tok || {}).length, chave: (await chavesVapid(env)).publica };
+    return { pode: true, nivel, prefs: limparPrefs(null, p.prefs), aparelhos: Object.keys(p.tok || {}).length, chave: (await chavesVapid(env)).publica };
   },
   '/push/registrar': async (req, env) => {
     const { u, adm, nivel } = await quem(req, env);
-    if (!nivel) throw falha(403, 'Os alertas push são do plano Operador ou Comando.');
     const b = await corpoJson(req);
     const s = limparAssinatura(b.assinatura);
     const p = (await db(env, 'GET', 'push/' + u.uid)) || {};
@@ -451,7 +452,6 @@ const ROTAS_PUSH = {
   },
   '/push/prefs': async (req, env) => {
     const { u, nivel } = await quem(req, env);
-    if (!nivel) throw falha(403, 'Os alertas push são do plano Operador ou Comando.');
     const b = await corpoJson(req);
     const atual = await db(env, 'GET', 'push/' + u.uid + '/prefs');
     const prefs = limparPrefs(b.prefs, atual);
@@ -467,7 +467,6 @@ const ROTAS_PUSH = {
   },
   '/push/teste': async (req, env) => {
     const { u, nivel } = await quem(req, env);
-    if (!nivel) throw falha(403, 'Os alertas push são do plano Operador ou Comando.');
     const tok = (await db(env, 'GET', 'push/' + u.uid + '/tok')) || {};
     if (!Object.keys(tok).length) throw falha(404, 'Nenhum aparelho com alertas ativos.');
     const msg = { titulo: '✅ Alertas PREPPERS BR ativos', texto: 'Este aparelho vai receber os alertas que você escolheu.', link: '/membros.html#alertas', tag: 'teste' };
@@ -518,7 +517,7 @@ const ROTAS_PUSH = {
     const r = { membros: 0, aparelhos: 0, tipos: {}, ufs: {}, estado: estado || null, filaPendente: Object.keys(fila || {}).length };
     Object.entries(push || {}).forEach(([uid, p]) => {
       const n = Object.keys(p.tok || {}).length;
-      if (!n || (!p.adm && !nivelPago((membros || {})[uid]))) return;
+      if (!n) return;
       r.membros++; r.aparelhos += n;
       TIPOS_PUSH.forEach(t => { if (!p.prefs || p.prefs[t] !== false) r.tipos[t] = (r.tipos[t] || 0) + 1; });
       if (p.prefs && p.prefs.uf) r.ufs[p.prefs.uf] = (r.ufs[p.prefs.uf] || 0) + 1;
@@ -534,7 +533,7 @@ async function enfileirar(env, ctx, msg, filtro, cache, semEntregar) {
   const [push, membros] = cache || await Promise.all([db(env, 'GET', 'push'), db(env, 'GET', 'members')]);
   const alvos = [];
   Object.entries(push || {}).forEach(([uid, p]) => {
-    if (!p || !p.tok || !(p.adm === true || nivelPago((membros || {})[uid]))) return;
+    if (!p || !p.tok) return;
     if (msg.tipo && msg.tipo !== 'mentoria' && msg.tipo !== 'avisos' && p.prefs && p.prefs[msg.tipo] === false) return;
     if (!filtro(uid, p)) return;
     Object.entries(p.tok).forEach(([id, t]) => { if (t && t.s) alvos.push({ u: uid, i: id, s: t.s }); });
