@@ -77,7 +77,7 @@
       '<div class="pgf-h">GUIA DEFINITIVO DE PREPARAÇÃO</div>' +
       '<p class="pgf-g">' + gancho + '</p>' +
       '<p class="pgf-p">41 capítulos e 20 diagramas práticos — água, comida, abrigo, energia, saúde, segurança e comunicação — adaptados à realidade brasileira. Em PDF e pronto para imprimir.</p></div>' +
-      '<div class="pgf-acao"><div class="pgf-preco">R$ 47<small>PAGAMENTO ÚNICO</small></div>' +
+      '<div class="pgf-acao"><div class="pgf-preco">R$ 39,50<small>PAGAMENTO ÚNICO</small></div>' +
       '<a class="pgf-cta" href="' + link('faixa') + '">QUERO MEU GUIA ▸</a><div class="pgf-letra">Garantia de 7 dias</div></div></div>';
     var rodape = document.querySelector('footer');
     if (rodape && rodape.parentNode) rodape.parentNode.insertBefore(f, rodape);
@@ -90,7 +90,7 @@
     c.className = 'pga'; c.setAttribute('aria-label', 'Guia Definitivo de Preparação');
     c.innerHTML = '<button class="pga-x" type="button" aria-label="Fechar anúncio" title="Fechar">×</button>' +
       '<a href="' + link('cartao') + '"><img class="pga-capa" src="' + CAPA + '" alt="Capa do Guia" width="78" height="110"></a>' +
-      '<div class="pga-txt"><div class="pga-tag">📕 GUIA DEFINITIVO · R$ 47</div>' +
+      '<div class="pga-txt"><div class="pga-tag">📕 GUIA DEFINITIVO · R$ 39,50</div>' +
       '<div class="pga-h">' + gancho + '</div>' +
       '<p class="pga-p">O manual passo a passo para proteger sua família, com o que se encontra no Brasil.</p>' +
       '<a class="pga-cta" href="' + link('cartao') + '">CONHECER O GUIA ▸</a>' +
