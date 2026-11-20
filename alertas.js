@@ -114,7 +114,7 @@
       corpo = (assinado ? '<p class="pal-p">Este aparelho recebe os alertas marcados abaixo. As mudanças são salvas na hora.</p>'
         : '<p class="pal-p">Escolha o que quer receber e ative. Os alertas chegam como notificação do sistema, <b>mesmo com o site fechado</b>.</p>') +
         htmlTipos() + '<div class="pal-acoes">' +
-        (assinado ? '<button class="pal-b" id="pal-teste">📨 ENVIAR TESTE</button><button class="pal-b g" id="pal-desligar">DESATIVAR NESTE APARELHO</button>'
+        (assinado ? (nivel === 'admin' ? '<button class="pal-b" id="pal-teste">📨 ENVIAR TESTE</button>' : '') + '<button class="pal-b g" id="pal-desligar">DESATIVAR NESTE APARELHO</button>'
           : '<button class="pal-b p" id="pal-ligar">🔔 ATIVAR ALERTAS NESTE APARELHO</button>') + '</div>';
     }
     var nAp = estado.aparelhos || 0;
