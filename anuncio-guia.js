@@ -102,7 +102,7 @@
     c.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', gravar); });
     document.body.appendChild(c);
     var mostrou = false;
-    function mostrar() { if (mostrou) return; mostrou = true; removeEventListener('scroll', rolou); requestAnimationFrame(function () { c.classList.add('on'); }); }
+    function mostrar() { if (mostrou) return; if (window.PBR_INSTALAR_ABERTO) { setTimeout(mostrar, 20000); return; } mostrou = true; removeEventListener('scroll', rolou); requestAnimationFrame(function () { c.classList.add('on'); }); }
     function rolou() { var h = document.documentElement; if ((h.scrollTop || document.body.scrollTop) > Math.min(600, (h.scrollHeight - innerHeight) * 0.35)) mostrar(); }
     addEventListener('scroll', rolou, { passive: true });
     setTimeout(mostrar, 9000);

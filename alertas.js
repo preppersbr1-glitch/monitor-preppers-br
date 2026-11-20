@@ -110,7 +110,8 @@
         '<li>Abra este site no <b>Safari</b> e toque em <b>Compartilhar</b> (o quadrado com a seta ↑).</li>' +
         '<li>Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>.</li>' +
         '<li>Abra o PREPPERS BR <b>pelo ícone da máscara</b> na Tela de Início, entre em Membros e ative aqui.</li></ol>' +
-        '<small style="color:#8fc4a9">Precisa do iOS 16.4 ou mais novo.</small></div>';
+        '<small style="color:#8fc4a9">Precisa do iOS 16.4 ou mais novo.</small>' +
+        (window.PBRInstalar ? '<div style="margin-top:10px"><button class="pal-b p" type="button" onclick="PBRInstalar.abrir()">📲 VER COMO INSTALAR</button></div>' : '') + '</div>';
     } else if (!suportado()) {
       corpo = '<div class="pal-aviso">Este navegador não recebe alertas push. Use o <b>Chrome</b>, <b>Edge</b>, <b>Firefox</b> ou <b>Safari</b> atualizados.</div>';
     } else if (Notification.permission === 'denied') {
