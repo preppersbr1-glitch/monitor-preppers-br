@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<script src="../nivel.js" data-nivel="sentinela"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -196,7 +195,7 @@ body.mobile .colL,body.mobile .colR{width:auto}
     </div><div class="colR">
     <div class="painel"><div class="tit">Equipamento</div><div id="equip"></div></div>
     <div class="painel"><div class="tit">Mochila</div><div id="mochila"></div></div>
-    <div class="painel" style="display:flex;gap:4px;flex-wrap:wrap"><button id="bAjuda">Ajuda</button><button id="bNovo">Novo personagem</button></div>
+    <div class="painel" style="display:flex;gap:4px;flex-wrap:wrap"><button id="bAjuda">Ajuda</button><button id="bNovo">Novo personagem</button><button id="bMus" title="Música (tecla M)">🎵 Música</button><button id="bSfx" title="Efeitos sonoros">🔊 Efeitos</button></div>
   </div></div>
 </div>
 <div id="menuItem" class="janela esc"></div>
@@ -204,6 +203,261 @@ body.mobile .colL,body.mobile .colR{width:auto}
 
 <script>
 "use strict";
+// ---------------------------------------------------------------- SOM (trilha e efeitos sintetizados na hora, sem arquivos)
+const SOM = (function(){
+  let ctx=null, mestre, gMus, gSfx, gComb, rev, ruidoBuf, timer=null;
+  const cfg={mus:true,sfx:true,vol:.8};
+  try{ Object.assign(cfg, JSON.parse(localStorage.getItem("zm_som")||"{}")); }catch(e){}
+  const salvarCfg=()=>{ try{ localStorage.setItem("zm_som",JSON.stringify(cfg)); }catch(e){} };
+  const ult={};                                   // evita o mesmo som repetido no mesmo instante
+  const pode=(k,ms)=>{ const n=performance.now(); if(n-(ult[k]||0)<ms) return false; ult[k]=n; return true; };
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const hz=(base,semi)=>base*Math.pow(2,semi/12);
+
+  function iniciar(){
+    if(ctx){ if(ctx.state==="suspended" && !document.hidden) ctx.resume(); return; }
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    try{ ctx=new AC(); }catch(e){ return; }
+    mestre=ctx.createGain(); mestre.gain.value=cfg.vol;
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-14; comp.ratio.value=4;
+    mestre.connect(comp); comp.connect(ctx.destination);
+    gMus=ctx.createGain(); gMus.gain.value=cfg.mus?1.3:0; gMus.connect(mestre);
+    gComb=ctx.createGain(); gComb.gain.value=0; gComb.connect(gMus);
+    gSfx=ctx.createGain(); gSfx.gain.value=cfg.sfx?.9:0; gSfx.connect(mestre);
+    ruidoBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+    const d=ruidoBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    // eco/reverb (impulso de ruído que decai)
+    rev=ctx.createConvolver(); const L=Math.floor(ctx.sampleRate*2.4), ir=ctx.createBuffer(2,L,ctx.sampleRate);
+    for(let c=0;c<2;c++){ const ch=ir.getChannelData(c); for(let i=0;i<L;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/L,3.2); }
+    rev.buffer=ir; const gr=ctx.createGain(); gr.gain.value=.45; rev.connect(gr); gr.connect(mestre);
+    MUS.prox=ctx.currentTime+.2;
+    timer=setInterval(()=>{ try{ MUS.agendar(); ambiente(); }catch(e){} },100);
+  }
+  document.addEventListener("visibilitychange",()=>{ if(!ctx) return; if(document.hidden) ctx.suspend(); else ctx.resume(); });
+
+  // ---------- peças básicas
+  function tom(f,dur,o={}){
+    const t=o.t!=null?o.t:ctx.currentTime, osc=ctx.createOscillator(), g=ctx.createGain();
+    osc.type=o.tipo||"sine"; osc.frequency.setValueAtTime(f,t);
+    if(o.f2) osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.f2),t+(o.glide||dur));
+    if(o.det) osc.detune.value=o.det;
+    const v=o.vol!=null?o.vol:.2, a=o.ataque||.005;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(v,t+a);
+    if(o.sus) g.gain.setValueAtTime(v,t+Math.max(a,dur-o.sus));
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    let no=osc;
+    if(o.lp){ const fl=ctx.createBiquadFilter(); fl.type="lowpass"; fl.frequency.value=o.lp; if(o.q) fl.Q.value=o.q; osc.connect(fl); no=fl; }
+    no.connect(g); g.connect(o.dest||gSfx); if(o.rev){ const s=ctx.createGain(); s.gain.value=o.rev; g.connect(s); s.connect(rev); }
+    osc.start(t); osc.stop(t+dur+.05);
+  }
+  function ruido(dur,o={}){
+    const t=o.t!=null?o.t:ctx.currentTime, src=ctx.createBufferSource(), g=ctx.createGain(), fl=ctx.createBiquadFilter();
+    src.buffer=ruidoBuf; src.loop=true; src.playbackRate.value=o.rate||1;
+    fl.type=o.filtro||"lowpass"; fl.frequency.setValueAtTime(o.f||2000,t); if(o.f2) fl.frequency.exponentialRampToValueAtTime(o.f2,t+dur); fl.Q.value=o.q||.8;
+    const v=o.vol!=null?o.vol:.2, a=o.ataque||.002;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(v,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(fl); fl.connect(g); g.connect(o.dest||gSfx); if(o.rev){ const s=ctx.createGain(); s.gain.value=o.rev; g.connect(s); s.connect(rev); }
+    src.start(t,Math.random()*1.5); src.stop(t+dur+.05);
+  }
+
+  // ---------- efeitos
+  const SFX={
+    passo_grama:()=>ruido(.07,{filtro:"bandpass",f:rnd(1600,2400),q:.7,vol:.05}),
+    passo_terra:()=>ruido(.08,{filtro:"lowpass",f:rnd(700,1000),vol:.09}),
+    passo_duro:()=>{ ruido(.05,{filtro:"bandpass",f:rnd(1800,2600),q:1.2,vol:.07}); tom(rnd(110,140),.05,{vol:.05,tipo:"triangle"}); },
+    passo_metal:()=>{ ruido(.04,{filtro:"highpass",f:3000,vol:.05}); tom(rnd(380,460),.12,{vol:.035,tipo:"square",lp:1800}); },
+    passo_madeira:()=>{ tom(rnd(150,190),.08,{vol:.09,tipo:"triangle",lp:900}); ruido(.04,{f:1200,vol:.04}); },
+    passo_lama:()=>ruido(.14,{filtro:"bandpass",f:rnd(500,800),f2:300,q:2,vol:.09}),
+    tiro:()=>{ ruido(.25,{f:6000,f2:300,vol:.55,rev:.25}); tom(140,.18,{f2:40,vol:.5,tipo:"sine"}); },
+    rifle:()=>{ ruido(.16,{f:8000,f2:500,vol:.5,rev:.2}); tom(180,.12,{f2:50,vol:.45}); ruido(.05,{t:ctx.currentTime+.06,filtro:"highpass",f:4000,vol:.12}); },
+    espingarda:()=>{ ruido(.45,{f:4000,f2:150,vol:.7,rev:.35}); tom(90,.3,{f2:30,vol:.6}); ruido(.08,{t:ctx.currentTime+.35,filtro:"bandpass",f:1800,q:3,vol:.12}); tom(600,.05,{t:ctx.currentTime+.4,vol:.06,tipo:"square",lp:1500}); },
+    flecha:()=>{ tom(rnd(240,280),.18,{tipo:"triangle",vol:.12,f2:200}); ruido(.15,{filtro:"bandpass",f:2500,f2:700,q:2,vol:.12}); },
+    pedra:()=>{ ruido(.12,{filtro:"bandpass",f:1800,f2:600,q:2,vol:.12}); tom(320,.04,{vol:.06,tipo:"triangle"}); },
+    laser:()=>tom(1400,.16,{f2:260,tipo:"square",vol:.08,lp:3000}),
+    cuspe:()=>{ ruido(.18,{filtro:"bandpass",f:1200,f2:400,q:3,vol:.12}); },
+    carne:()=>{ ruido(.1,{f:900,f2:200,vol:.28}); tom(rnd(90,120),.1,{f2:50,vol:.22}); },
+    dor:()=>{ ruido(.12,{f:1200,f2:200,vol:.3}); tom(rnd(200,240),.18,{f2:110,tipo:"sawtooth",vol:.07,lp:900}); },
+    errou:()=>ruido(.16,{filtro:"bandpass",f:900,f2:2600,q:1.5,vol:.1}),
+    puff:()=>ruido(.08,{f:500,vol:.14}),
+    bloqueio:()=>{ for(const f of [820,1240,1690]) tom(f*rnd(.98,1.02),.35,{vol:.07,tipo:"sine",rev:.2}); ruido(.04,{filtro:"highpass",f:2500,vol:.12}); },
+    morteMonstro:()=>{ tom(rnd(150,180),.5,{f2:45,tipo:"sawtooth",vol:.12,lp:700}); ruido(.35,{f:600,f2:120,vol:.18}); },
+    comer:()=>{ for(let i=0;i<3;i++) ruido(.05,{t:ctx.currentTime+i*.11,filtro:"bandpass",f:rnd(1500,3000),q:1.5,vol:.13}); },
+    beber:()=>{ for(let i=0;i<2;i++) tom(rnd(260,320),.12,{t:ctx.currentTime+i*.18,f2:rnd(480,560),vol:.14}); },
+    cura:()=>{ [523,659,784,1047].forEach((f,i)=>tom(f,.35,{t:ctx.currentTime+i*.07,vol:.08,tipo:"triangle",rev:.3})); },
+    pilula:()=>{ tom(900,.06,{vol:.06}); tom(1300,.08,{t:ctx.currentTime+.07,vol:.06}); },
+    levelUp:()=>{ const t=ctx.currentTime; [392,523,659,784].forEach((f,i)=>tom(f,.25,{t:t+i*.09,vol:.11,tipo:"square",lp:2500,rev:.3}));
+      [523,659,784,1047].forEach(f=>tom(f,1.2,{t:t+.38,vol:.06,tipo:"triangle",ataque:.02,rev:.5})); },
+    gloria:()=>{ const t=ctx.currentTime; [262,330,392,523,659,784,1047].forEach((f,i)=>tom(f,1.6-i*.1,{t:t+i*.12,vol:.07,tipo:"triangle",rev:.6})); },
+    pegar:()=>{ tom(880,.06,{vol:.06,tipo:"triangle"}); tom(1320,.09,{t:ctx.currentTime+.05,vol:.05,tipo:"triangle"}); },
+    moedas:()=>{ for(let i=0;i<4;i++) tom(rnd(2400,3400),.12,{t:ctx.currentTime+i*.05,vol:.04,tipo:"square",lp:5000}); },
+    bau:()=>{ tom(95,.35,{f2:150,tipo:"sawtooth",vol:.05,lp:500,q:6}); ruido(.2,{t:ctx.currentTime+.05,filtro:"bandpass",f:1800,q:.8,vol:.07}); },
+    corpo:()=>ruido(.25,{filtro:"bandpass",f:1100,f2:600,q:.8,vol:.09}),
+    porta:()=>{ tom(110,.5,{f2:170,tipo:"sawtooth",vol:.05,lp:600,q:8}); ruido(.12,{t:ctx.currentTime+.45,f:500,vol:.2}); },
+    portal:()=>{ ruido(.9,{filtro:"bandpass",f:300,f2:2400,q:1.2,vol:.14,rev:.4}); [523,784,1047].forEach((f,i)=>tom(f,.6,{t:ctx.currentTime+.2+i*.08,vol:.04,rev:.5})); },
+    equipar:()=>{ ruido(.08,{filtro:"bandpass",f:1400,q:1,vol:.08}); tom(500,.05,{t:ctx.currentTime+.06,tipo:"square",vol:.03,lp:2000}); },
+    vazio:()=>tom(1800,.03,{tipo:"square",vol:.04,lp:4000}),
+    morte:()=>{ const t=ctx.currentTime; [[220,261,330],[196,233,294],[165,196,247]].forEach((ac,i)=>ac.forEach(f=>tom(f,1.3,{t:t+i*.7,vol:.06,tipo:"triangle",ataque:.05,rev:.6}))); tom(80,2.2,{t,f2:30,vol:.25}); },
+    falaNpc:()=>{ for(let i=0;i<3;i++) tom(rnd(300,420),.05,{t:ctx.currentTime+i*.06,tipo:"square",vol:.02,lp:1400}); },
+    geiger:()=>ruido(.012,{filtro:"highpass",f:3000,vol:.25}),
+    gota:()=>{ const f=rnd(900,1800); tom(f,.25,{f2:f*.55,glide:.08,vol:.05,rev:.7}); },
+    grilo:()=>{ for(let i=0;i<3;i++) tom(4300,.03,{t:ctx.currentTime+i*.05,vol:.012}); },
+    fogo:()=>ruido(.025,{filtro:"bandpass",f:rnd(1500,3500),q:1.5,vol:rnd(.02,.05)}),
+    clank:()=>{ tom(rnd(180,260),.6,{tipo:"square",vol:.03,lp:900,rev:.6}); ruido(.06,{f:3000,vol:.06,rev:.4}); },
+    // vozes de monstro (aparecem de vez em quando quando estão perto)
+    v_rato:()=>{ for(let i=0;i<2;i++) tom(rnd(2400,3200),.07,{t:ctx.currentTime+i*.09,f2:rnd(3000,3800),vol:.03}); },
+    v_cao:()=>tom(rnd(90,120),.6,{tipo:"sawtooth",vol:.06,lp:500,ataque:.05}),
+    v_zumbi:()=>{ tom(rnd(95,130),1,{f2:rnd(70,90),tipo:"sawtooth",vol:.05,lp:600,q:5,ataque:.15}); },
+    v_morcego:()=>{ for(let i=0;i<3;i++) tom(rnd(5000,6500),.03,{t:ctx.currentTime+i*.07,vol:.02}); },
+    v_aranha:()=>ruido(.4,{filtro:"highpass",f:4000,vol:.05,ataque:.1}),
+    v_drone:()=>{ tom(1200,.08,{tipo:"square",vol:.03,lp:3000}); tom(1600,.08,{t:ctx.currentTime+.12,tipo:"square",vol:.03,lp:3000}); },
+    v_fera:()=>{ tom(rnd(70,90),1.2,{f2:50,tipo:"sawtooth",vol:.08,lp:400,q:4,ataque:.1}); ruido(1,{f:400,vol:.06,ataque:.2}); }
+  };
+  function tocar(nome,ms=60){ if(!ctx||!cfg.sfx||ctx.state!=="running") return; if(!SFX[nome]||!pode(nome,ms)) return; try{ SFX[nome](); }catch(e){} }
+
+  // ---------- ganchos chamados pelo jogo
+  const naTela=(x,y)=>P && Math.abs(x-P.x)<=9 && Math.abs(y-P.y)<=7;
+  function texto(txt,cor,x,y,emMim){
+    if(!naTela(x,y)) return;
+    if(txt==="LEVEL UP!") return tocar("levelUp",500);
+    if(/^\d+$/.test(txt) && cor==="#ff3030"){ combate(); return tocar(emMim?"dor":"carne",50); }
+    if(txt==="errou") return tocar("errou"); if(txt==="puff") return tocar("puff"); if(txt==="bloqueou") return tocar("bloqueio");
+    if(txt==="Nhac") return tocar("comer",300); if(txt==="Gulp") return tocar("beber",300);
+    if(/^\+\d/.test(txt)) return tocar("cura",300); if(txt==="-rad") return tocar("pilula",300);
+  }
+  function log(txt){
+    if(/foi derrotado/.test(txt)) return tocar("morteMonstro",100);
+    if(/^Você pegou/.test(txt)) return tocar("pegar",70);
+    if(/^Você (comprou|vendeu)/.test(txt)) return tocar("moedas",100);
+    if(/abre a porta/.test(txt)) return tocar("porta",300);
+    if(/^(Você chega:|Teletransportado)/.test(txt)) return tocar("portal",400);
+    if(/^Você equipou/.test(txt)) return tocar("equipar",100);
+    if(/^Sem munição/.test(txt)) return tocar("vazio",300);
+    if(/★/.test(txt)) return tocar("gloria",2000);
+    if(/recupera as forças/.test(txt)) return tocar("cura",300);
+    if(/bebe (a )?água/.test(txt)) return tocar("beber",300);
+    if(/^[^:]{2,30}: /.test(txt) && typeof NPCS!=="undefined" && NPCS.some(n=>txt.startsWith(n.nome+":"))) return tocar("falaNpc",400);
+  }
+  function proj(x0,y0,cor){
+    if(!naTela(x0,y0)) return; combate();
+    if(P && x0===P.x && y0===P.y){ const a=ITENS[P.eq.arma]||{};
+      return tocar(a.mun==="cartucho"?"espingarda":a.mun==="flecha"?"flecha":a.mun==="pedra"?"pedra":P.eq.arma==="rifle"?"rifle":"tiro",40); }
+    if(cor==="#5ad1ff") return tocar("laser",40);
+    if(cor==="#ffd23a"||cor==="#ff5a2a"||cor==="#fff"||cor==="#ffffff") return tocar("tiro",40);
+    tocar("cuspe",40);
+  }
+  function passo(m,x,y){
+    if(!ctx) return; const t=tileEm(m,x,y);
+    const k = (t===T.GRAMA)?"grama" : (t===T.METAL||t===T.TRILHO)?"metal" : (t===T.MADEIRA)?"madeira" : (t===T.LODO||t===T.ESGC||t===T.RAD)?"lama"
+      : (t===T.TERRA||t===T.AREIA||t===T.ENTULHO)?"terra" : "duro";
+    tocar("passo_"+k,90);
+  }
+  let combateAte=0;
+  function combate(){ combateAte=performance.now()+7000; }
+
+  // ---------- ambiente (sons soltos que dão vida ao lugar)
+  const VOZ={rato:"v_rato",barata:"v_rato",cao:"v_cao",carnical:"v_zumbi",soldado:"v_zumbi",morcego:"v_morcego",aranha:"v_aranha",escorp:"v_aranha",
+    drone:"v_drone",mutante:"v_fera",rei:"v_fera",experimento:"v_fera",carnica:"v_fera"};
+  let proxVoz=0;
+  function ambiente(){
+    if(!P||!cfg.sfx||ctx.state!=="running") return;
+    const z=MUS.zona, now=performance.now(), tl=tileEm(P.mapa,P.x,P.y);
+    if(tl===T.RAD||tl===T.LODO||P.rad>40){ const n=tl===T.RAD||tl===T.LODO?3:1; for(let i=0;i<n;i++) if(Math.random()<.35) ruido(.012,{t:ctx.currentTime+Math.random()*.1,filtro:"highpass",f:3000,vol:.2}); }
+    if(z==="subsolo" && Math.random()<.04) tocar("gota",200);
+    if(z==="noite" && Math.random()<.05) tocar("grilo",300);
+    if(z==="refugio" && Math.random()<.18) tocar("fogo",120);
+    if(z==="base" && Math.random()<.012) tocar("clank",2000);
+    if(now>proxVoz && typeof CRI!=="undefined"){
+      const perto=CRI.filter(c=>c.mapa===P.mapa && cheb(c,P)<=7 && VOZ[c.tipo]);
+      if(perto.length && Math.random()<.25){ const c=perto[(Math.random()*perto.length)|0]; tocar(VOZ[c.tipo],500); proxVoz=now+rnd(2500,6000); }
+    }
+  }
+
+  // ---------- trilha sonora generativa (muda conforme o lugar e a hora)
+  const I=[0,3,7], VI=[-4,0,3], III=[3,7,10], VII=[-2,2,5], iv=[5,8,12], v=[7,10,14], ii=[2,5,8];
+  const ESC=[0,2,3,5,7,8,10];   // menor natural
+  const ZONAS={
+    bunker:  {bpm:62, raiz:110,  prog:[I,VI,III,VII], pad:"triangle", padVol:.035, arp:"sine", arpP:.45, arpOit:2, melP:.25, mel:"sine", baixo:1, cama:"zumbido"},
+    refugio: {bpm:74, raiz:73.4, prog:[I,VI,III,VII], pad:"sine", padVol:.03, arp:"pluck", arpP:.85, arpOit:1, melP:.3, mel:"triangle", baixo:1, cama:"vento", camaVol:.025},
+    superficie:{bpm:70, raiz:82.4, prog:[I,VII,VI,VII], pad:"sawtooth", padVol:.018, arp:"pluck", arpP:.6, arpOit:1, melP:.28, mel:"triangle", baixo:1, cama:"vento", camaVol:.03},
+    noite:   {bpm:56, raiz:69.3, prog:[I,VI,iv,v], pad:"sawtooth", padVol:.02, arp:"sine", arpP:.25, arpOit:2, melP:.15, mel:"sine", baixo:1, cama:"vento", camaVol:.04},
+    subsolo: {bpm:50, raiz:65.4, prog:[I,I,ii,I], pad:"sawtooth", padVol:.016, arp:"sine", arpP:.12, arpOit:3, melP:.1, mel:"sine", baixo:0, drone:1, tenso:1, cama:"ronco"},
+    base:    {bpm:92, raiz:87.3, prog:[I,I,VI,v], pad:"sawtooth", padVol:.016, arp:"square", arpP:.5, arpOit:1, melP:.12, mel:"sine", baixo:2, tenso:1, cama:"maquina"}
+  };
+  function zonaAtual(){
+    if(!P) return "bunker"; const m=P.mapa;
+    if(m==="bunker") return "bunker";
+    if(m==="base") return "base";
+    if(m!=="sup") return "subsolo";
+    if(pzEm(m,P.x,P.y)) return "refugio";
+    const h=horaJogo(); return (h>=19||h<5.5)?"noite":"superficie";
+  }
+  function camaNova(tipo,vol){
+    const g=ctx.createGain(); g.gain.value=0.0001; g.connect(gSfx); const nos=[];
+    const fonteRuido=()=>{ const s=ctx.createBufferSource(); s.buffer=ruidoBuf; s.loop=true; s.start(); nos.push(s); return s; };
+    if(tipo==="vento"){ const s=fonteRuido(), f=ctx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=450; f.Q.value=1.1;
+      const lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=.07; lg.gain.value=320; lfo.connect(lg); lg.connect(f.frequency); lfo.start(); nos.push(lfo);
+      s.connect(f); f.connect(g); }
+    if(tipo==="zumbido"){ for(const [fr,tp,vv] of [[55,"sine",.6],[110,"triangle",.15]]){ const o=ctx.createOscillator(), og=ctx.createGain(); o.frequency.value=fr; o.type=tp; og.gain.value=vv; o.connect(og); og.connect(g); o.start(); nos.push(o); }
+      const s=fonteRuido(), f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=380; const sg=ctx.createGain(); sg.gain.value=.5; s.connect(f); f.connect(sg); sg.connect(g); }
+    if(tipo==="ronco"){ const s=fonteRuido(), f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=140; s.connect(f); f.connect(g); }
+    if(tipo==="maquina"){ const o=ctx.createOscillator(), f=ctx.createBiquadFilter(); o.type="sawtooth"; o.frequency.value=46; f.type="lowpass"; f.frequency.value=180;
+      const lfo=ctx.createOscillator(), lg=ctx.createGain(), am=ctx.createGain(); lfo.frequency.value=1.5; lg.gain.value=.4; am.gain.value=.6; lfo.connect(lg); lg.connect(am.gain);
+      o.connect(f); f.connect(am); am.connect(g); o.start(); lfo.start(); nos.push(o,lfo); }
+    g.gain.exponentialRampToValueAtTime(vol||.05, ctx.currentTime+3);
+    return { parar(){ const t=ctx.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(Math.max(.0001,g.gain.value),t); g.gain.exponentialRampToValueAtTime(.0001,t+2.5);
+      setTimeout(()=>{ for(const n of nos) try{ n.stop(); }catch(e){} g.disconnect(); },2800); } };
+  }
+  function pluck(f,t,vol,dest){ tom(f,1.4,{t,tipo:"triangle",vol,lp:f*4,dest,rev:.15}); tom(f*2,.25,{t,tipo:"sine",vol:vol*.3,dest}); }
+  const MUS={ zona:null, prox:0, passo:0, cama:null, nota:0,
+    agendar(){
+      if(!ctx||ctx.state!=="running") return;
+      const z=zonaAtual();
+      if(z!==this.zona){ this.zona=z; if(this.cama) this.cama.parar(); this.cama=camaNova(ZONAS[z].cama, ZONAS[z].camaVol); this.passo=0; this.prox=Math.max(this.prox,ctx.currentTime+.6); }
+      const lut=performance.now()<combateAte; gComb.gain.setTargetAtTime(lut?1:0, ctx.currentTime, lut?.3:1.5);
+      if(!cfg.mus){ this.prox=ctx.currentTime+.1; return; }
+      if(this.prox<ctx.currentTime-.2) this.prox=ctx.currentTime+.05;
+      const Z=ZONAS[this.zona], dur=60/Z.bpm/2;
+      while(this.prox<ctx.currentTime+.35){ this.tocarPasso(Z,this.passo,this.prox,dur); this.prox+=dur; this.passo++; }
+    },
+    tocarPasso(Z,s,t,dur){
+      const comp=Math.floor(s/8), pos=s%8, ac=Z.prog[comp%Z.prog.length], R0=Z.raiz;
+      if(pos===0){
+        if(Z.drone){ if(comp%2===0) for(const st of [0,7,12]) tom(hz(R0,st),dur*16.5,{t,tipo:"sawtooth",vol:Z.padVol,ataque:2.5,lp:500,dest:gMus,rev:.5,det:rnd(-8,8)}); }
+        else for(const st of ac){ const f=hz(R0*2,st); tom(f,dur*8.4,{t,tipo:Z.pad,vol:Z.padVol,ataque:1.2,sus:1.2,lp:900,dest:gMus,rev:.4,det:-6}); tom(f,dur*8.4,{t,tipo:Z.pad,vol:Z.padVol*.8,ataque:1.2,sus:1.2,lp:900,dest:gMus,det:6}); }
+        if(Z.baixo) tom(hz(R0/2*2,ac[0]),dur*7,{t,tipo:"triangle",vol:.09,ataque:.04,lp:400,dest:gMus});
+      }
+      if(Z.baixo===2 && pos%2===1) tom(hz(R0,ac[0]),dur*.9,{t,tipo:"sawtooth",vol:.05,lp:300,dest:gMus});
+      // arpejo / dedilhado
+      if(Math.random()<Z.arpP){ const pad=[0,1,2,1,2,0,1,2][pos], st=ac[pad]+12*(Z.arpOit-1), f=hz(R0*2,st);
+        if(Z.arp==="pluck") pluck(f,t,.06,gMus);
+        else tom(f,dur*2.2,{t,tipo:Z.arp,vol:Z.arp==="square"?.018:.045,lp:Z.arp==="square"?1600:6000,dest:gMus,rev:.35}); }
+      // melodia solta
+      if(pos%2===0 && Math.random()<Z.melP){
+        this.nota=Math.max(-3,Math.min(9,this.nota+[-2,-1,-1,0,1,1,2][(Math.random()*7)|0]));
+        const grau=((this.nota%7)+7)%7, oit=Math.floor(this.nota/7); let st=ESC[grau]+12*oit;
+        if(Z.tenso && Math.random()<.25) st+=6;   // trítono: desconforto
+        tom(hz(R0*4,st),dur*3,{t,tipo:Z.mel,vol:.04,ataque:.06,lp:3000,dest:gMus,rev:.55}); }
+      // camada de combate: tambores e baixo pulsante (sobe quando a luta começa)
+      if(pos===0||pos===4){ tom(110,.25,{t,f2:40,glide:.12,vol:.35,dest:gComb}); }
+      if(pos===2||pos===6){ ruido(.14,{t,filtro:"bandpass",f:1800,q:.7,vol:.16,dest:gComb}); tom(190,.08,{t,f2:120,vol:.08,dest:gComb}); }
+      ruido(.03,{t,filtro:"highpass",f:7000,vol:pos%2?.015:.025,dest:gComb});
+      tom(hz(R0/2*2,ac[0]),dur*.8,{t,tipo:"sawtooth",vol:.05,lp:250,dest:gComb});
+      if(pos===7 && Math.random()<.5) ruido(.1,{t:t+dur/2,filtro:"bandpass",f:2400,q:1,vol:.08,dest:gComb});
+    }
+  };
+
+  // ---------- controles
+  function aplicar(){ if(!ctx) return; const t=ctx.currentTime;
+    gMus.gain.setTargetAtTime(cfg.mus?1.3:0,t,.3); gSfx.gain.setTargetAtTime(cfg.sfx?.9:0,t,.1); mestre.gain.setTargetAtTime(cfg.vol,t,.1); }
+  function alternar(k){ cfg[k]=!cfg[k]; salvarCfg(); iniciar(); aplicar(); if(typeof atualizarBotoesSom==="function") atualizarBotoesSom(); return cfg[k]; }
+  function volume(v){ cfg.vol=Math.max(0,Math.min(1,v)); salvarCfg(); aplicar(); }
+  ["pointerdown","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,iniciar,{passive:true}));
+  return {iniciar,tocar,texto,log,proj,passo,combate,alternar,volume,cfg,_zona:()=>MUS.zona,_ctx:()=>ctx,
+    _teste:()=>{ const e=[]; for(const k in SFX){ try{ SFX[k](); }catch(x){ e.push(k+": "+x.message); } }
+      for(const z in ZONAS) for(let s=0;s<16;s++){ try{ MUS.tocarPasso(ZONAS[z],s,ctx.currentTime+.1,.3); }catch(x){ e.push(z+": "+x.message); break; } }
+      for(const c of ["vento","zumbido","ronco","maquina"]){ try{ camaNova(c,.01).parar(); }catch(x){ e.push(c+": "+x.message); } } return e; }};
+})();
+
 // ======================================================================
 //  ZONA MORTA — RPG de sobrevivência pós-apocalíptica estilo Tibia
 // ======================================================================
@@ -864,7 +1118,7 @@ function desequipar(slot){
 }
 
 // ---------------------------------------------------------------- COMBATE E XP
-function textoFlut(ent,txt,cor){ TXT.push({x:ent.x,y:ent.y,mapa:ent.mapa,txt,cor,t0:performance.now()}); }
+function textoFlut(ent,txt,cor){ TXT.push({x:ent.x,y:ent.y,mapa:ent.mapa,txt,cor,t0:performance.now()}); SOM.texto(txt,cor,ent.x,ent.y,ent===P); }
 function efeito(x,y,cor){ const now=performance.now(); for(let i=0;i<7;i++) FX.push({mapa:P.mapa,x:x+.5,y:y+.5,vx:(Math.random()-.5)*2.4,vy:(Math.random()-.8)*2.4,cor,t0:now}); }
 function treinar(k){
   const s=P.sk[k]; s.t++;
@@ -892,7 +1146,7 @@ function ataquePlayer(now){
   P.proxAtk = now + 1500;
   const d=MONS[m.tipo]; const sk = ranged ? P.sk.dist : P.sk.corpo;
   P.dir = Math.abs(m.x-P.x)>=Math.abs(m.y-P.y) ? (m.x>P.x?3:2) : (m.y>P.y?0:1);
-  if(ranged) PROJ.push({mapa:P.mapa,x0:P.x,y0:P.y,x1:m.x,y1:m.y,t0:now,dur:180,cor:"#fff"});
+  if(ranged){ PROJ.push({mapa:P.mapa,x0:P.x,y0:P.y,x1:m.x,y1:m.y,t0:now,dur:180,cor:"#fff"}); SOM.proj(P.x,P.y,"#fff"); }
   treinar(ranged?"dist":"corpo");
   if(ranged && !chance(Math.min(92,55+sk.v*1.1))){ textoFlut(m,"errou","#aaa"); m.aggro=true; return; }
   const atk = arma ? arma.atk : 4;
@@ -922,7 +1176,7 @@ function matar(m){
 }
 function ataqueMonstro(m,d,now,ranged){
   m.proxAtk = now + 2000;
-  if(ranged) PROJ.push({mapa:m.mapa,x0:m.x,y0:m.y,x1:P.x,y1:P.y,t0:now,dur:200,cor:d.proj||"#fff"});
+  if(ranged){ PROJ.push({mapa:m.mapa,x0:m.x,y0:m.y,x1:P.x,y1:P.y,t0:now,dur:200,cor:d.proj||"#fff"}); SOM.proj(m.x,m.y,d.proj||"#ffd23a"); }
   let dano=R(0,d.atk);
   const esc=ITENS[P.eq.escudo];
   if(esc){ treinar("def");
@@ -939,7 +1193,7 @@ function morrer(causa){
   const perda=Math.floor(P.xp*0.1);
   P.xp-=perda; while(P.lvl>1 && P.xp<xpNivel(P.lvl)) P.lvl--;
   const tamp=Math.floor(contar("tampinha")*0.1); if(tamp) tirarItem("tampinha",tamp);
-  P.mortes++;
+  P.mortes++; SOM.tocar("morte",3000);
   CORPOS.push({mapa:P.mapa,x:P.x,y:P.y,nome:`Corpo de ${P.nome}`,itens:[],ate:performance.now()+60000,spr:"hum",tipo:"player"});
   P.mapa=TEMPLO.mapa; P.x=TEMPLO.x; P.y=TEMPLO.y; P.mv=null; P.hp=hpMax(); P.fome=Math.max(P.fome,60); P.sede=Math.max(P.sede,60); P.rad=0;
   P.alvo=null; P.caminho=[]; P.acao=null; fecharJanelas(); npcFoco=null; atualizarChips();
@@ -1190,6 +1444,7 @@ function atualizarChips(){
 // ---------------------------------------------------------------- JANELAS
 function abrirLoot(c){
   if(ONLINE && !c._cont){ netEnviar({t:"abrir",id:c.id}); return; }
+  if(lootAberto!==c && !(lootAberto && c.id!=null && lootAberto.id===c.id)) SOM.tocar(c.cont?"bau":"corpo",300);
   lootAberto=c; const el=$("#loot"); el.classList.remove("esc");
   const slots=c.itens.map((s,i)=>`<div class="slot" data-l="${i}" title="${ITENS[s.id].n}">${ITENS[s.id].ic}${s.q>1?`<span class="q">${s.q}</span>`:""}</div>`).join("");
   el.innerHTML=`<div class="cab"><span>${c.nome}</span><button id="fxL">x</button></div>
@@ -1332,7 +1587,7 @@ function proximoAlvo(){
 }
 const corVida = p => p>.75?"#00c000":p>.5?"#60c060":p>.25?"#c0c000":p>.1?"#c03030":"#600000";
 function atualizarTudo(){ atualizarInv(); atualizarStatus(); atualizarHab(); batalhaCache=""; atualizarBatalha(); atualizarChips(); desenharMini(); }
-function log(txt,cls){ const el=$("#log"); const p=document.createElement("p"); p.className=cls||"c-sis"; p.textContent=txt; el.appendChild(p);
+function log(txt,cls){ const el=$("#log"); const p=document.createElement("p"); p.className=cls||"c-sis"; p.textContent=txt; el.appendChild(p); SOM.log(txt);
   while(el.children.length>150) el.removeChild(el.firstChild); el.scrollTop=el.scrollHeight; if(typeof logMobile==="function") logMobile(txt,cls); }
 
 // ---------------------------------------------------------------- GRÁFICOS
@@ -2006,7 +2261,7 @@ function servidorURL(){
   return SERVIDOR_PADRAO;
 }
 function netEnviar(m){ if(WS && WS.readyState===1) WS.send(JSON.stringify(m)); }
-function passoP(dx,dy,dur,now){ passo(P,dx,dy,dur,now); if(ONLINE) netEnviar({t:"p",x:P.x,y:P.y}); }
+function passoP(dx,dy,dur,now){ passo(P,dx,dy,dur,now); SOM.passo(P.mapa,P.x,P.y); if(ONLINE) netEnviar({t:"p",x:P.x,y:P.y}); }
 function definirAlvo(m){
   P.alvo=m||null; if(m && !ONLINE) m.aggro=true;
   if(ONLINE) netEnviar({t:"alvo",id:m?m.id:null});
@@ -2020,12 +2275,9 @@ function largarIdx(idx){
 function desconectarOnline(){ ONLINE=false; if(WS){ WS.onclose=null; try{ WS.close(); }catch(e){} } WS=null; }
 const dec64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 function msgOnline(txt){ const el=$("#onMsg"); if(el) el.textContent=txt; }
-// O nivel.js só libera a página (conta Sentinela). O online usa o login próprio do jogo (nome + senha),
-// para não perder os personagens já criados. LOGIN_SITE = true passa a entrar com a conta do site.
-const LOGIN_SITE = false;
 // conta do site (nivel.js / Firebase): devolve um ID token novo, ou null fora do site
 function tokenSite(){
-  if(!LOGIN_SITE || !window.PBR) return Promise.resolve(null);
+  if(!window.PBR) return Promise.resolve(null);
   return window.PBR.ready.then(r=>{ if(!r||!r.user) throw new Error("sem conta"); return r.user.getIdToken(); });
 }
 function conectar(nome,senha,token){
@@ -2070,9 +2322,9 @@ function netEventos(evs,now){
   for(const e of evs){
     switch(e[0]){
       case "log": log(e[1],e[2]); break;
-      case "txt": TXT.push({x:e[1],y:e[2],mapa:P.mapa,txt:e[3],cor:e[4],t0:now,fala:!!e[5]}); break;
+      case "txt": TXT.push({x:e[1],y:e[2],mapa:P.mapa,txt:e[3],cor:e[4],t0:now,fala:!!e[5]}); if(!e[5]) SOM.texto(e[3],e[4],e[1],e[2],e[1]===P.x&&e[2]===P.y); break;
       case "fx": efeito(e[1],e[2],e[3]); break;
-      case "proj": PROJ.push({mapa:P.mapa,x0:e[1],y0:e[2],x1:e[3],y1:e[4],t0:now,dur:200,cor:e[5]}); break;
+      case "proj": PROJ.push({mapa:P.mapa,x0:e[1],y0:e[2],x1:e[3],y1:e[4],t0:now,dur:200,cor:e[5]}); SOM.proj(e[1],e[2],e[5]); break;
       case "hit": { const c=CRI_ID.get(e[1]); if(c) c.hitT=now; break; }
       case "tile": { const M=MAPA[e[1]]; if(M) M.t[e[3]*M.W+e[2]]=e[4]; break; }
       case "alvo": P.alvo=null; batalhaCache=""; break;
@@ -2083,7 +2335,7 @@ function netEventos(evs,now){
       case "pos": { const mudou=P.mapa!==e[1]; P.mapa=e[1]; P.x=e[2]; P.y=e[3]; P.mv=null; P.caminho=[]; P.acao=null;
         if(mudou){ CRI=[]; CRI_ID.clear(); OUTROS=[]; OUTROS_ID.clear(); CORPOS=[]; CORPOS_ID.clear(); fecharJanelas(); efeito(P.x,P.y,"#ffd23a"); }
         marcarVisto(); break; }
-      case "morte": rodando=false; P.alvo=null; fecharJanelas(); npcFoco=null; atualizarChips();
+      case "morte": SOM.tocar("morte",3000); rodando=false; P.alvo=null; fecharJanelas(); npcFoco=null; atualizarChips();
         mostrarCobre(`<h1 style="color:#ff5a4a">VOCÊ MORREU</h1><p style="text-align:center">Você foi morto ${e[1]}.</p>
           <p style="text-align:center">Perdeu ${e[2]} de experiência${e[3]?` e ${e[3]} tampinhas`:""}. Você acorda no dormitório do Bunker 47.</p>
           <p style="text-align:center"><button id="bReviver">Levantar</button></p>`);
@@ -2149,7 +2401,7 @@ function telaInicial(){
     <p>No <b style="color:#e8c060">Bunker 47</b>, um punhado de sobreviventes resiste debaixo da terra. Lá em cima: cidades em ruínas, mata fechada, um deserto radioativo — e, no subsolo, esgotos, metrô, cavernas e uma base militar que ninguém deveria abrir.</p>
     <div class="online"><div class="tit2">● JOGAR ONLINE <span>com outros sobreviventes</span></div>
       <input id="onNome" maxlength="14" placeholder="Nome do personagem" value="${(()=>{try{return localStorage.getItem("zm_ultimo_nome")||""}catch(e){return ""}})()}">
-      ${LOGIN_SITE && window.PBR?`<div class="peqC" id="onConta">Você entra com a sua conta do site Preppers BR.</div>`:`<input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">`}
+      ${window.PBR?`<div class="peqC" id="onConta">Você entra com a sua conta do site Preppers BR.</div>`:`<input id="onSenha" type="password" maxlength="64" placeholder="Senha (no primeiro acesso, crie uma)">`}
       <button id="bOnline">Entrar no servidor</button><div id="onMsg" class="c-ouro"></div></div>
     <div class="tit2" style="margin-top:14px">○ JOGAR OFFLINE <span>sozinho, sem internet</span></div>
     ${s?`<p><button id="bCont">▶ Continuar com ${s.P.nome} (nível ${s.P.lvl})</button></p>`:""}
@@ -2157,10 +2409,10 @@ function telaInicial(){
     <button id="bComecar">${s?"Criar novo personagem":"Começar"}</button>`);
   if(s) $("#bCont").onclick=()=>iniciar(s);
   const entrar=()=>{ const n=$("#onNome").value.trim();
-    if(LOGIN_SITE && window.PBR){ msgOnline("Confirmando sua conta do site..."); tokenSite().then(t=>conectar(n,null,t)).catch(()=>msgOnline("Entre na sua conta do site (página Membros) para jogar online.")); return; }
+    if(window.PBR){ msgOnline("Confirmando sua conta do site..."); tokenSite().then(t=>conectar(n,null,t)).catch(()=>msgOnline("Entre na sua conta do site (página Membros) para jogar online.")); return; }
     const se=$("#onSenha").value; if(!n||!se) return msgOnline("Preencha nome e senha."); conectar(n,se); };
   $("#bOnline").onclick=entrar; ($("#onSenha")||$("#onNome")).addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
-  if(LOGIN_SITE && window.PBR) window.PBR.ready.then(r=>{ if(!r||!r.user) return; const el=$("#onConta"); if(el) el.textContent=`Conta do site: ${r.user.email||r.user.displayName||"conectada"}. No primeiro acesso, o nome abaixo vira o nome do seu personagem.`;
+  if(window.PBR) window.PBR.ready.then(r=>{ if(!r||!r.user) return; const el=$("#onConta"); if(el) el.textContent=`Conta do site: ${r.user.email||r.user.displayName||"conectada"}. No primeiro acesso, o nome abaixo vira o nome do seu personagem.`;
     const nm=$("#onNome"); if(nm && !nm.value) nm.value=(r.user.displayName||"").replace(/[^A-Za-zÀ-ÿ0-9 ]/g,"").slice(0,14); });
   $("#bComecar").onclick=()=>{ const n=($("#nomeIn").value.trim()||"Sobrevivente").slice(0,14); iniciar(null,n); };
 }
@@ -2187,6 +2439,7 @@ function iniciar(save,nome){
 function ajuda(){
   rodando=false;
   mostrarCobre(`<h1 style="font-size:24px">COMO JOGAR</h1>
+  <p><b>Som:</b> <button id="ajMus"></button> <button id="ajSfx"></button> &nbsp;Volume <input id="ajVol" type="range" min="0" max="100" value="${Math.round(SOM.cfg.vol*100)}" style="vertical-align:middle;width:120px"> <span class="c-cinza">(tecla M liga/desliga a música)</span></p>
   <p><b>Andar:</b> clique no chão, use WASD/setas ou o direcional (celular).</p>
   <p><b>Atacar:</b> clique no monstro ou no nome dele na lista de <b>Batalha</b> (ou botão ⚔ Alvo). Com arma corpo a corpo, você persegue o alvo sozinho. Armas de distância precisam de munição na mochila.</p>
   <p><b>Loot:</b> clique no corpo para abrir. O ponto amarelo indica que tem item.</p>
@@ -2195,12 +2448,13 @@ function ajuda(){
   <p><b>Habilidades</b> sobem com o uso: Corpo a corpo, Distância e Defesa (com escudo equipado).</p>
   <p><b>Noite:</b> fica escuro. Equipe uma tocha ou lanterna no slot Luz.</p>
   <p><b>Morte:</b> você perde 10% da experiência e das tampinhas e acorda no abrigo.</p>
-  <p><b>Atalhos:</b> 1 curar · 2 comer · 3 beber · 4 iodo · Tab próximo alvo · Enter conversar · Esc cancelar alvo.</p>
+  <p><b>Atalhos:</b> 1 curar · 2 comer · 3 beber · 4 iodo · Tab próximo alvo · Enter conversar · Esc cancelar alvo · M música.</p>
   <p class="c-cinza">O jogo salva sozinho neste navegador.</p>
-  <p class="c-cinza" style="font-size:11px">Créditos de arte: tiles de cenário por <b>Viktor Hahn</b> (v-ktor.itch.io, licença CC BY 4.0) e <b>Camping Set</b> por <b>0_mem0ry</b> (0-mem0ry.itch.io). Personagens, monstros e demais desenhos: feitos para o Zona Morta.</p>
+  <p class="c-cinza" style="font-size:11px">Créditos de arte: tiles de cenário por <b>Viktor Hahn</b> (v-ktor.itch.io, licença CC BY 4.0) e <b>Camping Set</b> por <b>0_mem0ry</b> (0-mem0ry.itch.io). Personagens, monstros e demais desenhos, trilha sonora e efeitos: feitos para o Zona Morta.</p>
   <p><b>No celular:</b> joystick à esquerda para andar (inclusive na diagonal), ⚔ escolhe o próximo alvo, ✋ usa o que estiver perto (corpo, NPC, poço), 🎒 abre mochila/equipamento, 💬 abre o chat, ⛶ tela cheia. Toque num monstro para atacar e no chão para andar até lá.</p>
   <button id="bFechaAj">Voltar ao jogo</button> <button id="bModo">${MOBILE?"Usar modo PC":"Usar modo celular"}</button>`);
   $("#bFechaAj").onclick=()=>{ esconderCobre(); rodando=true; };
+  $("#ajMus").onclick=()=>SOM.alternar("mus"); $("#ajSfx").onclick=()=>SOM.alternar("sfx"); $("#ajVol").oninput=e=>SOM.volume(e.target.value/100); atualizarBotoesSom();
   $("#bModo").onclick=()=>{ definirModo(!MOBILE); esconderCobre(); rodando=true; atualizarTudo(); };
 }
 
@@ -2217,6 +2471,7 @@ document.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].includes(k)){ teclas[k]=true; e.preventDefault(); }
   if(k==="1") usarMelhor("cura"); if(k==="2") usarMelhor("comida"); if(k==="3") usarMelhor("bebida"); if(k==="4") usarMelhor("antirad");
   if(k==="Tab"){ e.preventDefault(); proximoAlvo(); }
+  if(k==="m") SOM.alternar("mus");
   if(k==="Escape"){ definirAlvo(null); P.caminho=[]; fecharJanelas(); batalhaCache=""; atualizarBatalha(); }
 });
 document.addEventListener("keyup",e=>{ const k = e.key.length===1 ? e.key.toLowerCase() : e.key; teclas[k]=false; });
@@ -2227,6 +2482,9 @@ $("#hbCura").onclick=()=>rodando&&usarMelhor("cura"); $("#hbComer").onclick=()=>
 $("#hbBeber").onclick=()=>rodando&&usarMelhor("bebida"); $("#hbRad").onclick=()=>rodando&&usarMelhor("antirad");
 $("#hbAlvo").onclick=()=>rodando&&proximoAlvo();
 $("#bAjuda").onclick=ajuda;
+function atualizarBotoesSom(){ for(const [id,k] of [["#bMus","mus"],["#bSfx","sfx"],["#ajMus","mus"],["#ajSfx","sfx"]]){ const b=$(id); if(!b) continue;
+  b.style.opacity=SOM.cfg[k]?1:.45; b.textContent=(k==="mus"?(SOM.cfg.mus?"🎵 Música: ligada":"🎵 Música: desligada"):(SOM.cfg.sfx?"🔊 Efeitos: ligados":"🔇 Efeitos: desligados")); } }
+$("#bMus").onclick=()=>SOM.alternar("mus"); $("#bSfx").onclick=()=>SOM.alternar("sfx"); atualizarBotoesSom();
 $("#bNovo").onclick=()=>{ salvar(); desconectarOnline(); telaInicial(); };
 document.querySelectorAll("#dpad button").forEach(b=>{
   const d=b.dataset.d.split(",").map(Number);
