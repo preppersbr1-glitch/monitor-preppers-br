@@ -80,6 +80,8 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
 .ment-send textarea{flex:1;resize:vertical;min-height:46px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:8px 10px;border-radius:3px;outline:none}
 .ment-vazio{margin:auto;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;text-align:center;padding:20px}
 .hidden{display:none!important}
+.mp-btn{display:inline-block;margin-top:6px;padding:5px 9px;font-size:10px;letter-spacing:1px}
+.mp-res{font-family:'Share Tech Mono',monospace;font-size:11.5px;line-height:1.5;margin-top:5px;max-width:320px}
 .al-resumo{font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.8;color:var(--text);margin-bottom:12px}
 .al-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
 .al-linha{display:flex;gap:8px}.al-linha .input{flex:1}
@@ -349,11 +351,30 @@ function loadMembers(){
 }
 
 // Assinatura no cartão (Mercado Pago), gravada pelo Worker de pagamentos
-function subInfo(sub){
+var conferido = {};   // resultado do botão CONFERIR NO MERCADO PAGO, por membro
+function subInfo(sub, uid){
   if (!sub || !sub.status) return '';
   var st = { authorized: ['💳 ATIVA', 'var(--green)'], pending: ['💳 AGUARDANDO', 'var(--amber)'], paused: ['💳 PAUSADA', 'var(--amber)'], cancelled: ['💳 CANCELADA', 'var(--muted)'] }[sub.status] || ['💳 ' + String(sub.status).toUpperCase(), 'var(--muted)'];
   return '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;margin-top:4px;color:' + st[1] + '">' + st[0] + ' · ' + esc(sub.periodo || '') + ' R$' + esc(sub.valor || '') +
-    (sub.status === 'authorized' && sub.proxima ? '<br><span style="color:var(--muted)">próx. ' + fmtDate(sub.proxima) + '</span>' : '') + '</div>';
+    (sub.status === 'authorized' && sub.proxima ? '<br><span style="color:var(--muted)">próx. ' + fmtDate(sub.proxima) + '</span>' : '') + '</div>' +
+    (sub.id && uid ? '<button class="btn btn-ghost mp-btn" onclick="conferirMP(\'' + esc(uid) + '\')">🔄 CONFERIR NO MERCADO PAGO</button>' : '') +
+    (uid && conferido[uid] ? '<div class="mp-res" style="color:' + conferido[uid].c + '">' + conferido[uid].t + '</div>' : '');
+}
+function conferirMP(uid){
+  conferido[uid] = { t: '▋ Consultando o Mercado Pago...', c: 'var(--muted)' }; render();
+  alertaApi('/admin/conferir', { uid: uid }).then(function(r){
+    var h = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), t, c;
+    if (!r.encontrada) { t = '⚠️ ' + esc(r.aviso); c = 'var(--amber)'; }
+    else if (r.status === 'authorized' && r.cobrancas > 0) { t = '✅ PAGO no Mercado Pago (' + r.cobrancas + ' cobrança' + (r.cobrancas > 1 ? 's' : '') + '). Plano ' + esc(String(r.level).toUpperCase()) + ' liberado até ' + fmtDate(r.paidUntil) + '.'; c = 'var(--green)'; }
+    else if (r.status === 'authorized') { t = '⏳ Cartão autorizado no Mercado Pago, aguardando a 1ª cobrança. O plano libera sozinho quando ela for aprovada.'; c = 'var(--amber)'; }
+    else if (r.status === 'pending') { t = '❌ NÃO PAGO: o pagamento não foi concluído no Mercado Pago (o cliente não terminou o checkout ou o cartão foi recusado).'; c = 'var(--red)'; }
+    else if (r.status === 'cancelled') { t = 'Assinatura CANCELADA no Mercado Pago.' + (r.paidUntil && r.paidUntil > Date.now() ? ' Acesso já pago até ' + fmtDate(r.paidUntil) + '.' : ''); c = 'var(--muted)'; }
+    else if (r.status === 'paused') { t = 'Assinatura PAUSADA no Mercado Pago.'; c = 'var(--amber)'; }
+    else { t = 'Situação no Mercado Pago: ' + esc(r.status || r.ignorado || '—'); c = 'var(--muted)'; }
+    conferido[uid] = { t: t + ' <span style="color:var(--muted)">(conferido às ' + h + ')</span>', c: c }; render();
+  }).catch(function(e){
+    conferido[uid] = { t: '⚠️ ' + esc(e.message) + (/não encontrado|404/.test(e.message) ? ' Cole o pagamentos/worker.js atualizado no Worker da Cloudflare.' : ''), c: 'var(--red)' }; render();
+  });
 }
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
@@ -380,7 +401,7 @@ function render(){
     var dateVal = m.paidUntil ? new Date(m.paidUntil).toISOString().slice(0, 10) : '';
     return '<tr>' +
       '<td data-l="MEMBRO"><strong>' + esc(m.name || '—') + '</strong><div class="email">' + esc(m.email || m.uid) + '</div></td>' +
-      '<td data-l="PLANO ATUAL"><span class="lvl lvl-' + esc(m.level) + '">' + esc(m.level.toUpperCase()) + '</span>' + subInfo(m.sub) + '</td>' +
+      '<td data-l="PLANO ATUAL"><span class="lvl lvl-' + esc(m.level) + '">' + esc(m.level.toUpperCase()) + '</span>' + subInfo(m.sub, m.uid) + '</td>' +
       '<td data-l="PAGO ATÉ"><span class="due' + (late ? ' late' : '') + '">' + due + '</span></td>' +
       '<td data-l="DESDE"><span class="due">' + fmtDate(m.createdAt) + '</span></td>' +
       '<td data-l="ALTERAR PLANO"><div class="edit">' +
