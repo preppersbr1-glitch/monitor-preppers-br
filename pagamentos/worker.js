@@ -19,6 +19,7 @@
 //                            Authorization: Bearer <token de login do Firebase>
 //    POST /admin/alerta      { titulo, texto, link, uf }   } só o administrador do site
 //    POST /admin/push        resumo dos alertas            } (login com o e-mail de admin)
+//    POST /admin/conferir    { uid } consulta a assinatura do membro no Mercado Pago e atualiza o plano
 //  Gatilho agendado (Cloudflare → Worker → Settings → Triggers → Cron: "* * * * *"):
 //    verifica terremotos (USGS) e tempestades solares (NOAA) e entrega a fila de alertas.
 //
@@ -509,6 +510,26 @@ const ROTAS_PUSH = {
     const n = await enfileirar(env, ctx, msg, (uid, p) => p.prefs && p.prefs.avisos !== false && (!uf || p.prefs.uf === uf || p.adm === true));
     await registrarHist(env, msg, uf);
     return { alvos: n };
+  },
+  // botão "CONFERIR NO MERCADO PAGO" do Admin: lê a assinatura direto no Mercado Pago e grava o resultado
+  '/admin/conferir': async (req, env) => {
+    const { adm } = await quem(req, env);
+    if (!adm) throw falha(403, 'Só o administrador.');
+    const b = await corpoJson(req), uid = String(b.uid || '');
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) throw falha(400, 'membro inválido');
+    const sub = await db(env, 'GET', 'members/' + uid + '/sub');
+    if (!sub || !sub.id) throw falha(404, 'Este membro não tem assinatura no Mercado Pago.');
+    let r;
+    try { r = await sincronizar(env, sub.id); }
+    catch (e) {
+      if (e.status === 404) return { encontrada: false, aviso: 'O Mercado Pago não encontrou esta assinatura na conta ligada ao Worker. A chave MP_ACCESS_TOKEN pode ser de outra conta (ou de uma conta de teste).' };
+      if (e.publico) throw e;
+      throw falha(502, 'O Mercado Pago não respondeu como esperado: ' + String((e.mp && (e.mp.message || e.mp.error)) || e.message).slice(0, 160));
+    }
+    const m = (await db(env, 'GET', 'members/' + uid)) || {};
+    const s = m.sub || {};
+    return { encontrada: true, status: s.status || null, cobrancas: s.cobrancas || 0, valor: s.valor || null, plano: s.plano || null,
+      level: m.level || 'sentinela', paidUntil: m.paidUntil || null, ignorado: r.ignorado || null };
   },
   '/admin/push': async (req, env) => {
     const { adm } = await quem(req, env);
