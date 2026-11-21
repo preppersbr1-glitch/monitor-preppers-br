@@ -65,6 +65,24 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat-box{text-align:center;padding:16px 10px;background:var(--card);border:1px solid var(--border);border-radius:4px}
 .stat-num{font-family:'Orbitron',sans-serif;font-size:25px;font-weight:900;color:var(--green);text-shadow:0 0 15px rgba(0,255,136,0.3)}
+.stat-box.stat-click{cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
+.stat-box.stat-click:hover,.stat-box.stat-click:focus-visible{border-color:var(--green2);transform:translateY(-2px);box-shadow:0 0 16px rgba(0,255,136,.15);outline:none}
+.stat-box.stat-click .stat-label::after{content:' ▸';color:var(--green2)}
+.quem-box{max-width:620px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;position:relative}
+.quem-x{position:absolute;top:10px;right:12px;width:40px;height:40px;border:0;background:none;color:var(--muted);font-size:26px;cursor:pointer;border-radius:50%}
+.quem-x:hover{color:var(--green)}
+.quem-resumo{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--muted);margin:-8px 0 10px}
+.quem-lista{overflow:auto;margin-top:10px;flex:1;min-height:80px}
+.quem-i{display:flex;gap:11px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)}
+.quem-av{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--green3);border:1px solid var(--green2);color:var(--green);font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;position:relative}
+.quem-av.on::after{content:'';position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--green);border:2px solid var(--card);box-shadow:0 0 8px var(--green)}
+.quem-tx{min-width:0;flex:1}
+.quem-tx b{color:#e8fff4;font-size:16px}
+.quem-tx small{display:block;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quem-nv{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;padding:1px 6px;border-radius:3px;border:1px solid var(--border);color:var(--green2);margin-left:6px;vertical-align:2px}
+.quem-nv.operador{color:#00aaff;border-color:rgba(0,170,255,.4)}.quem-nv.comando{color:#ffb300;border-color:rgba(255,179,0,.45)}
+.quem-st{font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--muted);text-align:right;flex:none;max-width:38%}
+.quem-st.on{color:var(--green)}
 .stat-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:4px}
 /* MODO FÓRUM / BATE-PAPO */
 .mode-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
@@ -225,10 +243,10 @@ footer p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mute
     </div>
   </div>
   <div class="stats-row">
-    <div class="stat-box"><div class="stat-num" id="stat-members">—</div><div class="stat-label">MEMBROS</div></div>
+    <div class="stat-box" id="box-members" data-quem="membros"><div class="stat-num" id="stat-members">—</div><div class="stat-label">MEMBROS</div></div>
     <div class="stat-box"><div class="stat-num" id="stat-topics">—</div><div class="stat-label">TÓPICOS</div></div>
     <div class="stat-box"><div class="stat-num" id="stat-posts">—</div><div class="stat-label">POSTS</div></div>
-    <div class="stat-box"><div class="stat-num" id="stat-online">—</div><div class="stat-label">ONLINE</div></div>
+    <div class="stat-box" id="box-online" data-quem="online"><div class="stat-num" id="stat-online">—</div><div class="stat-label">ONLINE</div></div>
   </div>
   <div class="mode-tabs">
     <button class="mode-tab on" id="mode-forum" onclick="setMode('forum')">📋 FÓRUM</button>
@@ -438,8 +456,68 @@ auth.onAuthStateChanged(function(user){
 async function loadStats(){
   try{var u=await fbGet('users');var mc=u?Object.keys(u).length:0;var now=Date.now();var on=u?Object.values(u).filter(function(x){return now-x.lastSeen<300000}).length:0;
   document.getElementById('stat-members').textContent=mc;document.getElementById('stat-online').textContent=on;
+  if(IS_ADMIN)ativarQuem();
   var tc=0,pc=0;if(allTopics){tc=Object.keys(allTopics).length;for(var k in allTopics)pc+=1+(allTopics[k].replyCount||0)}
   document.getElementById('stat-topics').textContent=tc;document.getElementById('stat-posts').textContent=pc}catch(e){}}
+
+// ── ADMIN: quem são os membros e quem está online (toque nos quadros MEMBROS e ONLINE) ──
+var quemAtivo=false,quemTipo='membros';
+function ativarQuem(){
+  if(quemAtivo)return;quemAtivo=true;
+  ['box-members','box-online'].forEach(function(id){var b=document.getElementById(id);if(!b)return;
+    b.classList.add('stat-click');b.setAttribute('role','button');b.setAttribute('tabindex','0');b.title='Ver a lista (só o admin vê)';
+    b.addEventListener('click',function(){verQuem(b.getAttribute('data-quem'))});
+    b.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();verQuem(b.getAttribute('data-quem'))}});});
+}
+function escQ(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function haQuanto(ts){if(!ts)return 'nunca';var m=Math.round((Date.now()-ts)/60000);if(m<5)return 'online agora';if(m<60)return 'há '+m+' min';var h=Math.round(m/60);if(h<24)return 'há '+h+' h';var d=Math.round(h/24);if(d<31)return 'há '+d+' dia'+(d>1?'s':'');return new Date(ts).toLocaleDateString('pt-BR')}
+var quemDados=null;
+async function verQuem(tipo){
+  quemTipo=tipo;
+  var m=document.getElementById('quem-modal');
+  if(!m){
+    m=document.createElement('div');m.className='modal-overlay';m.id='quem-modal';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');
+    m.innerHTML='<div class="modal-box quem-box"><button class="quem-x" type="button" aria-label="Fechar">×</button><h3 id="quem-tit"></h3><div class="quem-resumo" id="quem-resumo"></div>'+
+      '<input id="quem-busca" placeholder="Buscar por nome ou e-mail" autocomplete="off"><div class="quem-lista" id="quem-lista"></div></div>';
+    document.body.appendChild(m);
+    m.querySelector('.quem-x').onclick=fecharQuem;
+    m.addEventListener('click',function(e){if(e.target===m)fecharQuem()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&m.classList.contains('show'))fecharQuem()});
+    document.getElementById('quem-busca').addEventListener('input',desenharQuem);
+  }
+  document.getElementById('quem-busca').value='';
+  document.getElementById('quem-tit').textContent=tipo==='online'?'🟢 QUEM ESTÁ ONLINE':'👥 MEMBROS DA COMUNIDADE';
+  document.getElementById('quem-lista').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-family:\'Share Tech Mono\',monospace">▋ CARREGANDO...</div>';
+  m.classList.add('show');
+  try{
+    var r=await Promise.all([fbGet('users'),fbGet('members').catch(function(){return null})]);
+    quemDados={users:r[0]||{},members:(r[1]&&!r[1].error)?r[1]:{}};
+  }catch(e){quemDados={users:{},members:{}}}
+  desenharQuem();
+}
+function fecharQuem(){var m=document.getElementById('quem-modal');if(m)m.classList.remove('show')}
+function desenharQuem(){
+  if(!quemDados)return;
+  var q=(document.getElementById('quem-busca').value||'').trim().toLowerCase(),agora=Date.now();
+  // em qual sala do chat cada um está agora
+  var sala={};if(typeof CHAT_ROOMS!=='undefined'&&typeof liveUsers==='function')CHAT_ROOMS.forEach(function(r){var lu=liveUsers(r[0]);for(var u in lu)sala[u]=r[2]||r[0]});
+  var lista=Object.keys(quemDados.users).map(function(uid){var u=quemDados.users[uid]||{},mb=quemDados.members[uid]||{};
+    var lv=mb.level||'sentinela';if(lv!=='sentinela'&&mb.paidUntil&&mb.paidUntil<agora)lv='sentinela';
+    return {uid:uid,nome:u.name||mb.name||'(sem nome)',email:u.email||mb.email||'',visto:u.lastSeen||0,nivel:lv,sala:sala[uid]}});
+  var online=lista.filter(function(x){return agora-x.visto<300000||x.sala});
+  if(quemTipo==='online')lista=online;
+  lista.sort(function(a,b){return b.visto-a.visto});
+  var total=lista.length;
+  if(q)lista=lista.filter(function(x){return x.nome.toLowerCase().indexOf(q)!==-1||x.email.toLowerCase().indexOf(q)!==-1});
+  var cont={sentinela:0,operador:0,comando:0};lista.forEach(function(x){if(cont[x.nivel]!==undefined)cont[x.nivel]++});
+  document.getElementById('quem-resumo').textContent=(quemTipo==='online'?total+' online agora (ativos nos últimos 5 min)':total+' membros · '+online.length+' online agora')+(q?' · '+lista.length+' na busca':'')+' · Sentinela '+cont.sentinela+' · Operador '+cont.operador+' · Comando '+cont.comando;
+  document.getElementById('quem-lista').innerHTML=lista.length?lista.map(function(x){
+    var on=agora-x.visto<300000||!!x.sala,st=x.sala?'💬 no chat '+escQ(x.sala):haQuanto(x.visto);
+    return '<div class="quem-i"><span class="quem-av'+(on?' on':'')+'">'+escQ(x.nome.charAt(0).toUpperCase())+'</span>'+
+      '<span class="quem-tx"><b>'+escQ(x.nome)+'</b><span class="quem-nv '+x.nivel+'">'+x.nivel.toUpperCase()+'</span><small>'+escQ(x.email)+'</small></span>'+
+      '<span class="quem-st'+(on?' on':'')+'">'+st+'</span></div>'}).join('')
+    :'<div style="padding:20px;text-align:center;color:var(--muted)">'+(q?'Ninguém encontrado.':quemTipo==='online'?'Ninguém online agora.':'Nenhum membro ainda.')+'</div>';
+}
 
 // ── TOPICS ──
 async function loadTopics(){
