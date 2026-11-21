@@ -1,0 +1,12 @@
+Modelos do cenário (cenario.glb) — todos em domínio público (CC0 1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+- KayKit Furniture Bits, City Builder Bits, Dungeon Remastered e Halloween Bits
+  Kay Lousberg — www.kaylousberg.com — CC0
+- Ultimate Nature Pack — Quaternius — https://quaternius.com — CC0
+
+Os modelos foram juntados num único arquivo e quantizados para carregar mais rápido.
+- Zombie Apocalypse Kit (March 2024) — Quaternius — https://quaternius.com — CC0
+  (zumbi.glb, zumbi_gordo.glb, cao.glb e veículos/entulho dentro de cenario.glb)
+- Universal Base Characters e Universal Animation Library — Quaternius — CC0
+  (homem.glb, mulher.glb, anim_humano.glb; texturas reduzidas, só as animações usadas)
