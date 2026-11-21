@@ -241,6 +241,42 @@ footer a{color:var(--muted)}
 .modal.on{display:flex}
 .modal-box{background:var(--bg2);border:1px solid var(--green2);border-radius:6px;max-width:440px;width:100%;padding:30px 26px;position:relative;text-align:center}
 .modal-box h3{font-size:17px;letter-spacing:2px;margin-bottom:6px}
+/* DEPOIMENTOS */
+[hidden]{display:none!important}
+.depo-sec{padding-top:60px;padding-bottom:20px}
+.depo-resumo{font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:1px;color:var(--muted);margin:-6px 0 26px}
+.depo-resumo b{color:#eafff4;font-size:18px}
+.depo-est{color:#2a3d33;letter-spacing:2px;font-size:17px}.depo-est .on{color:var(--amber);text-shadow:0 0 10px rgba(255,179,0,.4)}
+.depo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:22px}
+.depo-c{background:var(--card,#0a1610);border:1px solid var(--border);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.depo-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.depo-ver{font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1px;color:var(--green);border:1px solid rgba(0,255,136,.4);border-radius:3px;padding:2px 7px;white-space:nowrap}
+.depo-txt{font-size:17px;line-height:1.5;color:#d5f5e5;flex:1}
+.depo-quem{display:flex;align-items:center;gap:10px}
+.depo-av{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--green3);border:1px solid var(--green2);color:var(--green);font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700}
+.depo-quem b{display:block;color:#eafff4;font-size:16px}.depo-quem small{display:block;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--muted);letter-spacing:.5px}
+.depo-convite{margin-top:14px;font-size:16px;color:var(--muted)}
+.depo-cta{padding:10px 0 50px}
+.depo-cta-box{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:20px 22px;border:1px dashed var(--green2);border-radius:8px;background:linear-gradient(110deg,rgba(255,179,0,.06),rgba(10,22,16,.9) 50%)}
+.depo-cta-ic{font-size:34px;flex:none}
+.depo-cta-tx{flex:1 1 260px}.depo-cta-tx b{display:block;font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:2px;color:#eafff4}.depo-cta-tx span{color:#a9dcc4;font-size:16px}
+.depo-box{max-width:480px;text-align:left;max-height:calc(100vh - 40px);overflow:auto}
+.depo-box h3{text-align:left}
+.depo-notas{display:flex;gap:4px;margin:12px 0 2px}
+.depo-notas button{background:none;border:0;font-size:38px;line-height:1;color:#2a3d33;cursor:pointer;padding:0 2px;transition:transform .1s,color .1s}
+.depo-notas button.on{color:var(--amber);text-shadow:0 0 12px rgba(255,179,0,.5)}.depo-notas button:hover{transform:scale(1.12)}
+.depo-nota-txt{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
+.depo-box label{display:block;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:12px;flex:1}
+.depo-box input:not([type=checkbox]),.depo-box textarea,.depo-box select{display:block;width:100%;margin-top:5px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:17px;padding:10px 11px;border-radius:4px;outline:none}
+.depo-box input:focus,.depo-box textarea:focus,.depo-box select:focus{border-color:var(--green2)}
+.depo-box textarea{resize:vertical;min-height:96px}
+.depo-box label small{display:block;margin-top:4px;font-size:11px;letter-spacing:.3px;color:#4a7a60}
+.depo-linha{display:flex;gap:10px}.depo-uf{flex:0 0 86px!important}
+.depo-hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+.depo-ok-chk{display:flex!important;gap:9px;align-items:flex-start;font-family:'Rajdhani',sans-serif!important;font-size:15px!important;letter-spacing:0!important;color:#a9dcc4!important;line-height:1.35}
+.depo-ok-chk input{margin-top:3px;width:18px;height:18px;accent-color:var(--green);flex:none}
+.depo-msg{min-height:20px;font-family:'Share Tech Mono',monospace;font-size:13px;margin-bottom:8px}
+#depo-ok{text-align:center;padding:10px 0}
 .modal-box .close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer}
 .pix-key{margin:18px 0 10px;padding:14px;border:1px dashed var(--green2);border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--green);word-break:break-all}
 .steps{text-align:left;margin:18px 0 20px;counter-reset:s}
@@ -495,6 +531,22 @@ footer a{color:var(--muted)}
   </div>
 </section>
 
+<!-- DEPOIMENTOS (aprovados no Admin; a seção só aparece quando houver algum) -->
+<section id="depoimentos" class="depo-sec" hidden>
+  <div class="wrap">
+    <div class="center">
+      <span class="tag">// QUEM JÁ TEM O GUIA</span>
+      <h2>O que dizem os <em>leitores</em></h2>
+      <div class="depo-resumo" id="depo-resumo"></div>
+    </div>
+    <div class="depo-grid" id="depo-grid"></div>
+    <div class="center">
+      <button class="btn btn-ghost btn-sm" id="depo-mais" type="button" hidden>VER MAIS DEPOIMENTOS</button>
+      <p class="depo-convite">Já tem o guia? <a href="#depoimento" class="js-depo-abrir">Deixe o seu depoimento ▸</a></p>
+    </div>
+  </div>
+</section>
+
 <!-- OFFER -->
 <section class="offer" id="oferta">
   <div class="wrap">
@@ -551,6 +603,17 @@ footer a{color:var(--muted)}
   </div>
 </section>
 
+<!-- CONVITE PARA QUEM JÁ COMPROU -->
+<section class="depo-cta" id="deixar-depoimento">
+  <div class="wrap">
+    <div class="depo-cta-box">
+      <div class="depo-cta-ic" aria-hidden="true">⭐</div>
+      <div class="depo-cta-tx"><b>JÁ TEM O GUIA?</b><span>Conte o que achou. Sua opinião ajuda outras famílias a se prepararem — leva 1 minuto.</span></div>
+      <a href="#depoimento" class="btn js-depo-abrir">DEIXAR MEU DEPOIMENTO</a>
+    </div>
+  </div>
+</section>
+
 <!-- FINAL CTA -->
 <section class="final">
   <div class="wrap rv">
@@ -576,6 +639,39 @@ footer a{color:var(--muted)}
 </div>
 
 <div class="lightbox" id="lightbox"><img src="" alt="Prévia ampliada"></div>
+
+<div class="modal" id="depo-modal" role="dialog" aria-modal="true" aria-labelledby="depo-titulo">
+  <div class="modal-box depo-box">
+    <button class="close" id="depo-x" type="button" aria-label="Fechar">×</button>
+    <form id="depo-form" novalidate>
+      <span class="tag">// SEU DEPOIMENTO</span>
+      <h3 id="depo-titulo">O que você achou do guia?</h3>
+      <div class="depo-notas" id="depo-notas" role="group" aria-label="Sua nota">
+        <button type="button" aria-label="1 estrela">★</button><button type="button" aria-label="2 estrelas">★</button><button type="button" aria-label="3 estrelas">★</button><button type="button" aria-label="4 estrelas">★</button><button type="button" aria-label="5 estrelas">★</button>
+      </div>
+      <div class="depo-nota-txt" id="depo-nota-txt">Toque nas estrelas</div>
+      <label>Seu comentário<textarea id="depo-texto" maxlength="800" rows="4" placeholder="O que mais te ajudou? O que você já colocou em prática?"></textarea><small id="depo-cont">0/800</small></label>
+      <div class="depo-linha">
+        <label>Como quer aparecer<input id="depo-nome" maxlength="40" placeholder="Ex.: João S." autocomplete="given-name"></label>
+      </div>
+      <div class="depo-linha">
+        <label>Cidade<input id="depo-cidade" maxlength="40" placeholder="Ex.: Curitiba" autocomplete="address-level2"></label>
+        <label class="depo-uf">UF<select id="depo-uf"><option value="">—</option></select></label>
+      </div>
+      <label>E-mail usado na compra<input id="depo-email" type="email" maxlength="120" placeholder="voce@email.com" autocomplete="email"><small>Não aparece no site: serve só para confirmarmos que você comprou.</small></label>
+      <label class="depo-hp" aria-hidden="true">Site<input id="depo-site" tabindex="-1" autocomplete="off"></label>
+      <label class="depo-ok-chk"><input type="checkbox" id="depo-autorizo"> Autorizo publicar meu nome, cidade e comentário nesta página.</label>
+      <div class="depo-msg" id="depo-msg" role="alert"></div>
+      <button class="btn" id="depo-enviar" type="submit" style="width:100%">ENVIAR DEPOIMENTO ▸</button>
+    </form>
+    <div id="depo-ok" hidden>
+      <div style="font-size:44px;margin-bottom:6px">🙏</div>
+      <h3>Obrigado!</h3>
+      <p style="color:#a9dcc4;margin:8px 0 18px">Seu depoimento foi enviado e aparece aqui depois de aprovado. Continue perigoso — e fique pronto.</p>
+      <button class="btn btn-ghost btn-sm" id="depo-fechar-ok" type="button">FECHAR</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="pix-modal">
   <div class="modal-box">
@@ -756,5 +852,6 @@ initReveal();
 initSticky();
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(fixTilde); else fixTilde();
 </script>
+<script src="depoimentos.js" defer></script>
 </body>
 </html>

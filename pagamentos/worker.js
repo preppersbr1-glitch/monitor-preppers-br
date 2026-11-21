@@ -20,6 +20,11 @@
 //    POST /admin/alerta      { titulo, texto, link, uf }   } só o administrador do site
 //    POST /admin/push        resumo dos alertas            } (login com o e-mail de admin)
 //    POST /admin/conferir    { uid } consulta a assinatura do membro no Mercado Pago e atualiza o plano
+//
+//  Depoimentos do Guia (página de venda)
+//    GET  /depoimentos       aprovados (público)
+//    POST /depoimento        envia um depoimento (sem login; vai para aprovação)
+//    POST /admin/depoimentos { acao: listar|aprovar|recusar|apagar, id, verificado }   } só o administrador
 //  Gatilho agendado (Cloudflare → Worker → Settings → Triggers → Cron: "* * * * *"):
 //    verifica terremotos (USGS) e tempestades solares (NOAA) e entrega a fila de alertas.
 //
@@ -71,6 +76,9 @@ export default {
       if (req.method === 'GET' && url.pathname === '/push/chave') return json({ chave: (await chavesVapid(env)).publica }, 200, cors);
       if (req.method === 'GET' && url.pathname === '/alertas') return json(await ultimosAlertas(env), 200, { ...cors, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=60' });
       if (req.method === 'POST' && ROTAS_PUSH[url.pathname]) return json(await ROTAS_PUSH[url.pathname](req, env, ctx), 200, cors);
+      if (req.method === 'GET' && url.pathname === '/depoimentos') return json(await depoimentosPublicos(env), 200, { ...cors, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=60' });
+      if (req.method === 'POST' && url.pathname === '/depoimento') return json(await novoDepoimento(req, env, ctx), 200, cors);
+      if (req.method === 'POST' && url.pathname === '/admin/depoimentos') return json(await adminDepoimentos(req, env), 200, cors);
       return json({ erro: 'não encontrado' }, 404, cors);
     } catch (e) {
       const st = e.status || 500;
@@ -662,4 +670,71 @@ async function rodarAlertas(env) {
     }
   }
   await entregarFila(env, agora.length ? LOTE - 8 : LOTE);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DEPOIMENTOS DO GUIA — prova social da página de venda (guia.html)
+//  Quem comprou deixa nota (1 a 5), comentário, nome, cidade e o e-mail da compra.
+//  Nada aparece no site antes de o administrador aprovar no Admin. O e-mail serve só para
+//  conferir a compra no Hotmart ("compra verificada") e nunca é publicado.
+//    depoimentos/pendentes/<id>   aguardando aprovação (com e-mail)
+//    depoimentos/aprovados/<id>   públicos (sem e-mail)
+//    depoimentos/ip/<hash>        limite de envios por conexão (anti-spam)
+// ═══════════════════════════════════════════════════════════════════════════
+const MAX_DEPO_DIA = 3;
+const limpaTxt = (v, n) => String(v == null ? '' : v).replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
+function publicoDepo(id, d) {
+  return { id, nome: d.nome, cidade: d.cidade || '', uf: d.uf || '', nota: d.nota, texto: d.texto, ts: d.ts, verificado: d.verificado === true };
+}
+async function depoimentosPublicos(env) {
+  const a = (await db(env, 'GET', 'depoimentos/aprovados')) || {};
+  const lista = Object.entries(a).map(([id, d]) => publicoDepo(id, d)).sort((x, y) => (y.verificado ? 1 : 0) - (x.verificado ? 1 : 0) || y.ts - x.ts);   // compra verificada primeiro
+  const media = lista.length ? lista.reduce((s, d) => s + d.nota, 0) / lista.length : 0;
+  return { total: lista.length, media: Math.round(media * 10) / 10, depoimentos: lista.slice(0, 60) };
+}
+async function novoDepoimento(req, env, ctx) {
+  const b = await corpoJson(req);
+  // armadilhas para robôs: campo escondido preenchido ou formulário enviado rápido demais → finge que deu certo
+  if (b.site || !(Number(b.tempo) >= 4000)) return { ok: true };
+  const nome = limpaTxt(b.nome, 40), cidade = limpaTxt(b.cidade, 40), texto = limpaTxt(b.texto, 800);
+  const uf = UFS.includes(b.uf) ? b.uf : '', nota = Math.round(Number(b.nota));
+  const email = limpaTxt(b.email, 120).toLowerCase();
+  if (nome.length < 2) throw falha(400, 'Escreva seu nome.');
+  if (!(nota >= 1 && nota <= 5)) throw falha(400, 'Escolha de 1 a 5 estrelas.');
+  if (texto.length < 20) throw falha(400, 'Conte um pouco mais (mínimo de 20 letras).');
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw falha(400, 'Informe o e-mail usado na compra.');
+  if (b.autorizo !== true) throw falha(400, 'Marque a autorização para publicar seu depoimento.');
+  const ip = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || 'sem-ip';
+  const ipH = await hex('depo|' + ip);
+  const envios = ((await db(env, 'GET', 'depoimentos/ip/' + ipH)) || []).filter(t => Date.now() - t < 864e5);
+  if (envios.length >= MAX_DEPO_DIA) throw falha(429, 'Você já enviou depoimentos hoje. Obrigado! Tente de novo amanhã.');
+  envios.push(Date.now());
+  await db(env, 'PUT', 'depoimentos/ip/' + ipH, envios);
+  await db(env, 'POST', 'depoimentos/pendentes', { nome, cidade, uf, nota, texto, email, ts: Date.now() });
+  // avisa o administrador (alerta push) que chegou depoimento para aprovar
+  const msg = { tipo: 'mentoria', titulo: '⭐ Novo depoimento do Guia (' + '★'.repeat(nota) + ')', texto: nome + (cidade ? ' · ' + cidade : '') + ': "' + texto.slice(0, 90) + (texto.length > 90 ? '…' : '') + '"', link: '/admin.html#depoimentos', tag: 'depoimento' };
+  await enfileirar(env, ctx, msg, (uid, p) => p.adm === true).catch(() => {});
+  return { ok: true };
+}
+async function adminDepoimentos(req, env) {
+  const { adm } = await quem(req, env);
+  if (!adm) throw falha(403, 'Só o administrador.');
+  const b = await corpoJson(req), id = String(b.id || '');
+  if (b.acao !== 'listar' && !/^[A-Za-z0-9_-]{6,40}$/.test(id)) throw falha(400, 'depoimento inválido');
+  if (b.acao === 'aprovar') {
+    const d = await db(env, 'GET', 'depoimentos/pendentes/' + id);
+    if (!d) throw falha(404, 'Depoimento não encontrado (já foi aprovado ou recusado?).');
+    const pub = { nome: d.nome, cidade: d.cidade || '', uf: d.uf || '', nota: d.nota, texto: d.texto, ts: d.ts, verificado: b.verificado === true, aprovado: Date.now() };
+    await db(env, 'PATCH', '', { ['depoimentos/aprovados/' + id]: pub, ['depoimentos/pendentes/' + id]: null });
+    return { ok: true };
+  }
+  if (b.acao === 'verificar') { await db(env, 'PATCH', 'depoimentos/aprovados/' + id, { verificado: b.verificado === true }); return { ok: true }; }
+  if (b.acao === 'recusar') { await db(env, 'DELETE', 'depoimentos/pendentes/' + id); return { ok: true }; }
+  if (b.acao === 'apagar') { await db(env, 'DELETE', 'depoimentos/aprovados/' + id); return { ok: true }; }
+  if (b.acao !== 'listar') throw falha(400, 'ação inválida');
+  const [p, a] = await Promise.all([db(env, 'GET', 'depoimentos/pendentes'), db(env, 'GET', 'depoimentos/aprovados')]);
+  return {
+    pendentes: Object.entries(p || {}).map(([k, d]) => ({ id: k, ...d })).sort((x, y) => y.ts - x.ts),
+    aprovados: Object.entries(a || {}).map(([k, d]) => publicoDepo(k, d)).sort((x, y) => y.ts - x.ts),
+  };
 }
