@@ -80,6 +80,15 @@ td .email{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--mut
 .ment-send textarea{flex:1;resize:vertical;min-height:46px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:8px 10px;border-radius:3px;outline:none}
 .ment-vazio{margin:auto;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;text-align:center;padding:20px}
 .hidden{display:none!important}
+.dp-link{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
+.dp-link code{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--green);background:var(--bg);border:1px solid var(--border);padding:5px 8px;border-radius:3px;word-break:break-all}
+.dp-lista{font-size:15px;line-height:1.45}
+.dp-i{border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:4px;padding:10px 12px;margin-bottom:8px;background:rgba(0,0,0,.2)}
+.dp-i.pub{border-left-color:var(--green2)}
+.dp-est{color:var(--amber);letter-spacing:2px}
+.dp-i small{display:block;font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--muted);margin-top:4px;word-break:break-all}
+.dp-i .dp-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.dp-i .dp-acoes .btn{padding:6px 10px;font-size:10.5px;letter-spacing:1px}
+.dp-i .dp-acoes .rec{border-color:rgba(255,51,51,.5);color:var(--red);background:none}
 .mp-btn{display:inline-block;margin-top:6px;padding:5px 9px;font-size:10px;letter-spacing:1px}
 .mp-res{font-family:'Share Tech Mono',monospace;font-size:11.5px;line-height:1.5;margin-top:5px;max-width:320px}
 .al-resumo{font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.8;color:var(--text);margin-bottom:12px}
@@ -189,6 +198,23 @@ textarea.input{resize:vertical;font-family:'Rajdhani',sans-serif;font-size:16px}
           <div id="al-hist" class="al-lista">—</div>
         </div>
       </div>
+    </div>
+
+    <!-- Depoimentos do Guia: chegam pela página de venda e só aparecem lá depois de aprovados aqui -->
+    <div class="title" style="margin-top:24px;color:var(--amber)" id="depoimentos">⭐ DEPOIMENTOS DO GUIA <span class="badge hidden" id="dp-total"></span></div>
+    <div class="subtitle">PROVA SOCIAL DA PÁGINA DE VENDA — NADA É PUBLICADO SEM A SUA APROVAÇÃO</div>
+    <div class="card" style="padding:14px">
+      <div class="dp-link">
+        <span>Link para pedir depoimento aos compradores:</span>
+        <code id="dp-url">https://preppersbr.com/guia.html#depoimento</code>
+        <button class="btn btn-ghost al-mini" onclick="dpCopiar()">📋 COPIAR</button>
+        <a class="btn btn-ghost al-mini" href="img/guia/qr-depoimento.png" download="qr-depoimento-preppersbr.png">⬇ QR CODE (para o PDF)</a> <span class="saved" id="dp-copiado"></span>
+      </div>
+      <div class="al-sub" style="margin-top:12px">AGUARDANDO APROVAÇÃO</div>
+      <div id="dp-pend" class="dp-lista">▋ CARREGANDO...</div>
+      <div class="al-sub" style="margin-top:14px">PUBLICADOS NA PÁGINA</div>
+      <div id="dp-aprov" class="dp-lista">—</div>
+      <p class="al-nota">Antes de marcar <b>✓ compra verificada</b>, procure o e-mail em Hotmart → Vendas. Depoimentos verificados aparecem primeiro na página.</p>
     </div>
 
     <div class="title" style="margin-top:24px">MEMBROS</div>
@@ -343,7 +369,7 @@ function loadMembers(){
   show('v-panel');loadCourses();
   db.ref('members').on('value', function(snap){
     members = snap.val() || {};
-    render(); mentStart(); mentLista(); alertaIniciar();
+    render(); mentStart(); mentLista(); alertaIniciar(); dpIniciar();
   }, function(err){
     console.warn('Leitura negada', err);
     show('v-rules');
@@ -583,6 +609,41 @@ function alertaUsarInmet(i){
   document.getElementById('al-uf').value = ufs.length === 1 ? ufs[0] : '';
   document.getElementById('al-link').value = '/defesa-civil.html';
   document.getElementById('al-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Depoimentos do Guia (Worker) ──
+var dpIniciado = false;
+function dpIniciar(){ if (dpIniciado) return; dpIniciado = true; dpCarregar(); }
+function dpEstrelas(n){ return '<span class="dp-est">' + '★'.repeat(n) + '<span style="color:#2a3d33">' + '★'.repeat(5 - n) + '</span></span>'; }
+function dpCarregar(){
+  alertaApi('/admin/depoimentos', { acao: 'listar' }).then(function(r){
+    var b = document.getElementById('dp-total');
+    b.textContent = r.pendentes.length ? r.pendentes.length + ' NOVO' + (r.pendentes.length > 1 ? 'S' : '') : ''; b.classList.toggle('hidden', !r.pendentes.length);
+    document.getElementById('dp-pend').innerHTML = r.pendentes.length ? r.pendentes.map(function(d){
+      return '<div class="dp-i">' + dpEstrelas(d.nota) + ' <b>' + esc(d.nome) + '</b>' + (d.cidade || d.uf ? ' · ' + esc([d.cidade, d.uf].filter(Boolean).join('/')) : '') +
+        '<div style="margin-top:4px">“' + esc(d.texto) + '”</div><small>✉️ ' + esc(d.email) + ' · ' + quando(d.ts) + '</small>' +
+        '<div class="dp-acoes"><button class="btn" onclick="dpAcao(\'aprovar\',\'' + esc(d.id) + '\',true)">✓ APROVAR · COMPRA VERIFICADA</button>' +
+        '<button class="btn btn-ghost" onclick="dpAcao(\'aprovar\',\'' + esc(d.id) + '\',false)">APROVAR SEM VERIFICAR</button>' +
+        '<button class="btn rec" onclick="dpAcao(\'recusar\',\'' + esc(d.id) + '\')">✕ RECUSAR</button></div></div>';
+    }).join('') : '<span style="color:var(--muted)">Nenhum depoimento esperando aprovação.</span>';
+    document.getElementById('dp-aprov').innerHTML = r.aprovados.length ? r.aprovados.map(function(d){
+      return '<div class="dp-i pub">' + dpEstrelas(d.nota) + ' <b>' + esc(d.nome) + '</b>' + (d.verificado ? ' <span style="color:var(--green);font-family:\'Share Tech Mono\',monospace;font-size:11px">✓ VERIFICADA</span>' : '') +
+        '<div style="margin-top:4px">“' + esc(d.texto) + '”</div><small>' + quando(d.ts) + '</small>' +
+        '<div class="dp-acoes"><button class="btn btn-ghost" onclick="dpAcao(\'verificar\',\'' + esc(d.id) + '\',' + !d.verificado + ')">' + (d.verificado ? 'TIRAR “VERIFICADA”' : '✓ MARCAR COMO VERIFICADA') + '</button>' +
+        '<button class="btn rec" onclick="dpAcao(\'apagar\',\'' + esc(d.id) + '\')">APAGAR DA PÁGINA</button></div></div>';
+    }).join('') : '<span style="color:var(--muted)">Nenhum depoimento publicado ainda: a seção fica escondida na página de venda até o primeiro.</span>';
+  }).catch(function(e){
+    document.getElementById('dp-pend').innerHTML = '<span style="color:var(--amber)">⚠️ ' + esc(e.message) + '. Se acabou de receber o código novo, cole o <b>pagamentos/worker.js</b> atualizado no Worker da Cloudflare.</span>';
+  });
+}
+function dpAcao(acao, id, verificado){
+  if ((acao === 'recusar' || acao === 'apagar') && !confirm(acao === 'recusar' ? 'Recusar este depoimento? Ele será apagado.' : 'Tirar este depoimento da página de venda?')) return;
+  alertaApi('/admin/depoimentos', { acao: acao, id: id, verificado: verificado }).then(dpCarregar).catch(function(e){ alert('Erro: ' + e.message); });
+}
+function dpCopiar(){
+  var t = document.getElementById('dp-url').textContent, m = document.getElementById('dp-copiado');
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){ m.style.color = 'var(--green)'; m.textContent = 'Copiado!'; })
+    .catch(function(){ m.style.color = 'var(--amber)'; m.textContent = 'Selecione e copie o link.'; });
 }
 
 // Regras do banco: sempre a versão mais nova publicada no site (firebase/database.rules.json).
