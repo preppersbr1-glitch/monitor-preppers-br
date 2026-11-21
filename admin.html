@@ -40,7 +40,11 @@ main{max-width:1200px;margin:0 auto;padding:24px}
 .input:focus{border-color:var(--green3)}
 .err{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--red);margin:6px 0;min-height:14px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center;width:100%;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.stat:hover{border-color:var(--green2);transform:translateY(-2px)}
+.stat.on{border-color:var(--green);background:rgba(0,255,136,0.07);box-shadow:0 0 18px rgba(0,255,136,0.18)}
+.stat.on .stat-lbl{color:var(--green)}
+.stat.on .stat-lbl::after{content:' ✓'}
 .stat-val{font-family:'Orbitron',sans-serif;font-size:25px;font-weight:900}
 .stat-lbl{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:4px}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -220,10 +224,10 @@ textarea.input{resize:vertical;font-family:'Rajdhani',sans-serif;font-size:16px}
     <div class="title" style="margin-top:24px">MEMBROS</div>
     <div class="subtitle">ALTERE O PLANO DE CADA MEMBRO APÓS CONFIRMAR O PAGAMENTO</div>
     <div class="stats">
-      <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">TOTAL</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--green2)" id="s-sentinela">—</div><div class="stat-lbl">SENTINELA</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--blue)" id="s-operador">—</div><div class="stat-lbl">OPERADOR</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--amber)" id="s-comando">—</div><div class="stat-lbl">COMANDO</div></div>
+      <button type="button" class="stat" data-f="" onclick="filtrarNivel('')" aria-pressed="false"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">TOTAL</div></button>
+      <button type="button" class="stat" data-f="sentinela" onclick="filtrarNivel('sentinela')" aria-pressed="false"><div class="stat-val" style="color:var(--green2)" id="s-sentinela">—</div><div class="stat-lbl">SENTINELA</div></button>
+      <button type="button" class="stat" data-f="operador" onclick="filtrarNivel('operador')" aria-pressed="false"><div class="stat-val" style="color:var(--blue)" id="s-operador">—</div><div class="stat-lbl">OPERADOR</div></button>
+      <button type="button" class="stat" data-f="comando" onclick="filtrarNivel('comando')" aria-pressed="false"><div class="stat-val" style="color:var(--amber)" id="s-comando">—</div><div class="stat-lbl">COMANDO</div></button>
     </div>
     <div class="card" style="padding:14px">
       <div class="toolbar">
@@ -402,9 +406,18 @@ function conferirMP(uid){
     conferido[uid] = { t: '⚠️ ' + esc(e.message) + (/não encontrado|404/.test(e.message) ? ' Cole o pagamentos/worker.js atualizado no Worker da Cloudflare.' : ''), c: 'var(--red)' }; render();
   });
 }
+// cartões de contagem viram filtros: tocar em COMANDO mostra só os membros Comando (tocar de novo mostra todos)
+function filtrarNivel(nivel){
+  var sel = document.getElementById('f-level');
+  sel.value = sel.value === nivel && nivel ? '' : nivel;
+  render();
+  var tb = document.getElementById('rows');
+  if (tb) { var top = tb.closest('.card').getBoundingClientRect().top; if (top > innerHeight * 0.6 || top < 0) tb.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
   var f = document.getElementById('f-level').value;
+  [].forEach.call(document.querySelectorAll('.stat[data-f]'), function(b){ var on = b.getAttribute('data-f') === f; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
   var now = Date.now();
   var counts = { sentinela:0, operador:0, comando:0 };
   var list = Object.keys(members).map(function(uid){ var m = members[uid] || {}; m.uid = uid; m.level = m.level || 'sentinela'; return m; });
