@@ -1,0 +1,3426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vida Artificial</title>
+<meta name="description" content="Simulação de vida artificial no navegador: organismos com genoma e cérebro neural evoluem por seleção natural.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+ * Vida Artificial — estilo (tema tático escuro, paleta Preppers BR)
+ * ===================================================================== */
+:root{
+  --bg:#050a08;--bg2:#080f0c;--bg3:#0d1a14;
+  --green:#00ff88;--green2:#00cc6a;--green3:#004422;
+  --amber:#ffb300;--red:#ff3333;--blue:#00aaff;--purple:#b36bff;
+  --text:#c8fce8;--muted:#5f9278;--border:#1a3d2a;--card:#0a1610;
+  --painel:400px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column;overflow:hidden}
+button,select,input{font-family:inherit;color:inherit}
+
+/* ---------- topo ---------- */
+#topo{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:3px;color:var(--green);text-shadow:0 0 18px rgba(0,255,136,.45);font-size:17px;white-space:nowrap}
+.logo span{color:var(--muted);margin:0 2px}
+.controles,.arquivo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.arquivo{margin-left:auto}
+.grupo{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.grupo .btn{border:0;border-radius:0;border-right:1px solid var(--border)}
+.grupo .btn:last-child{border-right:0}
+.btn{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:5px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:1px;color:var(--text);transition:background .12s,color .12s}
+.btn:hover{background:var(--bg3);color:var(--green)}
+.btn:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+.btn.ativo{background:var(--green3);color:var(--green);border-color:var(--green2)}
+.btn.principal{border-color:var(--green2);color:var(--green)}
+.btn.mini{padding:3px 8px}
+#b-play{min-width:42px;font-size:15px}
+#b-turbo.ativo{background:#3a2600;border-color:var(--amber);color:var(--amber)}
+
+/* ---------- barra de status ---------- */
+#barra-status{display:flex;gap:18px;flex-wrap:wrap;padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)}
+#barra-status b{color:var(--text);font-weight:400}
+#barra-status .alerta{color:var(--amber);border:1px solid var(--amber);padding:0 6px;border-radius:3px;animation:pulso 1.4s infinite}
+@keyframes pulso{50%{opacity:.4}}
+
+/* ---------- área principal ---------- */
+main{flex:1;display:flex;min-height:0}
+#area-mundo{position:relative;flex:1;min-width:0;background:#020403}
+#tela{width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+#ferramentas{position:absolute;left:10px;bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(5,10,8,.86);border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-family:'Share Tech Mono',monospace;font-size:12px;max-width:calc(100% - 20px)}
+#ferramentas label{display:flex;gap:5px;align-items:center;color:var(--muted)}
+#ferramentas select{background:var(--card);border:1px solid var(--border);border-radius:3px;padding:2px 4px;font-family:'Share Tech Mono',monospace;font-size:12px}
+.chk input{accent-color:var(--green)}
+.legenda{position:absolute;right:10px;top:10px;background:rgba(5,10,8,.86);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:'Share Tech Mono',monospace;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+#turbo-aviso{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(2,4,3,.92);text-align:center;padding:16px}
+#turbo-aviso[hidden]{display:none}
+#turbo-aviso .t1{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:4px;color:var(--amber);font-size:26px}
+#turbo-aviso .t2{font-family:'Share Tech Mono',monospace;color:var(--text);font-size:15px}
+#turbo-aviso .t3{color:var(--muted);font-size:13px}
+
+/* ---------- painel lateral ---------- */
+#painel{width:var(--painel);flex:none;display:flex;flex-direction:column;background:var(--bg2);border-left:1px solid var(--border);min-height:0}
+#abas{display:flex;border-bottom:1px solid var(--border)}
+.aba{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:9px 2px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.aba:hover{color:var(--text)}
+.aba.ativa{color:var(--green);border-bottom-color:var(--green)}
+.conteudo{display:none;overflow-y:auto;padding:10px 14px 24px;flex:1;min-height:0}
+.conteudo.ativa{display:block}
+h3{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green2);margin:16px 0 8px;font-weight:700}
+h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:0;text-transform:none;font-size:11px;margin-left:6px}
+.dica{color:var(--muted);line-height:1.4}
+.pequena{font-size:13px}
+.texto p{line-height:1.45;margin:0 0 10px;color:#a8dcc6}
+.texto b{color:var(--text)}
+
+/* organismo */
+.org-topo{display:flex;gap:10px;align-items:center}
+.org-topo .btn{margin-left:auto}
+.amostra{width:26px;height:26px;border-radius:50%;flex:none;border:2px solid var(--border)}
+.org-nome{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:1px;font-weight:700}
+.org-sub{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)}
+.barras{margin-top:10px;display:grid;gap:3px}
+.rot{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.rot b{color:var(--text);font-weight:400}
+.barra{height:7px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.barra i{display:block;height:100%;background:var(--green2);width:0}
+.barra i.amb{background:var(--amber)}
+.grade-info{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:'Share Tech Mono',monospace;font-size:12px;margin-top:8px}
+.grade-info div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px dotted #12301f;padding:2px 0}
+.grade-info span{color:var(--muted)}
+#tela-cerebro{width:100%;max-width:372px;height:auto;aspect-ratio:360/430;background:var(--bg);border:1px solid var(--border);border-radius:4px;display:block}
+.legenda-cerebro{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px}
+.lc{display:inline-block;width:14px;height:3px;vertical-align:middle;margin:0 3px 0 6px}
+.lc.pos{background:var(--green)}.lc.neg{background:var(--red)}.lc.rec{background:var(--blue)}
+.acoes{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-family:'Share Tech Mono',monospace;font-size:12px}
+.acoes .a{display:grid;grid-template-columns:88px 1fr;align-items:center;gap:6px;color:var(--muted)}
+.acoes .a .barra{margin:0;height:6px;position:relative}
+.acoes .a .barra i{position:absolute;top:0;bottom:0}
+.genes{display:grid;gap:3px}
+.gene{display:grid;grid-template-columns:150px 1fr 54px;gap:8px;align-items:center;font-family:'Share Tech Mono',monospace;font-size:12px}
+.gene span:first-child{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gene .barra{margin:0;height:5px}
+.gene b{font-weight:400;text-align:right}
+.linhagem{font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.6}
+.linhagem .esp{display:flex;align-items:center;gap:6px}
+.linhagem .esp i{width:9px;height:9px;border-radius:50%;flex:none}
+.linhagem .extinta{color:var(--muted)}
+.botoes{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+.tabela{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:12px}
+.tabela th{text-align:left;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);padding:3px 4px}
+.tabela td{padding:4px;border-bottom:1px dotted #12301f}
+.tabela tbody tr{cursor:pointer}
+.tabela tbody tr:hover{background:var(--bg3)}
+.tabela i{display:inline-block;width:10px;height:10px;border-radius:50%}
+
+/* gráficos */
+.grafico{width:100%;display:block;background:var(--bg);border:1px solid var(--border);border-radius:4px}
+.legenda-graf{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px}
+.legenda-graf i{display:inline-block;width:10px;height:3px;margin-right:4px;vertical-align:middle}
+#arv-rolagem{max-height:calc(100vh - 230px);overflow:auto;border:1px solid var(--border);border-radius:4px;background:var(--bg)}
+#g-arvore{display:block}
+.arv-info{font-family:'Share Tech Mono',monospace;font-size:12px;min-height:36px;color:var(--text);margin-bottom:6px}
+
+/* marcos */
+#lista-marcos{list-style:none;padding:0;margin:12px 0 0}
+#lista-marcos li{border-left:2px solid var(--green3);padding:4px 0 8px 12px;position:relative}
+#lista-marcos li::before{content:'';position:absolute;left:-5px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--green)}
+#lista-marcos li.evento::before,#lista-marcos li.seca::before,#lista-marcos li.chuva::before{background:var(--blue)}
+#lista-marcos li.crise::before,#lista-marcos li.seca::before{background:var(--amber)}
+#lista-marcos .t{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+#lista-marcos .ti{font-weight:700;color:var(--text)}
+#lista-marcos .d{color:#9cccb6;font-size:13.5px;line-height:1.35}
+
+/* formulário */
+.form{display:grid;grid-template-columns:1fr 110px;gap:6px 10px;align-items:center;font-size:14px}
+.form label{color:#a8dcc6}
+.form input[type=number],.form select{background:var(--card);border:1px solid var(--border);border-radius:3px;padding:3px 6px;font-family:'Share Tech Mono',monospace;font-size:12px;width:100%}
+.form input[type=range]{width:100%;accent-color:var(--green)}
+.form input[type=checkbox]{accent-color:var(--green);justify-self:start}
+
+#modal{position:fixed;inset:0;background:rgba(2,4,3,.8);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.modal-caixa{background:var(--bg2);border:1px solid var(--green2);border-radius:4px;padding:14px;width:min(640px,100%);display:flex;flex-direction:column;gap:10px}
+.modal-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace}
+#modal-texto{width:100%;height:280px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;resize:vertical}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);border:1px solid var(--green2);color:var(--green);padding:8px 16px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:13px;z-index:10;max-width:90vw;box-shadow:0 0 20px rgba(0,255,136,.15)}
+
+/* ---------- responsivo ---------- */
+@media (max-width:900px){
+  body{overflow:auto;height:auto}
+  main{flex-direction:column}
+  #area-mundo{height:auto;flex:none;display:flex;flex-direction:column}
+  #tela{height:58vh}
+  #ferramentas{position:static;max-width:none;border-radius:0;border-width:1px 0 0}
+  #turbo-aviso{bottom:auto;height:58vh}
+  #painel{width:100%;border-left:0;border-top:1px solid var(--border)}
+  .conteudo{overflow:visible}
+  .arquivo{margin-left:0}
+  #arv-rolagem{max-height:60vh}
+}
+@media (max-width:480px){
+  #topo{padding:6px 10px;gap:6px}
+  .arquivo .btn{padding:3px 6px;font-size:11px}
+  .btn.vel{padding:4px 5px}
+  .logo{font-size:14px}
+  .btn{padding:4px 7px;font-size:12px}
+  #barra-status{gap:10px;font-size:11.5px;padding:4px 10px}
+  .gene{grid-template-columns:120px 1fr 48px}
+  .conteudo{padding:10px 10px 20px}
+  #ferramentas{gap:5px;padding:4px 6px;font-size:11px;left:6px;bottom:6px}
+  #ferramentas select{font-size:11px;max-width:120px}
+}
+
+</style>
+</head>
+<body>
+<header id="topo">
+  <div class="logo">VIDA<span>·</span>ARTIFICIAL</div>
+  <div class="controles">
+    <button id="b-play" class="btn principal" title="Pausar / continuar (Espaço)">⏸</button>
+    <button id="b-passo" class="btn" title="Avançar 1 passo (pausado)">+1</button>
+    <div class="grupo" id="velocidades" role="group" aria-label="Velocidade">
+      <button class="btn vel" data-v="1">1x</button>
+      <button class="btn vel" data-v="2">2x</button>
+      <button class="btn vel" data-v="5">5x</button>
+      <button class="btn vel" data-v="10">10x</button>
+      <button class="btn vel" data-v="50">50x</button>
+      <button class="btn vel" data-v="100">100x</button>
+      <button class="btn vel" data-v="1000">1000x</button>
+    </div>
+    <button id="b-turbo" class="btn" title="Processamento rápido sem desenhar (T)">TURBO</button>
+  </div>
+  <div class="arquivo">
+    <button id="b-salvar" class="btn" title="Baixar o estado completo (.json)">Salvar</button>
+    <button id="b-carregar" class="btn" title="Carregar estado (.json)">Carregar</button>
+    <button id="b-rapido-s" class="btn" title="Salvar no navegador (localStorage)">⇩ Slot</button>
+    <button id="b-rapido-c" class="btn" title="Carregar do navegador">⇧ Slot</button>
+    <input type="file" id="arq-entrada" accept=".json,application/json" hidden>
+  </div>
+</header>
+
+<div id="barra-status">
+  <span><b id="st-passo">0</b> passos</span>
+  <span id="st-estacao">—</span>
+  <span><b id="st-pop">0</b> organismos</span>
+  <span><b id="st-esp">0</b> espécies</span>
+  <span><b id="st-ger">0</b> geração máx.</span>
+  <span><b id="st-vel">0</b> passos/s</span>
+  <span id="st-seca" class="alerta" hidden>SECA</span>
+</div>
+
+<main>
+  <section id="area-mundo">
+    <canvas id="tela"></canvas>
+    <div id="turbo-aviso" hidden>
+      <div class="t1">MODO TURBO</div>
+      <div class="t2">simulando sem desenhar — <b id="turbo-vel">0</b> passos/s</div>
+      <div class="t3">pressione T ou o botão TURBO para voltar</div>
+    </div>
+    <div id="ferramentas">
+      <label>Cor
+        <select id="sel-cor">
+          <option value="genoma">genoma</option>
+          <option value="especie">espécie</option>
+          <option value="papel">papel ecológico</option>
+          <option value="dieta">dieta</option>
+          <option value="energia">energia</option>
+        </select>
+      </label>
+      <label>Ferramenta
+        <select id="sel-ferr">
+          <option value="selecionar">selecionar / mover</option>
+          <option value="obstaculo">pintar obstáculo</option>
+          <option value="apagar">apagar obstáculo</option>
+          <option value="comida">jogar comida</option>
+          <option value="inserir">inserir organismo importado</option>
+        </select>
+      </label>
+      <label class="chk"><input type="checkbox" id="chk-sinais" checked> sinais</label>
+      <label class="chk"><input type="checkbox" id="chk-seguir" checked> seguir</label>
+      <button class="btn mini" id="b-zoom-mais" title="Aproximar">＋</button>
+      <button class="btn mini" id="b-zoom-menos" title="Afastar">－</button>
+      <button class="btn mini" id="b-enquadrar" title="Ver o mundo todo">▣</button>
+    </div>
+    <div id="legenda-papel" class="legenda" hidden></div>
+  </section>
+
+  <aside id="painel">
+    <nav id="abas" role="tablist">
+      <button class="aba ativa" data-aba="org">Organismo</button>
+      <button class="aba" data-aba="graf">Gráficos</button>
+      <button class="aba" data-aba="arv">Árvore</button>
+      <button class="aba" data-aba="marcos">Marcos</button>
+      <button class="aba" data-aba="mundo">Mundo</button>
+    </nav>
+
+    <!-- ORGANISMO -->
+    <div class="conteudo ativa" id="aba-org">
+      <div id="org-vazio">
+        <p class="dica">Clique num organismo no mapa para ver genes, cérebro em tempo real, idade, energia e linhagem.</p>
+        <h3>Espécies vivas</h3>
+        <table class="tabela" id="tab-especies"><thead><tr><th></th><th>Espécie</th><th>N</th><th>Papel</th><th>Cérebro</th></tr></thead><tbody></tbody></table>
+        <p class="dica pequena">Clique numa espécie para selecionar um membro.</p>
+      </div>
+      <div id="org-info" hidden>
+        <div class="org-topo">
+          <span class="amostra" id="o-cor"></span>
+          <div>
+            <div class="org-nome" id="o-nome">—</div>
+            <div class="org-sub" id="o-sub">—</div>
+          </div>
+          <button class="btn mini" id="b-desselecionar" title="Fechar">✕</button>
+        </div>
+        <div class="barras">
+          <div class="rot">Energia <b id="o-energia"></b></div><div class="barra"><i id="o-energia-b"></i></div>
+          <div class="rot">Idade <b id="o-idade"></b></div><div class="barra"><i id="o-idade-b" class="amb"></i></div>
+        </div>
+        <div class="grade-info" id="o-dados"></div>
+        <h3>Cérebro <small id="o-cx"></small></h3>
+        <canvas id="tela-cerebro" width="360" height="430"></canvas>
+        <div class="legenda-cerebro"><span class="lc pos"></span>peso +  <span class="lc neg"></span>peso −  <span class="lc rec"></span>recorrente  · nós brilham com a ativação atual</div>
+        <h3>Ações agora</h3>
+        <div id="o-acoes" class="acoes"></div>
+        <h3>Genes</h3>
+        <div id="o-genes" class="genes"></div>
+        <h3>Linhagem</h3>
+        <div id="o-linhagem" class="linhagem"></div>
+        <div class="botoes">
+          <button class="btn" id="b-exportar">Exportar organismo</button>
+          <button class="btn" id="b-clonar">Clonar ×10</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="conteudo" id="aba-graf">
+      <h3>População por espécie</h3>
+      <canvas class="grafico" id="g-pop" height="180"></canvas>
+      <div class="legenda-graf" id="lg-pop"></div>
+      <h3>Papéis ecológicos</h3>
+      <canvas class="grafico" id="g-papeis" height="140"></canvas>
+      <div class="legenda-graf" id="lg-papeis"></div>
+      <h3>Complexidade média dos cérebros</h3>
+      <canvas class="grafico" id="g-cerebro" height="140"></canvas>
+      <div class="legenda-graf" id="lg-cerebro"></div>
+      <h3>Genes médios</h3>
+      <canvas class="grafico" id="g-genes" height="140"></canvas>
+      <div class="legenda-graf" id="lg-genes"></div>
+      <h3>Recursos do mundo</h3>
+      <canvas class="grafico" id="g-recursos" height="120"></canvas>
+      <div class="legenda-graf" id="lg-recursos"></div>
+      <h3>Contadores</h3>
+      <div class="grade-info" id="contadores"></div>
+    </div>
+
+    <!-- ÁRVORE -->
+    <div class="conteudo" id="aba-arv">
+      <p class="dica pequena">Cada linha é uma espécie (tempo →). Espessura = pico populacional. Linhas verticais ligam a espécie-mãe à filha. Passe o mouse para ver nomes; clique numa espécie viva para selecionar um membro.</p>
+      <div id="arv-info" class="arv-info">—</div>
+      <div id="arv-rolagem"><canvas id="g-arvore"></canvas></div>
+    </div>
+
+    <!-- MARCOS -->
+    <div class="conteudo" id="aba-marcos">
+      <canvas class="grafico" id="g-linha-tempo" height="70"></canvas>
+      <ul id="lista-marcos"></ul>
+    </div>
+
+    <!-- MUNDO -->
+    <div class="conteudo" id="aba-mundo">
+      <h3>Ajustes ao vivo</h3>
+      <div class="form" id="form-vivo"></div>
+      <h3>Novo mundo</h3>
+      <div class="form" id="form-novo"></div>
+      <div class="botoes"><button class="btn principal" id="b-novo">Criar novo mundo</button></div>
+      <h3>Como funciona</h3>
+      <div class="texto">
+        <p><b>Organismos</b> têm um genoma (tamanho, velocidade, cor, visão, olfato, metabolismo, dieta, longevidade, taxa de mutação, sexualidade…) e um cérebro neural que também é herdado e mutado — podem surgir neurônios e conexões novos (estilo NEAT) e, nos cérebros mais complexos, células de memória.</p>
+        <p><b>Sentidos:</b> olfato de plantas e carne, visão do semelhante e do diferente mais próximos (distância, ângulo, tamanho, se está atacando, cor-sinal), audição de sons, dor, obstáculos, estação, oscilador interno e memória.</p>
+        <p><b>Ações:</b> mover, girar, comer, atacar, reproduzir, emitir som e cor. Fugir, perseguir, agrupar e comunicar não são programados — só surgem se ajudarem a sobreviver.</p>
+        <p><b>Seleção natural pura:</b> não há pontuação. Viver, mover, pensar e enxergar custam energia; quem não come morre, quem acumula energia se reproduz.</p>
+        <p><b>Espécies</b> são separadas por distância genética (genes + estrutura do cérebro). Reprodução sexuada só é possível depois do passo configurado e apenas entre parceiros geneticamente compatíveis.</p>
+        <p><b>Atalhos:</b> Espaço = pausar · T = turbo · + / − = velocidade · F = seguir · roda do mouse = zoom · arrastar = mover a câmera.</p>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="modal" hidden>
+  <div class="modal-caixa" role="dialog" aria-labelledby="modal-titulo">
+    <div class="modal-topo"><b id="modal-titulo">—</b><button class="btn mini" id="modal-fechar" title="Fechar">✕</button></div>
+    <textarea id="modal-texto" spellcheck="false"></textarea>
+    <div class="botoes">
+      <button class="btn principal" id="modal-copiar">Copiar</button>
+      <button class="btn" id="modal-importar">Usar este organismo</button>
+      <button class="btn" id="modal-arquivo" onclick="VA.App.modoArquivo='organismo';document.getElementById('arq-entrada').click()">Abrir arquivo…</button>
+    </div>
+  </div>
+</div>
+<div id="toast" hidden></div>
+
+<!-- Módulos (scripts clássicos: funcionam abrindo o arquivo direto, sem servidor) -->
+<script>
+/* ==== js/util.js ==== */
+/* =====================================================================
+ * util.js — Utilitários básicos da simulação
+ * ---------------------------------------------------------------------
+ * - Gerador de números aleatórios com semente (reprodutível e salvável)
+ * - Funções matemáticas pequenas
+ * - Ruído de valor 2D (para gerar fertilidade/biomas do mundo)
+ * - Grade espacial (hash espacial) para achar vizinhos rapidamente
+ *
+ * Todos os módulos se registram no objeto global VA (Vida Artificial).
+ * Funciona tanto no navegador (window) quanto no Node (globalThis),
+ * o que permite rodar os testes automáticos sem navegador.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  /* ------------------------------------------------------------------
+   * Gerador aleatório "mulberry32": rápido, 32 bits, estado = 1 inteiro.
+   * Guardar o estado permite salvar/carregar e continuar idêntico.
+   * ------------------------------------------------------------------ */
+  function Aleatorio(semente) {
+    this.estado = (semente >>> 0) || 1;
+    this._gaussExtra = null;
+  }
+  Aleatorio.prototype.prox = function () {
+    var t = (this.estado = (this.estado + 0x6D2B79F5) >>> 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  /* número real em [a, b) */
+  Aleatorio.prototype.entre = function (a, b) { return a + (b - a) * this.prox(); };
+  /* inteiro em [0, n) */
+  Aleatorio.prototype.inteiro = function (n) { return Math.floor(this.prox() * n); };
+  /* verdadeiro com probabilidade p */
+  Aleatorio.prototype.chance = function (p) { return this.prox() < p; };
+  /* distribuição normal (Box-Muller) média 0, desvio 1 */
+  Aleatorio.prototype.gauss = function () {
+    if (this._gaussExtra !== null) { var g = this._gaussExtra; this._gaussExtra = null; return g; }
+    var u = 0, v = 0;
+    while (u === 0) u = this.prox();
+    v = this.prox();
+    var m = Math.sqrt(-2 * Math.log(u));
+    this._gaussExtra = m * Math.sin(2 * Math.PI * v);
+    return m * Math.cos(2 * Math.PI * v);
+  };
+  Aleatorio.prototype.escolher = function (lista) { return lista[this.inteiro(lista.length)]; };
+  VA.Aleatorio = Aleatorio;
+
+  /* Gerador global usado por toda a simulação (substituído ao criar/carregar) */
+  VA.rng = new Aleatorio(12345);
+
+  /* ------------------------------------------------------------------
+   * Matemática
+   * ------------------------------------------------------------------ */
+  function limitar(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  /* normaliza ângulo para (-PI, PI] */
+  function angNorm(a) {
+    while (a > Math.PI) a -= 2 * Math.PI;
+    while (a <= -Math.PI) a += 2 * Math.PI;
+    return a;
+  }
+  /* arredonda para n casas (usado para compactar arquivos salvos) */
+  function arred(v, n) { var f = Math.pow(10, n); return Math.round(v * f) / f; }
+  VA.limitar = limitar;
+  VA.lerp = lerp;
+  VA.angNorm = angNorm;
+  VA.arred = arred;
+
+  /* ------------------------------------------------------------------
+   * Ruído de valor 2D com várias oitavas (fractal), valores ~[0,1].
+   * Usado só na criação do mundo, então simplicidade > velocidade.
+   * ------------------------------------------------------------------ */
+  function criarRuido(rng, tamanho) {
+    var n = tamanho || 256;
+    var tabela = new Float32Array(n * n);
+    for (var i = 0; i < tabela.length; i++) tabela[i] = rng.prox();
+    function suave(t) { return t * t * (3 - 2 * t); }
+    function base(x, y) {
+      var xi = Math.floor(x), yi = Math.floor(y);
+      var xf = x - xi, yf = y - yi;
+      var x0 = ((xi % n) + n) % n, y0 = ((yi % n) + n) % n;
+      var x1 = (x0 + 1) % n, y1 = (y0 + 1) % n;
+      var a = tabela[y0 * n + x0], b = tabela[y0 * n + x1];
+      var c = tabela[y1 * n + x0], d = tabela[y1 * n + x1];
+      var u = suave(xf), v = suave(yf);
+      return lerp(lerp(a, b, u), lerp(c, d, u), v);
+    }
+    return function (x, y, oitavas) {
+      var soma = 0, amp = 1, freq = 1, total = 0;
+      oitavas = oitavas || 4;
+      for (var o = 0; o < oitavas; o++) {
+        soma += base(x * freq, y * freq) * amp;
+        total += amp;
+        amp *= 0.5;
+        freq *= 2;
+      }
+      return soma / total;
+    };
+  }
+  VA.criarRuido = criarRuido;
+
+  /* ------------------------------------------------------------------
+   * Grade espacial (hash espacial com ordenação por contagem).
+   * Reconstruída a cada passo em O(n), sem criar objetos novos:
+   *   inicio[c] .. inicio[c+1]-1  => índices dos organismos na célula c
+   * ------------------------------------------------------------------ */
+  function GradeEspacial(largura, altura, tamCelula) {
+    this.tam = tamCelula;
+    this.cols = Math.ceil(largura / tamCelula);
+    this.linhas = Math.ceil(altura / tamCelula);
+    var nc = this.cols * this.linhas;
+    this.contagem = new Int32Array(nc);
+    this.inicio = new Int32Array(nc + 1);
+    this.itens = new Int32Array(1024);
+    this.celulaDe = new Int32Array(1024);
+    this.alocarPlanos(1024);
+  }
+  /* Cópias "planas" dos dados mais lidos na busca de vizinhos, na ordem
+   * da grade (contíguas por célula) — evita saltos de memória entre
+   * objetos e acelera muito o laço de sentidos. */
+  GradeEspacial.prototype.alocarPlanos = function (n) {
+    this.px = new Float32Array(n); this.py = new Float32Array(n);
+    this.pr = new Float32Array(n); this.psom = new Float32Array(n);
+    this.pcr = new Float32Array(n); this.pcg = new Float32Array(n); this.pcb = new Float32Array(n);
+  };
+  GradeEspacial.prototype.reconstruir = function (orgs) {
+    var n = orgs.length, i, c;
+    if (this.itens.length < n) {
+      var novo = Math.max(n, this.itens.length * 2);
+      this.itens = new Int32Array(novo);
+      this.celulaDe = new Int32Array(novo);
+      this.alocarPlanos(novo);
+    }
+    var cont = this.contagem, ini = this.inicio, tam = this.tam, cols = this.cols, lin = this.linhas;
+    cont.fill(0);
+    for (i = 0; i < n; i++) {
+      var o = orgs[i];
+      var cx = (o.x / tam) | 0, cy = (o.y / tam) | 0;
+      if (cx < 0) cx = 0; else if (cx >= cols) cx = cols - 1;
+      if (cy < 0) cy = 0; else if (cy >= lin) cy = lin - 1;
+      c = cy * cols + cx;
+      this.celulaDe[i] = c;
+      cont[c]++;
+    }
+    var acc = 0;
+    for (c = 0; c < cont.length; c++) { ini[c] = acc; acc += cont[c]; }
+    ini[cont.length] = acc;
+    /* reaproveita 'contagem' como cursor de escrita */
+    for (c = 0; c < cont.length; c++) cont[c] = ini[c];
+    for (i = 0; i < n; i++) {
+      c = this.celulaDe[i];
+      var k = cont[c]++, o2 = orgs[i];
+      this.itens[k] = i;
+      this.px[k] = o2.x; this.py[k] = o2.y; this.pr[k] = o2.raio; this.psom[k] = o2.sinalA;
+      this.pcr[k] = o2.cr; this.pcg[k] = o2.cg; this.pcb[k] = o2.cb;
+    }
+  };
+  VA.GradeEspacial = GradeEspacial;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/cerebro.js ==== */
+/* =====================================================================
+ * cerebro.js — Rede neural evolutiva no estilo NEAT
+ * ---------------------------------------------------------------------
+ * GENÓTIPO do cérebro (o que é herdado e mutado):
+ *   { nos:  [{id, tipo, ativ, ordem}],   tipo: 0=entrada 1=saída 2=oculto
+ *     cons: [{de, para, peso, ativo, inov}], ordenadas por 'inov'
+ *     mem:  número de células de memória liberadas (0..3) }
+ *
+ * FENÓTIPO (o que roda a cada passo): versão "compilada" em arrays
+ * tipados (Float32Array/Int32Array) para avaliar milhares de cérebros
+ * por passo sem criar lixo para o coletor de memória.
+ *
+ * Recorrência: os nós são avaliados em ordem crescente de 'ordem'
+ * (entradas=0, ocultos entre 0 e 1, saídas=1). Uma conexão que vem de
+ * um nó avaliado DEPOIS lê o valor do passo anterior — isso dá
+ * memória de curto prazo natural (laços recorrentes), sem custo extra.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  /* ---------------- Entradas (sentidos) ---------------- */
+  var ENTRADAS = [
+    'bias', 'energia', 'idade', 'dor',
+    'planta frente', 'planta lado', 'planta aqui',
+    'carne frente', 'carne lado', 'carne aqui',
+    'obstáculo',
+    'semelh. perto', 'semelh. ângulo', 'semelh. cor-sinal',
+    'difer. perto', 'difer. ângulo', 'difer. tamanho', 'difer. atacando',
+    'multidão', 'som intens.', 'som direção',
+    'estação', 'oscilador', 'velocidade',
+    'memória 1', 'memória 2', 'memória 3'
+  ];
+  /* ---------------- Saídas (ações) ---------------- */
+  var SAIDAS = [
+    'propulsão', 'giro', 'comer', 'atacar', 'reproduzir',
+    'sinal som', 'sinal cor',
+    'grava mem 1', 'grava mem 2', 'grava mem 3'
+  ];
+  var NE = ENTRADAS.length, NS = SAIDAS.length;
+  /* índices úteis */
+  var E = {
+    BIAS: 0, ENERGIA: 1, IDADE: 2, DOR: 3,
+    PL_FRENTE: 4, PL_LADO: 5, PL_AQUI: 6,
+    CA_FRENTE: 7, CA_LADO: 8, CA_AQUI: 9,
+    OBST: 10,
+    SEM_PERTO: 11, SEM_ANG: 12, SEM_SINAL: 13,
+    DIF_PERTO: 14, DIF_ANG: 15, DIF_TAM: 16, DIF_ATACA: 17,
+    MULTIDAO: 18, SOM: 19, SOM_DIR: 20,
+    ESTACAO: 21, OSC: 22, VEL: 23, MEM0: 24
+  };
+  var S = { PROP: 0, GIRO: 1, COMER: 2, ATACAR: 3, REPRO: 4, SOM: 5, COR: 6, MEM0: 7 };
+  var MAX_MEM = 3;
+
+  /* Funções de ativação disponíveis para neurônios ocultos */
+  var ATIVACOES = ['tanh', 'seno', 'relu', 'gauss', 'degrau'];
+
+  VA.Cerebro = {
+    ENTRADAS: ENTRADAS, SAIDAS: SAIDAS, NE: NE, NS: NS, E: E, S: S,
+    MAX_MEM: MAX_MEM, ATIVACOES: ATIVACOES
+  };
+
+  /* ------------------------------------------------------------------
+   * Registro global de inovações (NEAT): a mesma mutação estrutural
+   * (ex.: conexão 3→12) recebe sempre o mesmo número de inovação,
+   * permitindo alinhar genomas no cruzamento e medir distância.
+   * ------------------------------------------------------------------ */
+  var Inov = {
+    proxNo: NE + NS,     /* ids 0..NE-1 entradas, NE..NE+NS-1 saídas */
+    proxInov: 1,
+    mapaCon: {},         /* "de,para" -> inov */
+    mapaNo: {}           /* inov da conexão dividida -> id do novo nó */
+  };
+  VA.Inovacao = Inov;
+
+  function inovCon(de, para) {
+    var k = de + ',' + para;
+    var v = Inov.mapaCon[k];
+    if (v === undefined) { v = Inov.proxInov++; Inov.mapaCon[k] = v; }
+    return v;
+  }
+  function noDivisao(inov) {
+    var v = Inov.mapaNo[inov];
+    if (v === undefined) { v = Inov.proxNo++; Inov.mapaNo[inov] = v; }
+    return v;
+  }
+  function reiniciarInovacao() {
+    Inov.proxNo = NE + NS; Inov.proxInov = 1; Inov.mapaCon = {}; Inov.mapaNo = {};
+  }
+  VA.Cerebro.reiniciarInovacao = reiniciarInovacao;
+
+  /* ------------------------------------------------------------------
+   * Criação
+   * ------------------------------------------------------------------ */
+  function nosBase() {
+    var nos = [], i;
+    for (i = 0; i < NE; i++) nos.push({ id: i, tipo: 0, ativ: 0, ordem: 0 });
+    for (i = 0; i < NS; i++) nos.push({ id: NE + i, tipo: 1, ativ: 0, ordem: 1 });
+    return nos;
+  }
+  /* Cérebro inicial: poucas conexões aleatórias entrada→saída.
+   * Memórias (entradas 24..26 / saídas 7..9) ficam de fora até evoluírem. */
+  function criarInicial(rng) {
+    var cer = { nos: nosBase(), cons: [], mem: 0 };
+    /* bias → cada ação principal (peso aleatório): sem isso uma saída
+     * sem conexões fica parada em 0 e a ação nunca é tentada */
+    for (var s = 0; s < S.MEM0; s++) adicionarConexao(cer, E.BIAS, NE + s, rng.gauss() * 0.8);
+    var n = 3 + rng.inteiro(5);
+    for (var k = 0; k < n; k++) {
+      var de = rng.inteiro(E.MEM0);
+      var para = NE + rng.inteiro(S.MEM0);
+      adicionarConexao(cer, de, para, rng.gauss() * 1.2);
+    }
+    return cer;
+  }
+  VA.Cerebro.criarInicial = criarInicial;
+
+  function acharCon(cer, de, para) {
+    for (var i = 0; i < cer.cons.length; i++) {
+      var c = cer.cons[i];
+      if (c.de === de && c.para === para) return c;
+    }
+    return null;
+  }
+  function inserirOrdenado(cer, con) {
+    var cons = cer.cons, i = cons.length;
+    cons.push(con);
+    while (i > 0 && cons[i - 1].inov > con.inov) { cons[i] = cons[i - 1]; i--; }
+    cons[i] = con;
+  }
+  function adicionarConexao(cer, de, para, peso) {
+    var ex = acharCon(cer, de, para);
+    if (ex) { ex.ativo = true; return ex; }
+    var c = { de: de, para: para, peso: peso, ativo: true, inov: inovCon(de, para) };
+    inserirOrdenado(cer, c);
+    return c;
+  }
+
+  function copiar(cer) {
+    var nos = new Array(cer.nos.length), cons = new Array(cer.cons.length), i, n, c;
+    for (i = 0; i < cer.nos.length; i++) { n = cer.nos[i]; nos[i] = { id: n.id, tipo: n.tipo, ativ: n.ativ, ordem: n.ordem }; }
+    for (i = 0; i < cer.cons.length; i++) { c = cer.cons[i]; cons[i] = { de: c.de, para: c.para, peso: c.peso, ativo: c.ativo, inov: c.inov }; }
+    return { nos: nos, cons: cons, mem: cer.mem };
+  }
+  VA.Cerebro.copiar = copiar;
+
+  /* ------------------------------------------------------------------
+   * Mutação (taxa = gene 'taxaMutacao' do organismo, auto-adaptativo)
+   * ------------------------------------------------------------------ */
+  function mutar(cer, taxa, rng) {
+    var i, c, nos = cer.nos, cons = cer.cons;
+    var escala = taxa / 0.1;  /* taxa 0.1 = referência */
+    /* 1) perturbação de pesos */
+    for (i = 0; i < cons.length; i++) {
+      c = cons[i];
+      if (rng.chance(0.25 * escala)) {
+        if (rng.chance(0.08)) c.peso = rng.gauss() * 1.5;      /* troca total */
+        else c.peso += rng.gauss() * 0.35;                       /* ajuste fino */
+        if (c.peso > 6) c.peso = 6; else if (c.peso < -6) c.peso = -6;
+      }
+    }
+    /* 2) nova conexão (pode ser recorrente) */
+    if (rng.chance(0.12 * escala)) {
+      var tent = 0;
+      while (tent++ < 10) {
+        var a = nos[rng.inteiro(nos.length)], b = nos[rng.inteiro(nos.length)];
+        if (b.tipo === 0) continue;                                 /* não entra numa entrada */
+        if (!memUsavel(cer, a, true) || !memUsavel(cer, b, false)) continue;
+        if (acharCon(cer, a.id, b.id)) continue;
+        adicionarConexao(cer, a.id, b.id, rng.gauss());
+        break;
+      }
+    }
+    /* 3) novo neurônio: divide uma conexão ativa (estilo NEAT) */
+    if (cons.length && rng.chance(0.04 * escala)) {
+      c = cons[rng.inteiro(cons.length)];
+      if (c.ativo) {
+        var novoId = noDivisao(c.inov);
+        if (!noPorId(cer, novoId)) {
+          var na = noPorId(cer, c.de), nb = noPorId(cer, c.para);
+          var ord = (na.ordem + nb.ordem) / 2;
+          if (na.ordem >= nb.ordem) ord = rng.entre(0.05, 0.95);   /* conexão recorrente */
+          nos.push({ id: novoId, tipo: 2, ativ: rng.inteiro(ATIVACOES.length), ordem: ord });
+          c.ativo = false;
+          adicionarConexao(cer, c.de, novoId, 1.0);
+          adicionarConexao(cer, novoId, c.para, c.peso);
+        }
+      }
+    }
+    /* 4) liga/desliga conexão */
+    if (cons.length && rng.chance(0.02 * escala)) {
+      c = cons[rng.inteiro(cons.length)];
+      c.ativo = !c.ativo;
+    }
+    /* 5) remove conexão (simplificação — evita inchaço sem utilidade) */
+    if (cons.length > 2 && rng.chance(0.03 * escala)) {
+      cons.splice(rng.inteiro(cons.length), 1);
+    }
+    /* 6) troca a função de ativação de um oculto */
+    if (rng.chance(0.03 * escala)) {
+      var ocultos = [];
+      for (i = 0; i < nos.length; i++) if (nos[i].tipo === 2) ocultos.push(nos[i]);
+      if (ocultos.length) rng.escolher(ocultos).ativ = rng.inteiro(ATIVACOES.length);
+    }
+    /* 7) nova célula de memória — só para cérebros já complexos
+     *    ("memória simples para os organismos mais evoluídos") */
+    if (cer.mem < MAX_MEM && rng.chance(0.01 * escala)) {
+      var nOcultos = 0;
+      for (i = 0; i < nos.length; i++) if (nos[i].tipo === 2) nOcultos++;
+      if (nOcultos >= 2) {
+        var m = cer.mem++;
+        /* liga a memória nova a algo, para ter chance de ser útil */
+        adicionarConexao(cer, E.MEM0 + m, NE + rng.inteiro(S.MEM0), rng.gauss());
+        adicionarConexao(cer, rng.inteiro(E.MEM0), NE + S.MEM0 + m, rng.gauss());
+      }
+    }
+  }
+  VA.Cerebro.mutar = mutar;
+
+  /* entrada/saída de memória só pode ser ligada se a célula existir */
+  function memUsavel(cer, no, comoOrigem) {
+    if (no.tipo === 0 && no.id >= E.MEM0) return (no.id - E.MEM0) < cer.mem;
+    if (no.tipo === 1 && (no.id - NE) >= S.MEM0) return (no.id - NE - S.MEM0) < cer.mem;
+    return true;
+  }
+  function noPorId(cer, id) {
+    var nos = cer.nos;
+    for (var i = 0; i < nos.length; i++) if (nos[i].id === id) return nos[i];
+    return null;
+  }
+
+  /* ------------------------------------------------------------------
+   * Cruzamento (reprodução sexuada): alinha conexões por inovação.
+   * 'a' é o pai "dominante" (o com mais energia) — herda os genes
+   * disjuntos/excedentes dele. Não existe nota de aptidão: a energia
+   * no momento do acasalamento é só um fato do mundo.
+   * ------------------------------------------------------------------ */
+  function cruzar(a, b, rng) {
+    var filho = { nos: [], cons: [], mem: rng.chance(0.5) ? a.mem : b.mem };
+    var i = 0, j = 0, ca = a.cons, cb = b.cons, c;
+    while (i < ca.length) {
+      while (j < cb.length && cb[j].inov < ca[i].inov) j++;
+      if (j < cb.length && cb[j].inov === ca[i].inov) {
+        c = rng.chance(0.5) ? ca[i] : cb[j];
+        var ativo = (ca[i].ativo && cb[j].ativo) ? true : rng.chance(0.25);
+        filho.cons.push({ de: c.de, para: c.para, peso: c.peso, ativo: ativo, inov: c.inov });
+        j++;
+      } else {
+        c = ca[i];
+        filho.cons.push({ de: c.de, para: c.para, peso: c.peso, ativo: c.ativo, inov: c.inov });
+      }
+      i++;
+    }
+    /* nós necessários: base + ocultos usados (vindos de a ou b) */
+    var usados = {}, k;
+    for (k = 0; k < filho.cons.length; k++) { usados[filho.cons[k].de] = 1; usados[filho.cons[k].para] = 1; }
+    filho.nos = nosBase();
+    var vistos = {};
+    var fontes = [a.nos, b.nos];
+    for (var f = 0; f < 2; f++) {
+      for (k = 0; k < fontes[f].length; k++) {
+        var n = fontes[f][k];
+        if (n.tipo === 2 && usados[n.id] && !vistos[n.id]) {
+          vistos[n.id] = 1;
+          filho.nos.push({ id: n.id, tipo: 2, ativ: n.ativ, ordem: n.ordem });
+        }
+      }
+    }
+    /* remove conexões de memória que o filho não possui */
+    filho.cons = filho.cons.filter(function (c) {
+      return memUsavel(filho, { id: c.de, tipo: c.de < NE ? 0 : (c.de < NE + NS ? 1 : 2) }) &&
+             memUsavel(filho, { id: c.para, tipo: c.para < NE ? 0 : (c.para < NE + NS ? 1 : 2) });
+    });
+    return filho;
+  }
+  VA.Cerebro.cruzar = cruzar;
+
+  /* ------------------------------------------------------------------
+   * Distância de compatibilidade NEAT: c1*(disjuntos+excedentes)/N + c2*Δpeso
+   * ------------------------------------------------------------------ */
+  function distancia(a, b) {
+    var ca = a.cons, cb = b.cons, i = 0, j = 0, iguais = 0, difPeso = 0, desc = 0;
+    while (i < ca.length && j < cb.length) {
+      if (ca[i].inov === cb[j].inov) { iguais++; difPeso += Math.abs(ca[i].peso - cb[j].peso); i++; j++; }
+      else if (ca[i].inov < cb[j].inov) { desc++; i++; }
+      else { desc++; j++; }
+    }
+    desc += (ca.length - i) + (cb.length - j);
+    var N = Math.max(ca.length, cb.length, 1);
+    if (N < 10) N = 10;
+    return 1.0 * desc / N + 0.4 * (iguais ? difPeso / iguais : 0) + 0.3 * Math.abs(a.mem - b.mem);
+  }
+  VA.Cerebro.distancia = distancia;
+
+  /* Complexidade: neurônios ocultos e conexões ativas */
+  function complexidade(cer) {
+    var oc = 0, ca = 0, i;
+    for (i = 0; i < cer.nos.length; i++) if (cer.nos[i].tipo === 2) oc++;
+    for (i = 0; i < cer.cons.length; i++) if (cer.cons[i].ativo) ca++;
+    return { ocultos: oc, conexoes: ca, memoria: cer.mem };
+  }
+  VA.Cerebro.complexidade = complexidade;
+
+  /* ------------------------------------------------------------------
+   * Compilação para fenótipo rápido
+   * Índices: 0..NE-1 entradas, NE..NE+NS-1 saídas, depois ocultos.
+   * ------------------------------------------------------------------ */
+  function compilar(cer) {
+    var mapa = {}, i, n;
+    var ocultos = [];
+    for (i = 0; i < cer.nos.length; i++) if (cer.nos[i].tipo === 2) ocultos.push(cer.nos[i]);
+    ocultos.sort(function (x, y) { return x.ordem - y.ordem || x.id - y.id; });
+    for (i = 0; i < NE + NS; i++) mapa[i] = i;
+    for (i = 0; i < ocultos.length; i++) mapa[ocultos[i].id] = NE + NS + i;
+    var total = NE + NS + ocultos.length;
+
+    /* conexões de entrada por nó destino */
+    var entradasDe = new Array(total);
+    for (i = 0; i < total; i++) entradasDe[i] = [];
+    var nAtivas = 0;
+    for (i = 0; i < cer.cons.length; i++) {
+      var c = cer.cons[i];
+      if (!c.ativo) continue;
+      var d = mapa[c.para], o = mapa[c.de];
+      if (d === undefined || o === undefined) continue;
+      entradasDe[d].push(o, c.peso);
+      nAtivas++;
+    }
+    /* ordem de avaliação: ocultos (por 'ordem') e depois saídas */
+    var nAval = ocultos.length + NS;
+    var alvo = new Int32Array(nAval), ini = new Int32Array(nAval + 1), ativ = new Uint8Array(nAval);
+    var fonte = new Int32Array(nAtivas), peso = new Float32Array(nAtivas);
+    var p = 0, k = 0;
+    for (i = 0; i < nAval; i++) {
+      var idx = i < ocultos.length ? NE + NS + i : NE + (i - ocultos.length);
+      alvo[i] = idx;
+      ativ[i] = i < ocultos.length ? ocultos[i].ativ : 0;
+      ini[i] = p;
+      var lst = entradasDe[idx];
+      for (k = 0; k < lst.length; k += 2) { fonte[p] = lst[k]; peso[p] = lst[k + 1]; p++; }
+    }
+    ini[nAval] = p;
+    return {
+      total: total, nAval: nAval, alvo: alvo, ini: ini, ativ: ativ, fonte: fonte, peso: peso,
+      val: new Float32Array(total), mapa: mapa
+    };
+  }
+  VA.Cerebro.compilar = compilar;
+
+  /* Avalia um passo. 'ent' = Float32Array(NE). Resultado em fen.val[NE..NE+NS-1] */
+  function avaliar(fen, ent) {
+    var val = fen.val, i, k;
+    for (i = 0; i < NE; i++) val[i] = ent[i];
+    var alvo = fen.alvo, ini = fen.ini, fonte = fen.fonte, peso = fen.peso, ativ = fen.ativ;
+    for (i = 0; i < fen.nAval; i++) {
+      var s = 0, fim = ini[i + 1];
+      for (k = ini[i]; k < fim; k++) s += val[fonte[k]] * peso[k];
+      var v;
+      switch (ativ[i]) {
+        case 0: v = Math.tanh(s); break;
+        case 1: v = Math.sin(s); break;
+        case 2: v = s > 0 ? (s < 3 ? s : 3) : 0; break;
+        case 3: v = Math.exp(-s * s); break;
+        default: v = s > 0 ? 1 : 0;
+      }
+      val[alvo[i]] = v;
+    }
+  }
+  VA.Cerebro.avaliar = avaliar;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/genoma.js ==== */
+/* =====================================================================
+ * genoma.js — Genoma digital dos organismos
+ * ---------------------------------------------------------------------
+ * Um genoma = { tr: {gene: valor, ...}, cer: <genótipo do cérebro> }
+ *
+ * Cada gene numérico tem faixa [min, max] e desvio de mutação 'dp'.
+ * A taxa de mutação é ela mesma um gene (auto-adaptação): linhagens
+ * em ambientes estáveis tendem a reduzi-la, e vice-versa.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  /* Tabela de genes. 'ini' = faixa dos ancestrais primordiais. */
+  var GENES = [
+    { k: 'tamanho',      nome: 'Tamanho (raio)',          min: 3,     max: 14,    ini: [4, 6],       dp: 0.45 },
+    { k: 'velocidade',   nome: 'Velocidade máxima',       min: 0.3,   max: 4,     ini: [1, 1.8],     dp: 0.15 },
+    { k: 'corR',         nome: 'Cor — vermelho',          min: 0,     max: 1,     ini: [0, 1],       dp: 0.05 },
+    { k: 'corG',         nome: 'Cor — verde',             min: 0,     max: 1,     ini: [0, 1],       dp: 0.05 },
+    { k: 'corB',         nome: 'Cor — azul',              min: 0,     max: 1,     ini: [0, 1],       dp: 0.05 },
+    { k: 'visao',        nome: 'Alcance da visão',        min: 10,    max: 160,   ini: [40, 70],     dp: 5 },
+    { k: 'campoVisao',   nome: 'Campo de visão (rad)',    min: 0.4,   max: 6.28,  ini: [1.6, 3],     dp: 0.18 },
+    { k: 'olfato',       nome: 'Alcance do olfato',       min: 5,     max: 100,   ini: [20, 40],     dp: 3 },
+    { k: 'metabolismo',  nome: 'Metabolismo',             min: 0.5,   max: 2,     ini: [0.9, 1.1],   dp: 0.05 },
+    { k: 'dieta',        nome: 'Dieta (0=planta 1=carne)',min: 0,     max: 1,     ini: [0, 0.12],    dp: 0.035 },
+    { k: 'limiarRepro',  nome: 'Limiar de reprodução',    min: 0.3,   max: 0.95,  ini: [0.5, 0.7],   dp: 0.03 },
+    { k: 'investimento', nome: 'Investimento na cria',    min: 0.1,   max: 0.7,   ini: [0.3, 0.45],  dp: 0.025 },
+    { k: 'longevidade',  nome: 'Longevidade (passos)',    min: 800,   max: 20000, ini: [3000, 5000], dp: 220 },
+    { k: 'taxaMutacao',  nome: 'Taxa de mutação',         min: 0.02,  max: 0.4,   ini: [0.08, 0.12], dp: 0.008 },
+    { k: 'sexualidade',  nome: 'Sexualidade',             min: 0,     max: 1,     ini: [0.05, 0.3],  dp: 0.06 },
+    { k: 'oscilador',    nome: 'Frequência do oscilador', min: 0.005, max: 0.3,   ini: [0.02, 0.1],  dp: 0.008 }
+  ];
+  var INDICE = {};
+  for (var i = 0; i < GENES.length; i++) INDICE[GENES[i].k] = GENES[i];
+
+  VA.Genoma = { GENES: GENES, INDICE: INDICE };
+
+  /* Genoma primordial aleatório */
+  function criarAleatorio(rng) {
+    var tr = {};
+    for (var i = 0; i < GENES.length; i++) {
+      var g = GENES[i];
+      tr[g.k] = rng.entre(g.ini[0], g.ini[1]);
+    }
+    return { tr: tr, cer: VA.Cerebro.criarInicial(rng) };
+  }
+  VA.Genoma.criarAleatorio = criarAleatorio;
+
+  function copiar(gen) {
+    var tr = {};
+    for (var k in gen.tr) tr[k] = gen.tr[k];
+    return { tr: tr, cer: VA.Cerebro.copiar(gen.cer) };
+  }
+  VA.Genoma.copiar = copiar;
+
+  /* Mutação in-place (aplicada na cópia que vai para o filho) */
+  function mutar(gen, rng) {
+    var taxa = gen.tr.taxaMutacao;
+    for (var i = 0; i < GENES.length; i++) {
+      var g = GENES[i];
+      if (rng.chance(taxa * 2)) {
+        var v = gen.tr[g.k] + rng.gauss() * g.dp;
+        gen.tr[g.k] = v < g.min ? g.min : (v > g.max ? g.max : v);
+      }
+    }
+    VA.Cerebro.mutar(gen.cer, taxa, rng);
+  }
+  VA.Genoma.mutar = mutar;
+
+  /* Recombinação de genes (cada gene vem de um dos pais) */
+  function cruzar(a, b, rng) {
+    var tr = {};
+    for (var i = 0; i < GENES.length; i++) {
+      var k = GENES[i].k;
+      var r = rng.prox();
+      /* 45% de cada pai, 10% média (herança mista) */
+      tr[k] = r < 0.45 ? a.tr[k] : (r < 0.9 ? b.tr[k] : (a.tr[k] + b.tr[k]) / 2);
+    }
+    return { tr: tr, cer: VA.Cerebro.cruzar(a.cer, b.cer, rng) };
+  }
+  VA.Genoma.cruzar = cruzar;
+
+  /* Distância genética = genes normalizados + distância do cérebro */
+  function distancia(a, b) {
+    var s = 0;
+    for (var i = 0; i < GENES.length; i++) {
+      var g = GENES[i];
+      s += Math.abs(a.tr[g.k] - b.tr[g.k]) / (g.max - g.min);
+    }
+    return 2.5 * s + VA.Cerebro.distancia(a.cer, b.cer);
+  }
+  VA.Genoma.distancia = distancia;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/mundo.js ==== */
+/* =====================================================================
+ * mundo.js — Ambiente 2D
+ * ---------------------------------------------------------------------
+ * O mundo é contínuo para os organismos, mas os recursos ficam numa
+ * grade de células (padrão 20x20 unidades):
+ *   planta[c] — alimento vegetal que cresce (logístico) conforme o bioma
+ *   carne[c]  — carcaças deixadas por mortos; apodrece aos poucos
+ *   bloq[c]   — 1 = obstáculo (rocha/muralha), intransponível
+ *   bioma[c]  — deserto, planície, floresta ou pântano
+ *
+ * Condições mudam com o tempo:
+ *   - Estações: senoide com fase que varia com a latitude (y) — o norte
+ *     e o sul ficam em estações opostas, incentivando migração.
+ *   - Secas: eventos aleatórios de escassez que derrubam o crescimento.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  /* cap = estoque máximo por célula, taxa = crescimento, sens = quanto a
+   * estação afeta o bioma */
+  var BIOMAS = [
+    { nome: 'Deserto',  cor: [58, 46, 26],  cap: 5,  taxa: 0.004, sens: 1.0 },
+    { nome: 'Planície', cor: [22, 44, 24],  cap: 16, taxa: 0.010, sens: 0.7 },
+    { nome: 'Floresta', cor: [10, 40, 22],  cap: 34, taxa: 0.005, sens: 0.35 },
+    { nome: 'Pântano',  cor: [16, 38, 44],  cap: 22, taxa: 0.016, sens: 0.85 }
+  ];
+
+  function Mundo(cfg, rng, dados) {
+    this.cfg = cfg;
+    this.largura = cfg.largura;
+    this.altura = cfg.altura;
+    this.cel = cfg.celula;
+    this.cols = Math.ceil(this.largura / this.cel);
+    this.linhas = Math.ceil(this.altura / this.cel);
+    var n = this.cols * this.linhas;
+    this.n = n;
+    this.planta = new Float32Array(n);
+    this.carne = new Float32Array(n);
+    this.bloq = new Uint8Array(n);
+    this.bioma = new Uint8Array(n);
+    this.seca = { ativa: false, inicio: 0, fim: 0, proxima: 0, intensidade: 0 };
+    this.fatorEstacaoGlobal = 1;
+    if (dados) this.restaurar(dados);
+    else this.gerar(rng);
+  }
+  Mundo.BIOMAS = BIOMAS;
+
+  /* Geração procedural: biomas por ruído de fertilidade/umidade,
+   * cordilheiras de rocha e algumas muralhas com passagens (que podem
+   * isolar populações e favorecer o surgimento de espécies). */
+  Mundo.prototype.gerar = function (rng) {
+    var ruidoF = VA.criarRuido(rng), ruidoU = VA.criarRuido(rng), ruidoR = VA.criarRuido(rng);
+    var x, y, c;
+    for (y = 0; y < this.linhas; y++) {
+      for (x = 0; x < this.cols; x++) {
+        c = y * this.cols + x;
+        var f = ruidoF(x / 22, y / 22, 4), u = ruidoU(x / 30 + 50, y / 30 + 50, 3);
+        var b;
+        if (f < 0.40) b = 0;              /* deserto */
+        else if (u > 0.58) b = 3;         /* pântano */
+        else if (f > 0.56) b = 2;         /* floresta */
+        else b = 1;                       /* planície */
+        this.bioma[c] = b;
+        /* rochas: faixas estreitas de ruído (cristas) */
+        var r = ruidoR(x / 14 + 7, y / 14 + 3, 3);
+        if (Math.abs(r - 0.5) < 0.018 * this.cfg.obstaculos) this.bloq[c] = 1;
+        this.planta[c] = BIOMAS[b].cap * rng.entre(0.3, 0.9);
+      }
+    }
+    /* muralhas com passagens */
+    var nMur = Math.round(2 * this.cfg.obstaculos);
+    for (var m = 0; m < nMur; m++) {
+      var vertical = rng.chance(0.5);
+      var pos = rng.inteiro(vertical ? this.cols : this.linhas);
+      var len = vertical ? this.linhas : this.cols;
+      var ini = rng.inteiro(len / 3), fim = len - rng.inteiro(len / 3);
+      for (var t = ini; t < fim; t++) {
+        if (rng.chance(0.05)) { t += 3 + rng.inteiro(4); continue; } /* passagem */
+        c = vertical ? t * this.cols + pos : pos * this.cols + t;
+        this.bloq[c] = 1;
+      }
+    }
+    for (c = 0; c < this.n; c++) if (this.bloq[c]) this.planta[c] = 0;
+    this.seca.proxima = 15000 + rng.inteiro(25000);
+  };
+
+  /* Fator de estação (0.1..1) para uma linha y no instante t */
+  Mundo.prototype.fatorEstacao = function (t, linha) {
+    var P = this.cfg.periodoEstacao;
+    var fase = Math.PI * linha / this.linhas;   /* norte e sul opostos */
+    return Math.sin(2 * Math.PI * t / P + fase);
+  };
+
+  /* Atualiza recursos. Chamado a cada 'k' passos com crescimento × k. */
+  Mundo.prototype.atualizar = function (t, k, rng, aoEvento) {
+    var s = this.seca;
+    /* eventos de seca (escassez) */
+    if (this.cfg.secas) {
+      if (!s.ativa && t >= s.proxima) {
+        s.ativa = true; s.inicio = t;
+        s.fim = t + 3000 + rng.inteiro(5000);
+        s.intensidade = rng.entre(0.6, 0.9);
+        if (aoEvento) aoEvento('seca', 'Início de uma seca',
+          'Crescimento das plantas cai ' + Math.round(s.intensidade * 100) + '% até o passo ' + s.fim + '.');
+      } else if (s.ativa && t >= s.fim) {
+        s.ativa = false;
+        s.proxima = t + 15000 + rng.inteiro(30000);
+        if (aoEvento) aoEvento('chuva', 'Fim da seca', 'As chuvas voltaram.');
+      }
+    }
+    var fSeca = s.ativa ? (1 - s.intensidade) : 1;
+    var fert = this.cfg.fertilidade * fSeca * k;
+    var cols = this.cols, planta = this.planta, carne = this.carne, bloq = this.bloq, bioma = this.bioma;
+    var podre = Math.pow(0.9985, k);
+    var amp = this.cfg.amplitudeEstacao;
+    for (var y = 0; y < this.linhas; y++) {
+      var est = this.fatorEstacao(t, y);   /* -1..1 */
+      var fatores = [];
+      for (var b = 0; b < 4; b++) {
+        var B = BIOMAS[b];
+        fatores[b] = B.taxa * fert * Math.max(0.05, 1 + amp * B.sens * est);
+      }
+      var base = y * cols;
+      for (var x = 0; x < cols; x++) {
+        var c = base + x;
+        if (carne[c] > 0) { carne[c] *= podre; if (carne[c] < 0.05) carne[c] = 0; }
+        if (bloq[c]) continue;
+        var bi = bioma[c], cap = BIOMAS[bi].cap, p = planta[c];
+        /* crescimento logístico com "semente" mínima (nunca zera de vez) */
+        p += fatores[bi] * (p + 0.08 * cap) * (1 - p / cap);
+        planta[c] = p > cap ? cap : p;
+      }
+    }
+  };
+
+  Mundo.prototype.indice = function (x, y) {
+    var cx = (x / this.cel) | 0, cy = (y / this.cel) | 0;
+    if (cx < 0 || cy < 0 || cx >= this.cols || cy >= this.linhas) return -1;
+    return cy * this.cols + cx;
+  };
+  /* bloqueado: fora do mapa conta como parede */
+  Mundo.prototype.bloqueado = function (x, y) {
+    var c = this.indice(x, y);
+    return c < 0 || this.bloq[c] === 1;
+  };
+  Mundo.prototype.plantaEm = function (x, y) {
+    var c = this.indice(x, y);
+    return c < 0 ? 0 : this.planta[c];
+  };
+  Mundo.prototype.carneEm = function (x, y) {
+    var c = this.indice(x, y);
+    return c < 0 ? 0 : this.carne[c];
+  };
+  /* deposita carne: metade na célula, resto nas 4 vizinhas */
+  Mundo.prototype.depositarCarne = function (x, y, q) {
+    var c = this.indice(x, y);
+    if (c < 0) return;
+    this.carne[c] += q * 0.5;
+    var cx = c % this.cols, cy = (c / this.cols) | 0, part = q * 0.125;
+    if (cx > 0) this.carne[c - 1] += part; else this.carne[c] += part;
+    if (cx < this.cols - 1) this.carne[c + 1] += part; else this.carne[c] += part;
+    if (cy > 0) this.carne[c - this.cols] += part; else this.carne[c] += part;
+    if (cy < this.linhas - 1) this.carne[c + this.cols] += part; else this.carne[c] += part;
+  };
+
+  /* totais (para estatísticas) */
+  Mundo.prototype.totais = function () {
+    var p = 0, c = 0;
+    for (var i = 0; i < this.n; i++) { p += this.planta[i]; c += this.carne[i]; }
+    return { planta: p, carne: c };
+  };
+
+  /* Ferramentas do usuário: pintar obstáculo/comida */
+  Mundo.prototype.pintar = function (x, y, raio, tipo) {
+    var r = Math.ceil(raio / this.cel);
+    var c0 = this.indice(x, y);
+    if (c0 < 0) return;
+    var cx = c0 % this.cols, cy = (c0 / this.cols) | 0;
+    for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      var X = cx + dx, Y = cy + dy;
+      if (X < 0 || Y < 0 || X >= this.cols || Y >= this.linhas) continue;
+      var c = Y * this.cols + X;
+      if (tipo === 'obstaculo') { this.bloq[c] = 1; this.planta[c] = 0; }
+      else if (tipo === 'apagar') this.bloq[c] = 0;
+      else if (tipo === 'comida' && !this.bloq[c]) this.planta[c] = BIOMAS[this.bioma[c]].cap * 1.5;
+    }
+  };
+
+  /* ---------- serialização ---------- */
+  function arr(ta, casas) {
+    var out = new Array(ta.length);
+    for (var i = 0; i < ta.length; i++) out[i] = casas === 0 ? ta[i] : VA.arred(ta[i], casas);
+    return out;
+  }
+  Mundo.prototype.serializar = function () {
+    return {
+      planta: arr(this.planta, 0), carne: arr(this.carne, 0),
+      bloq: arr(this.bloq, 0), bioma: arr(this.bioma, 0),
+      seca: this.seca
+    };
+  };
+  Mundo.prototype.restaurar = function (d) {
+    this.planta.set(d.planta); this.carne.set(d.carne);
+    this.bloq.set(d.bloq); this.bioma.set(d.bioma);
+    this.seca = d.seca;
+  };
+
+  VA.Mundo = Mundo;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/organismo.js ==== */
+/* =====================================================================
+ * organismo.js — Corpo, sentidos e ações de um organismo
+ * ---------------------------------------------------------------------
+ * Ciclo de vida a cada passo:
+ *   sentir()  → monta o vetor de entradas a partir do mundo/vizinhos
+ *   pensar    → avalia a rede neural (cerebro.js)
+ *   agir()    → move, come, ataca, emite sinais, tenta reproduzir
+ *   metabolismo → gasta energia (viver, mover, pensar, enxergar)
+ *
+ * Não existe função de pontuação: quem acumula energia se reproduz,
+ * quem não consegue morre. Isso é toda a "seleção".
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+  var C = VA.Cerebro, E = C.E, S = C.S, NE = C.NE, NS = C.NS;
+
+  var AUDICAO = 100;         /* alcance fixo da audição */
+  var MATURIDADE = 120;      /* idade mínima para reproduzir */
+  var ESPERA_REPRO = 50;     /* passos entre reproduções */
+
+  function Organismo(genoma, x, y, energia, id) {
+    this.id = id;
+    this.gen = genoma;
+    this.x = x; this.y = y;
+    this.ang = 0;
+    this.vel = 0;
+    this.energia = energia;
+    this.idade = 0;
+    this.dor = 0;
+    this.mem = new Float32Array(C.MAX_MEM);
+    this.sinalA = 0;           /* som (0..1) */
+    this.sinalB = 0;           /* cor/brilho (-1..1) */
+    this.atacando = 0;
+    this.comendo = 0;
+    this.espera = 0;
+    this.procurando = 0;       /* passos procurando parceiro */
+    this.especie = 0;
+    this.geracao = 0;
+    this.paiId = 0;
+    this.maeId = 0;
+    this.nasc = 0;
+    this.filhos = 0;
+    this.vivo = true;
+    this.causaMorte = '';
+    /* estatísticas de comportamento (para classificar papéis) */
+    this.comeuPlanta = 0;
+    this.comeuCarnica = 0;     /* carne do chão (carniceiro) */
+    this.comeuPresa = 0;       /* energia tirada atacando (predador) */
+    this.abates = 0;
+    this.agressores = [];      /* [{id, esp, t}] — detectar caça em grupo */
+    this.ent = new Float32Array(NE);
+    this.sai = new Float32Array(NS);
+    this.alvoContato = null;   /* vizinho ao alcance (para atacar/acasalar) */
+    this.parceiro = null;
+    this.ameacado = false;
+    this.derivar();
+  }
+
+  /* Calcula atributos físicos a partir dos genes e compila o cérebro */
+  Organismo.prototype.derivar = function () {
+    var t = this.gen.tr;
+    this.raio = t.tamanho;
+    this.massa = (t.tamanho / 5) * (t.tamanho / 5);
+    this.maxE = 100 * this.massa;
+    var rm = Math.sqrt(this.massa);
+    this.velMax = t.velocidade * Math.sqrt(t.metabolismo) / (0.7 + 0.3 * rm);
+    this.giroMax = 0.3 / (0.6 + 0.4 * rm);
+    this.cosCampo = Math.cos(Math.min(Math.PI, t.campoVisao / 2));
+    var cx = C.complexidade(this.gen.cer);
+    this.cx = cx;
+    /* custo basal: lei de Kleiber (massa^0.75) × metabolismo
+     * + sentidos + cérebro (cada neurônio/conexão custa energia) */
+    this.custoBase =
+      0.011 * Math.pow(this.massa, 0.75) * t.metabolismo +
+      0.00007 * t.visao * Math.sqrt(t.campoVisao / Math.PI) +
+      0.00005 * t.olfato +
+      0.0003 * cx.conexoes + 0.0008 * cx.ocultos + 0.003 * cx.memoria;
+    this.mordida = 1.1 * this.massa * t.metabolismo;
+    this.forca = 2.4 * this.massa * t.metabolismo;
+    this.efPlanta = 1 - t.dieta;
+    this.efCarne = t.dieta * 1.8;   /* carne é mais concentrada */
+    /* cor normalizada (para reconhecimento entre organismos) */
+    this.cr = t.corR; this.cg = t.corG; this.cb = t.corB;
+    this.fen = C.compilar(this.gen.cer);
+  };
+
+  /* ------------------------------------------------------------------
+   * SENTIR: preenche this.ent
+   * ------------------------------------------------------------------ */
+  Organismo.prototype.sentir = function (sim, indiceProprio) {
+    var m = sim.mundo, t = this.gen.tr, ent = this.ent;
+    var hx = Math.cos(this.ang), hy = Math.sin(this.ang);
+    var capRef = 20;
+
+    ent[E.BIAS] = 1;
+    ent[E.ENERGIA] = this.energia / this.maxE;
+    ent[E.IDADE] = this.idade / t.longevidade;
+    ent[E.DOR] = this.dor;
+
+    /* --- olfato: amostra planta/carne à frente, esquerda e direita --- */
+    var d = t.olfato;
+    var ae = this.ang - 0.6, ad = this.ang + 0.6;
+    var fx = this.x + hx * d * 0.7, fy = this.y + hy * d * 0.7;
+    var ex = this.x + Math.cos(ae) * d, ey = this.y + Math.sin(ae) * d;
+    var dx_ = this.x + Math.cos(ad) * d, dy_ = this.y + Math.sin(ad) * d;
+    ent[E.PL_FRENTE] = m.plantaEm(fx, fy) / capRef;
+    ent[E.PL_LADO] = (m.plantaEm(dx_, dy_) - m.plantaEm(ex, ey)) / capRef;
+    ent[E.PL_AQUI] = m.plantaEm(this.x, this.y) / capRef;
+    ent[E.CA_FRENTE] = Math.min(2, m.carneEm(fx, fy) / capRef);
+    ent[E.CA_LADO] = Math.max(-2, Math.min(2, (m.carneEm(dx_, dy_) - m.carneEm(ex, ey)) / capRef));
+    ent[E.CA_AQUI] = Math.min(2, m.carneEm(this.x, this.y) / capRef);
+
+    /* --- obstáculo à frente (3 amostras) --- */
+    var ob = 0;
+    var r = this.raio;
+    if (m.bloqueado(this.x + hx * (r + 6), this.y + hy * (r + 6))) ob = 1;
+    else if (m.bloqueado(this.x + hx * (r + 16), this.y + hy * (r + 16))) ob = 0.6;
+    else if (m.bloqueado(this.x + hx * (r + 30), this.y + hy * (r + 30))) ob = 0.3;
+    ent[E.OBST] = ob;
+
+    /* --- vizinhos: visão, audição, contato --- */
+    var g = sim.grade, orgs = sim.orgs;
+    var R = t.visao > AUDICAO ? t.visao : AUDICAO;
+    var R2 = R * R, vis2 = t.visao * t.visao, aud2 = AUDICAO * AUDICAO;
+    var c0x = ((this.x - R) / g.tam) | 0, c1x = ((this.x + R) / g.tam) | 0;
+    var c0y = ((this.y - R) / g.tam) | 0, c1y = ((this.y + R) / g.tam) | 0;
+    if (c0x < 0) c0x = 0; if (c0y < 0) c0y = 0;
+    if (c1x >= g.cols) c1x = g.cols - 1; if (c1y >= g.linhas) c1y = g.linhas - 1;
+
+    var melhorSem = -1, dSem = 1e9, melhorDif = -1, dDif = 1e9;
+    var contato = -1, dCont = 1e9, parceiro = -1, dPar = 1e9;
+    var somI = 0, somX = 0, somY = 0, multidao = 0;
+    /* arrays planos da grade (ver util.js) */
+    var px = g.px, py = g.py, pr = g.pr, psom = g.psom, pcr = g.pcr, pcg = g.pcg, pcb = g.pcb;
+    var itens = g.itens, inicio = g.inicio, cols = g.cols;
+    var mx = this.x, my = this.y, mr = this.raio, mcr = this.cr, mcg = this.cg, mcb = this.cb, cosC = this.cosCampo;
+    for (var cy = c0y; cy <= c1y; cy++) {
+      for (var cx = c0x; cx <= c1x; cx++) {
+        var c = cy * cols + cx, fim = inicio[c + 1];
+        for (var k = inicio[c]; k < fim; k++) {
+          var vx = px[k] - mx, vy = py[k] - my;
+          var d2 = vx * vx + vy * vy;
+          if (d2 > R2 || itens[k] === indiceProprio) continue;
+          var dist = Math.sqrt(d2) + 1e-6;
+          if (dist < 30) multidao++;
+          /* audição (omnidirecional) */
+          var sa = psom[k];
+          if (sa > 0.02 && d2 < aud2) {
+            var w = sa * (1 - dist / AUDICAO);
+            somI += w; somX += vx / dist * w; somY += vy / dist * w;
+          }
+          if (d2 > vis2 && dist > mr + 30) continue;
+          var frente = (vx * hx + vy * hy) / dist;    /* cosseno do ângulo */
+          /* contato físico: à frente e encostando */
+          var alcance = mr + pr[k] + 4;
+          if (dist < alcance && frente > 0.2 && dist < dCont) { contato = k; dCont = dist; }
+          /* visão: dentro do cone e do alcance */
+          if (d2 < vis2 && frente >= cosC) {
+            var dr = mcr - pcr[k], dg = mcg - pcg[k], db = mcb - pcb[k];
+            if ((dr * dr + dg * dg + db * db) < 0.06) {           /* semelhante */
+              if (dist < dSem) { dSem = dist; melhorSem = k; }
+              if (dist < alcance + 16 && dist < dPar) { dPar = dist; parceiro = k; }
+            } else if (dist < dDif) { dDif = dist; melhorDif = k; }
+          }
+        }
+      }
+    }
+    /* converte índices da grade em organismos (descarta mortos neste passo) */
+    melhorSem = melhorSem >= 0 ? orgs[itens[melhorSem]] : null; if (melhorSem && !melhorSem.vivo) melhorSem = null;
+    melhorDif = melhorDif >= 0 ? orgs[itens[melhorDif]] : null; if (melhorDif && !melhorDif.vivo) melhorDif = null;
+    contato = contato >= 0 ? orgs[itens[contato]] : null; if (contato && !contato.vivo) contato = null;
+    parceiro = parceiro >= 0 ? orgs[itens[parceiro]] : null; if (parceiro && !parceiro.vivo) parceiro = null;
+    var vt = t.visao;
+    if (melhorSem) {
+      ent[E.SEM_PERTO] = 1 - dSem / vt;
+      ent[E.SEM_ANG] = this.anguloPara(melhorSem, hx, hy) / Math.PI;
+      ent[E.SEM_SINAL] = melhorSem.sinalB;
+    } else { ent[E.SEM_PERTO] = 0; ent[E.SEM_ANG] = 0; ent[E.SEM_SINAL] = 0; }
+    if (melhorDif) {
+      ent[E.DIF_PERTO] = 1 - dDif / vt;
+      ent[E.DIF_ANG] = this.anguloPara(melhorDif, hx, hy) / Math.PI;
+      ent[E.DIF_TAM] = Math.tanh(Math.log(melhorDif.massa / this.massa));
+      ent[E.DIF_ATACA] = melhorDif.atacando > 0 ? 1 : 0;
+      /* "ameaçado" é só para estatística (detectar alerta de perigo) —
+       * o organismo NÃO recebe essa informação diretamente. */
+      this.ameacado = melhorDif.gen.tr.dieta > 0.5 && melhorDif.massa > this.massa * 0.6;
+    } else {
+      ent[E.DIF_PERTO] = 0; ent[E.DIF_ANG] = 0; ent[E.DIF_TAM] = 0; ent[E.DIF_ATACA] = 0;
+      this.ameacado = false;
+    }
+    ent[E.MULTIDAO] = Math.min(1, multidao / 8);
+    ent[E.SOM] = Math.min(1, somI);
+    if (somI > 0.01) {
+      /* direção do som relativa à orientação: seno do ângulo (-1..1) */
+      var cr = hx * somY - hy * somX, dt = hx * somX + hy * somY;
+      ent[E.SOM_DIR] = Math.atan2(cr, dt) / Math.PI;
+    } else ent[E.SOM_DIR] = 0;
+
+    ent[E.ESTACAO] = m.fatorEstacao(sim.tick, (this.y / m.cel) | 0);
+    ent[E.OSC] = Math.sin(this.idade * t.oscilador * 2 * Math.PI);
+    ent[E.VEL] = this.vel / (this.velMax + 1e-6);
+    for (var mi = 0; mi < C.MAX_MEM; mi++) ent[E.MEM0 + mi] = mi < this.cx.memoria ? this.mem[mi] : 0;
+
+    this.alvoContato = contato;
+    this.parceiro = parceiro;
+  };
+
+  /* ângulo relativo (-PI..PI) até outro organismo */
+  Organismo.prototype.anguloPara = function (o, hx, hy) {
+    var vx = o.x - this.x, vy = o.y - this.y;
+    return Math.atan2(hx * vy - hy * vx, hx * vx + hy * vy);
+  };
+
+  /* ------------------------------------------------------------------
+   * PENSAR + AGIR
+   * ------------------------------------------------------------------ */
+  Organismo.prototype.pensarEAgir = function (sim) {
+    C.avaliar(this.fen, this.ent);
+    var val = this.fen.val, sai = this.sai, i;
+    for (i = 0; i < NS; i++) sai[i] = val[NE + i];
+    var m = sim.mundo, t = this.gen.tr;
+
+    /* --- movimento --- */
+    this.ang = VA.angNorm(this.ang + sai[S.GIRO] * this.giroMax);
+    var p = sai[S.PROP];
+    var v = p > 0 ? p * this.velMax : p * this.velMax * 0.3;
+    var nx = this.x + Math.cos(this.ang) * v, ny = this.y + Math.sin(this.ang) * v;
+    if (nx < 1) nx = 1; else if (nx > m.largura - 1) nx = m.largura - 1;
+    if (ny < 1) ny = 1; else if (ny > m.altura - 1) ny = m.altura - 1;
+    if (m.bloqueado(nx, ny)) { v = 0; }
+    else { this.x = nx; this.y = ny; }
+    this.vel = v < 0 ? -v : v;
+
+    var gasto = this.custoBase + 0.0045 * this.massa * v * v;
+
+    /* --- comer (planta e/ou carne do chão) --- */
+    this.comendo = 0;
+    if (sai[S.COMER] > 0) {
+      var c = m.indice(this.x, this.y);
+      if (c >= 0) {
+        var q = this.mordida * sai[S.COMER], ganho = 0, tirar;
+        if (this.efPlanta > 0.15 && m.planta[c] > 0) {
+          tirar = Math.min(q, m.planta[c]);
+          m.planta[c] -= tirar;
+          ganho += tirar * this.efPlanta;
+          this.comeuPlanta += tirar * this.efPlanta;
+        }
+        if (this.efCarne > 0.15 && m.carne[c] > 0) {
+          tirar = Math.min(q, m.carne[c]);
+          m.carne[c] -= tirar;
+          ganho += tirar * this.efCarne;
+          this.comeuCarnica += tirar * this.efCarne;
+        }
+        this.energia += ganho;
+        this.comendo = ganho;
+        gasto += 0.002 * this.massa;
+      }
+    }
+
+    /* --- atacar quem está encostado à frente --- */
+    this.atacando = 0;
+    if (sai[S.ATACAR] > 0) {
+      var a = sai[S.ATACAR];
+      this.atacando = a;
+      gasto += 0.02 * this.massa * a;
+      var alvo = this.alvoContato;
+      if (alvo && alvo.vivo) {
+        /* organismos maiores resistem mais */
+        var dano = this.forca * a * (2 * this.massa / (this.massa + alvo.massa));
+        if (dano > alvo.energia) dano = Math.max(0, alvo.energia);
+        alvo.energia -= dano;
+        alvo.dor = 1;
+        var ganhoP = dano * 0.75 * this.efCarne;
+        this.energia += ganhoP;
+        this.comeuPresa += ganhoP;
+        /* registra agressor (para detectar caça em grupo) */
+        var ag = alvo.agressores;
+        var achou = false;
+        for (i = 0; i < ag.length; i++) if (ag[i].id === this.id) { ag[i].t = sim.tick; achou = true; break; }
+        if (!achou) { ag.push({ id: this.id, esp: this.especie, t: sim.tick }); if (ag.length > 6) ag.shift(); }
+        if (alvo.energia <= 0 && alvo.vivo) sim.matar(alvo, 'predação', this);
+        if (this.especie === alvo.especie) sim.contadores.canibalismo++;
+      }
+    }
+
+    /* --- sinais --- */
+    this.sinalA = sai[S.SOM] > 0 ? sai[S.SOM] : 0;
+    this.sinalB = sai[S.COR];
+    gasto += 0.003 * this.sinalA + 0.001 * Math.abs(this.sinalB);
+
+    /* --- memória (células liberadas por mutação) --- */
+    for (i = 0; i < this.cx.memoria; i++) this.mem[i] += 0.5 * (sai[S.MEM0 + i] - this.mem[i]);
+
+    /* --- metabolismo, dor e envelhecimento --- */
+    this.energia -= gasto;
+    if (this.energia > this.maxE) this.energia = this.maxE;
+    this.dor *= 0.85;
+    this.idade++;
+    if (this.espera > 0) this.espera--;
+
+    /* --- reprodução --- */
+    if (sai[S.REPRO] > 0 && this.idade > MATURIDADE && this.espera === 0 &&
+        this.energia > t.limiarRepro * this.maxE) {
+      sim.tentarReproduzir(this);
+    }
+
+    /* --- morte --- */
+    if (this.vivo) {
+      if (this.energia <= 0) sim.matar(this, 'fome', null);
+      else if (this.idade > t.longevidade) sim.matar(this, 'velhice', null);
+    }
+  };
+
+  Organismo.prototype.querReproduzir = function (t) {
+    return this.sai[S.REPRO] > 0 && this.idade > MATURIDADE && this.espera === 0 &&
+      this.energia > this.maxE * 0.35;
+  };
+
+  /* Papel ecológico pelo comportamento real (não pelo gene) */
+  Organismo.prototype.papel = function () {
+    var p = this.comeuPlanta, ca = this.comeuCarnica, pr = this.comeuPresa;
+    var tot = p + ca + pr;
+    if (tot < 5) return 'indefinido';
+    if (pr / tot > 0.45) return 'predador';
+    if (ca / tot > 0.45) return 'carniceiro';
+    if (p / tot > 0.75) return 'herbívoro';
+    return 'onívoro';
+  };
+
+  Organismo.AUDICAO = AUDICAO;
+  Organismo.MATURIDADE = MATURIDADE;
+  Organismo.ESPERA_REPRO = ESPERA_REPRO;
+  VA.Organismo = Organismo;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/especies.js ==== */
+/* =====================================================================
+ * especies.js — Espécies e árvore evolutiva (filogenia)
+ * ---------------------------------------------------------------------
+ * Cada espécie guarda um genoma REPRESENTANTE. Quando nasce um filho,
+ * ele é comparado ao representante da espécie do pai:
+ *   distância <= limiar → mesma espécie
+ *   distância  > limiar → NOVA espécie, filha da espécie do pai
+ * Assim a árvore evolutiva surge sozinha (especiação por divergência).
+ * O representante é trocado periodicamente por um membro vivo aleatório,
+ * acompanhando a deriva da espécie.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  var SIL1 = ['Pro', 'Vel', 'Mor', 'Cal', 'Nex', 'Tor', 'Lum', 'Ser', 'Ox', 'Pyr', 'Gal', 'Bra', 'Cri', 'Den', 'Fla', 'Hal', 'Ig', 'Kry', 'Lep', 'Myx', 'Nyx', 'Ory', 'Pel', 'Quo', 'Rho', 'Sty', 'Tri', 'Ul', 'Vor', 'Xan', 'Zyg'];
+  var SIL2 = ['to', 'ra', 'li', 'xo', 'me', 'nu', 'ca', 'si', 'te', 'go', 'ba', 'ri', 'do', 'ze', 'ly'];
+  var SIL3 = ['bius', 'pax', 'nis', 'tor', 'dax', 'mus', 'lis', 'rex', 'zoa', 'phis', 'tes', 'vora', 'cus'];
+  var EPI = ['rubra', 'velox', 'minor', 'magna', 'viridis', 'lenta', 'ferox', 'umbra', 'aquatica', 'deserti', 'silvae', 'astuta', 'gregaria', 'solitaria', 'nocturna', 'pallida', 'vorax', 'mitis'];
+
+  function gerarNome(rng) {
+    return rng.escolher(SIL1) + rng.escolher(SIL2) + rng.escolher(SIL3) + ' ' + rng.escolher(EPI);
+  }
+
+  function Especies() {
+    this.lista = {};      /* id -> espécie */
+    this.prox = 1;
+    this.nVivas = 0;
+  }
+
+  Especies.prototype.criar = function (rep, paiId, tick, rng) {
+    var id = this.prox++;
+    var t = rep.tr;
+    var esp = {
+      id: id, paiId: paiId || 0, nome: gerarNome(rng),
+      cor: [Math.round(t.corR * 255), Math.round(t.corG * 255), Math.round(t.corB * 255)],
+      rep: VA.Genoma.copiar(rep), nasc: tick, extinta: -1,
+      n: 0, pico: 0, total: 0, nFilhas: 0,
+      papel: 'indefinido', resumo: null,
+      acc: { somAmeaca: 0, nAmeaca: 0, somCalmo: 0, nCalmo: 0, cacasGrupo: 0, sexuados: 0 }
+    };
+    this.lista[id] = esp;
+    if (paiId && this.lista[paiId]) this.lista[paiId].nFilhas++;
+    return esp;
+  };
+
+  /* Decide a espécie de um recém-nascido */
+  Especies.prototype.atribuir = function (gen, espPaiId, tick, rng, limiar) {
+    var esp = this.lista[espPaiId];
+    if (esp && esp.rep && VA.Genoma.distancia(gen, esp.rep) <= limiar) return espPaiId;
+    return this.criar(gen, espPaiId, tick, rng).id;
+  };
+
+  /* Para organismos sem pai (população inicial / abiogênese) */
+  Especies.prototype.classificar = function (gen, tick, rng, limiar) {
+    for (var id in this.lista) {
+      var e = this.lista[id];
+      if (e.n > 0 && e.rep && e.paiId === 0 && VA.Genoma.distancia(gen, e.rep) <= limiar) return e.id;
+    }
+    return this.criar(gen, 0, tick, rng).id;
+  };
+
+  Especies.prototype.nasceu = function (id) {
+    var e = this.lista[id];
+    if (e.n === 0) { this.nVivas++; e.extinta = -1; }
+    e.n++; e.total++;
+    if (e.n > e.pico) e.pico = e.n;
+  };
+  Especies.prototype.morreu = function (id, tick) {
+    var e = this.lista[id];
+    e.n--;
+    if (e.n <= 0) { e.n = 0; e.extinta = tick; this.nVivas--; }
+  };
+
+  /* Troca representantes por membros vivos (amostragem de reservatório)
+   * e calcula o resumo/papel ecológico de cada espécie viva. */
+  Especies.prototype.atualizar = function (orgs, rng, trocarReps) {
+    var acc = {}, i, o, a, id;
+    for (i = 0; i < orgs.length; i++) {
+      o = orgs[i];
+      if (!o.vivo) continue;
+      a = acc[o.especie];
+      if (!a) a = acc[o.especie] = { n: 0, escolhido: null, planta: 0, carnica: 0, presa: 0, dieta: 0, tam: 0, oc: 0, con: 0, mem: 0, som: 0, sex: 0, ger: 0 };
+      a.n++;
+      if (rng.inteiro(a.n) === 0) a.escolhido = o;
+      a.planta += o.comeuPlanta; a.carnica += o.comeuCarnica; a.presa += o.comeuPresa;
+      var t = o.gen.tr;
+      a.dieta += t.dieta; a.tam += t.tamanho; a.sex += t.sexualidade;
+      a.oc += o.cx.ocultos; a.con += o.cx.conexoes; a.mem += o.cx.memoria;
+      a.som += o.sinalA; a.ger += o.geracao;
+    }
+    for (id in acc) {
+      var e = this.lista[id];
+      a = acc[id];
+      if (trocarReps && a.escolhido) e.rep = VA.Genoma.copiar(a.escolhido.gen);
+      var tot = a.planta + a.carnica + a.presa;
+      var papel = 'indefinido';
+      if (tot > 5 * a.n) {
+        if (a.presa / tot > 0.4) papel = 'predador';
+        else if (a.carnica / tot > 0.4) papel = 'carniceiro';
+        else if (a.planta / tot > 0.75) papel = 'herbívoro';
+        else papel = 'onívoro';
+      }
+      e.papel = papel;
+      e.resumo = {
+        dieta: a.dieta / a.n, tamanho: a.tam / a.n, ocultos: a.oc / a.n, conexoes: a.con / a.n,
+        memoria: a.mem / a.n, som: a.som / a.n, sexualidade: a.sex / a.n, geracao: a.ger / a.n
+      };
+      var t2 = e.rep.tr;
+      e.cor = [Math.round(t2.corR * 255), Math.round(t2.corG * 255), Math.round(t2.corB * 255)];
+    }
+    this.podar();
+  };
+
+  /* Evita crescimento infinito: remove espécies extintas, pequenas e sem
+   * descendentes (folhas irrelevantes da árvore) quando há muitas. */
+  Especies.prototype.podar = function () {
+    var ids = Object.keys(this.lista);
+    if (ids.length < 2500) return;
+    for (var i = 0; i < ids.length; i++) {
+      var e = this.lista[ids[i]];
+      if (e.n === 0 && e.pico < 4 && e.nFilhas === 0) {
+        if (this.lista[e.paiId]) this.lista[e.paiId].nFilhas--;
+        delete this.lista[ids[i]];
+      } else if (e.n === 0 && e.pico < 10) e.rep = null;   /* libera memória */
+    }
+  };
+
+  /* Cadeia de ancestrais (espécie → mãe → avó ...) */
+  Especies.prototype.ancestrais = function (id) {
+    var cad = [], e = this.lista[id], guard = 0;
+    while (e && guard++ < 500) { cad.push(e); e = this.lista[e.paiId]; }
+    return cad;
+  };
+
+  Especies.prototype.vivas = function () {
+    var out = [];
+    for (var id in this.lista) if (this.lista[id].n > 0) out.push(this.lista[id]);
+    out.sort(function (a, b) { return b.n - a.n; });
+    return out;
+  };
+
+  Especies.prototype.serializar = function () {
+    return { prox: this.prox, nVivas: this.nVivas, lista: this.lista };
+  };
+  Especies.prototype.restaurar = function (d) {
+    this.prox = d.prox; this.nVivas = d.nVivas; this.lista = d.lista;
+  };
+
+  VA.Especies = Especies;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/estatisticas.js ==== */
+/* =====================================================================
+ * estatisticas.js — Séries históricas e linha do tempo de marcos
+ * ---------------------------------------------------------------------
+ * A cada 'intervaloAmostra' passos guarda uma amostra (população por
+ * espécie, complexidade média dos cérebros, papéis ecológicos...).
+ * Quando o histórico enche, é reduzido pela metade (mantém o começo e
+ * o fim com resolução decrescente — custo de memória constante).
+ *
+ * Marcos são detectados por regras objetivas sobre o que ACONTECEU no
+ * mundo (abates, sinais emitidos, cruzamentos...), nunca programados
+ * para acontecer.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  var MAX_AMOSTRAS = 800;
+
+  function Estatisticas() {
+    this.hist = [];
+    this.marcos = [];
+    this.chaves = {};
+    this.picoPop = 0;
+  }
+
+  /* Marco único (só registra a primeira vez) */
+  Estatisticas.prototype.marco = function (chave, tick, titulo, desc, tipo) {
+    if (this.chaves[chave]) return false;
+    this.chaves[chave] = tick;
+    this.marcos.push({ t: tick, titulo: titulo, desc: desc || '', tipo: tipo || 'marco' });
+    if (this.aoMarco) this.aoMarco(this.marcos[this.marcos.length - 1]);
+    return true;
+  };
+  /* Evento repetível (secas etc.) */
+  Estatisticas.prototype.evento = function (tick, titulo, desc, tipo) {
+    this.marcos.push({ t: tick, titulo: titulo, desc: desc || '', tipo: tipo || 'evento' });
+    if (this.marcos.length > 400) {
+      /* descarta eventos repetíveis antigos, mantendo os marcos únicos */
+      for (var i = 0; i < this.marcos.length; i++) if (this.marcos[i].tipo !== 'marco') { this.marcos.splice(i, 1); break; }
+    }
+    if (this.aoMarco) this.aoMarco(this.marcos[this.marcos.length - 1]);
+  };
+
+  Estatisticas.prototype.amostrar = function (sim) {
+    var orgs = sim.orgs, n = orgs.length, i, o;
+    var oc = 0, con = 0, mem = 0, tam = 0, vel = 0, dieta = 0, sex = 0;
+    var papeis = { 'herbívoro': 0, 'predador': 0, 'carniceiro': 0, 'onívoro': 0, 'indefinido': 0 };
+    var porEsp = {};
+    for (i = 0; i < n; i++) {
+      o = orgs[i];
+      oc += o.cx.ocultos; con += o.cx.conexoes; mem += o.cx.memoria;
+      var t = o.gen.tr;
+      tam += t.tamanho; vel += t.velocidade; dieta += t.dieta; sex += t.sexualidade;
+      papeis[o.papel()]++;
+      porEsp[o.especie] = (porEsp[o.especie] || 0) + 1;
+    }
+    var d = n || 1;
+    var tot = sim.mundo.totais();
+    var a = {
+      t: sim.tick, pop: n, nEsp: sim.especies.nVivas,
+      ocultos: oc / d, conexoes: con / d, memoria: mem / d,
+      tamanho: tam / d, velocidade: vel / d, dieta: dieta / d, sexualidade: sex / d,
+      herb: papeis['herbívoro'], pred: papeis['predador'], carn: papeis['carniceiro'], oniv: papeis['onívoro'],
+      planta: Math.round(tot.planta), carne: Math.round(tot.carne),
+      porEsp: porEsp
+    };
+    this.hist.push(a);
+    if (this.hist.length > MAX_AMOSTRAS) {
+      var novo = [];
+      for (i = 0; i < this.hist.length; i += 2) novo.push(this.hist[i]);
+      this.hist = novo;
+    }
+    this.verificarMarcos(sim, a);
+    return a;
+  };
+
+  Estatisticas.prototype.verificarMarcos = function (sim, a) {
+    var t = sim.tick, cont = sim.contadores, esp = sim.especies, self = this;
+    if (a.pop > this.picoPop) this.picoPop = a.pop;
+    if (a.pop >= 1000) this.marco('pop1000', t, 'População chega a 1.000', 'O ecossistema sustenta mil organismos ao mesmo tempo.');
+    if (esp.nVivas >= 2 && sim.contadores.especiacoes > 0) this.marco('novaEsp', t, 'Primeira especiação', 'Uma linhagem divergiu o bastante para formar uma nova espécie.');
+    if (esp.nVivas >= 10) this.marco('esp10', t, '10 espécies coexistindo', 'Diversidade alta: dez espécies vivas ao mesmo tempo.');
+    if (esp.nVivas >= 25) this.marco('esp25', t, '25 espécies coexistindo', '');
+    if (a.ocultos >= 1) this.marco('cer1', t, 'Cérebros com 1+ neurônio oculto em média', 'A complexidade neural média passou de 1 neurônio oculto.');
+    if (a.ocultos >= 4) this.marco('cer4', t, 'Cérebros com 4+ neurônios ocultos em média', '');
+    if (a.memoria >= 0.05) this.marco('memoria', t, 'Primeira memória difundida', '5% dos organismos já possuem células de memória.');
+    if (cont.abates > 0) this.marco('abate', t, 'Primeira morte por predação', 'Um organismo matou outro atacando.');
+    if (cont.sexuados > 0) this.marco('sexo', t, 'Primeira reprodução sexuada', 'Dois organismos cruzaram e misturaram seus genes.');
+    var dn = cont.nascimentos - (this.ultNasc || 0), ds = cont.sexuados - (this.ultSex || 0);
+    this.ultNasc = cont.nascimentos; this.ultSex = cont.sexuados;
+    if (dn > 20 && ds / dn > 0.5) this.marco('sexoDom', t, 'Reprodução sexuada domina', 'Mais da metade dos nascimentos recentes vem de cruzamentos.');
+    if (a.pop > 50 && this.picoPop > 400 && a.pop < this.picoPop * 0.3) {
+      this.evento(t, 'Extinção em massa', 'A população caiu de ' + this.picoPop + ' para ' + a.pop + '.', 'crise');
+      this.picoPop = a.pop;
+    }
+    /* marcos por espécie */
+    var vivas = esp.vivas();
+    vivas.forEach(function (e) {
+      var r = e.resumo, ac = e.acc;
+      if (!r) return;
+      /* "evoluída" = espécie antiga, com várias gerações desde a origem —
+       * evita confundir comportamento aleatório inicial com adaptação */
+      var evoluida = (t - e.nasc) >= 3000 && r.geracao >= 15;
+      if (e.n >= 10 && e.papel === 'predador' && r.dieta > 0.4)
+        self.marco('pred', t, 'Primeiro predador especializado', e.nome + ' vive principalmente de caçar outros organismos (dieta média ' + r.dieta.toFixed(2) + ').');
+      if (e.n >= 10 && e.papel === 'carniceiro')
+        self.marco('carn', t, 'Primeiro carniceiro', e.nome + ' vive principalmente de carcaças.');
+      if (e.n >= 10 && e.papel === 'onívoro' && r.dieta > 0.3)
+        self.marco('oniv', t, 'Primeiro onívoro', e.nome + ' combina plantas e carne.');
+      if (!evoluida) return;
+      /* comunicação: espécie evoluída emite sinais com frequência e a
+       * maioria dos cérebros tem conexões partindo dos sentidos sociais */
+      if (e.n >= 10 && r.som > 0.25 && sim.usaSinais(e.id) > 0.6)
+        self.marco('comunic', t, 'Primeira comunicação', e.nome + ': sinais sonoros frequentes (média ' + r.som.toFixed(2) + ') e a maioria dos cérebros reage a sinais de outros.');
+      /* alerta de perigo: sinal emitido mais forte quando há predador perto */
+      if (e.n >= 8 && ac.nAmeaca > 40 && ac.nCalmo > 40) {
+        var difer = ac.somAmeaca / ac.nAmeaca - ac.somCalmo / ac.nCalmo;
+        if (difer > 0.2)
+          self.marco('alerta', t, 'Primeiro alerta de perigo', e.nome + ' emite sinal ' + difer.toFixed(2) + ' mais forte quando um predador está à vista.');
+      }
+      if (e.n >= 10 && ac.cacasGrupo >= 3 && (e.papel === 'predador' || e.papel === 'onívoro'))
+        self.marco('grupo', t, 'Primeira caça em grupo', e.nome + ': vários membros atacaram a mesma presa antes do abate (cooperação).');
+    });
+    vivas.forEach(function (e) {
+      var ac = e.acc;
+      ac.somAmeaca = ac.nAmeaca = ac.somCalmo = ac.nCalmo = 0;
+      ac.cacasGrupo = 0;
+    });
+  };
+
+  Estatisticas.prototype.serializar = function () {
+    return { hist: this.hist, marcos: this.marcos, chaves: this.chaves, picoPop: this.picoPop, ultNasc: this.ultNasc, ultSex: this.ultSex };
+  };
+  Estatisticas.prototype.restaurar = function (d) {
+    this.hist = d.hist; this.marcos = d.marcos; this.chaves = d.chaves; this.picoPop = d.picoPop;
+    this.ultNasc = d.ultNasc || 0; this.ultSex = d.ultSex || 0;
+  };
+
+  VA.Estatisticas = Estatisticas;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/simulacao.js ==== */
+/* =====================================================================
+ * simulacao.js — Laço principal da simulação
+ * ---------------------------------------------------------------------
+ * Um "passo" (tick):
+ *   1. mundo cresce plantas / apodrece carne / estações / secas
+ *   2. reconstrói a grade espacial
+ *   3. cada organismo sente → pensa → age
+ *   4. remove mortos (viram carcaça), adiciona recém-nascidos
+ *   5. abiogênese mínima se a vida estiver quase extinta (opcional)
+ *   6. periodicamente: estatísticas, espécies, marcos
+ * Tudo usa o gerador VA.rng com semente → mesma semente = mesma história.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  VA.CONFIG_PADRAO = {
+    semente: 0,               /* 0 = aleatória */
+    largura: 2400,
+    altura: 1600,
+    celula: 20,               /* tamanho da célula de recursos */
+    obstaculos: 1,            /* 0 = sem obstáculos, 2 = muitos */
+    fertilidade: 1,           /* multiplicador de crescimento das plantas */
+    amplitudeEstacao: 0.7,    /* força das estações */
+    periodoEstacao: 8000,     /* passos por ano */
+    secas: true,
+    popInicial: 300,
+    popMinima: 30,            /* abaixo disso surgem organismos primordiais */
+    popMaxima: 3500,          /* limite de segurança de desempenho */
+    limiarEspecie: 4.0,       /* distância genética para nova espécie */
+    inicioSexuado: 15000,     /* a partir deste passo a reprodução sexuada é possível */
+    intervaloAmostra: 100
+  };
+
+  function Simulacao(cfg) {
+    this.cfg = {};
+    var k;
+    for (k in VA.CONFIG_PADRAO) this.cfg[k] = VA.CONFIG_PADRAO[k];
+    if (cfg) for (k in cfg) this.cfg[k] = cfg[k];
+    if (!this.cfg.semente) this.cfg.semente = (Math.random() * 1e9) | 0;
+    VA.rng = new VA.Aleatorio(this.cfg.semente);
+    VA.Cerebro.reiniciarInovacao();
+    this.tick = 0;
+    this.proxId = 1;
+    this.orgs = [];
+    this.novos = [];
+    this.especies = new VA.Especies();
+    this.stats = new VA.Estatisticas();
+    this.contadores = { nascimentos: 0, sexuados: 0, abates: 0, fome: 0, velhice: 0, canibalismo: 0, especiacoes: 0, cacasGrupo: 0, abiogenese: 0 };
+    this.grade = new VA.GradeEspacial(this.cfg.largura, this.cfg.altura, 50);
+    this.mundo = new VA.Mundo(this.cfg, VA.rng);
+    this.porId = {};
+  }
+
+  /* População inicial: alguns ancestrais primordiais e variações deles */
+  Simulacao.prototype.popular = function () {
+    var rng = VA.rng, n = this.cfg.popInicial;
+    var ancestrais = [];
+    for (var a = 0; a < 6; a++) ancestrais.push(VA.Genoma.criarAleatorio(rng));
+    for (var i = 0; i < n; i++) {
+      var g = VA.Genoma.copiar(ancestrais[i % ancestrais.length]);
+      VA.Genoma.mutar(g, rng);
+      this.criarPrimordial(g);
+    }
+    this.stats.evento(0, 'Início do mundo', 'Semente ' + this.cfg.semente + ', ' + n + ' organismos primordiais.', 'marco');
+  };
+
+  Simulacao.prototype.posicaoLivre = function () {
+    var m = this.mundo, x, y, t = 0;
+    do { x = VA.rng.entre(5, m.largura - 5); y = VA.rng.entre(5, m.altura - 5); }
+    while (m.bloqueado(x, y) && t++ < 100);
+    return [x, y];
+  };
+
+  Simulacao.prototype.criarPrimordial = function (g) {
+    var p = this.posicaoLivre();
+    var o = new VA.Organismo(g, p[0], p[1], 0, this.proxId++);
+    o.energia = o.maxE * 0.6;
+    o.ang = VA.rng.entre(-Math.PI, Math.PI);
+    o.idade = VA.rng.inteiro(100);
+    o.nasc = this.tick;
+    o.especie = this.especies.classificar(g, this.tick, VA.rng, this.cfg.limiarEspecie);
+    this.especies.nasceu(o.especie);
+    this.novos.push(o);
+    return o;
+  };
+
+  /* ------------------------------------------------------------------
+   * Passo da simulação
+   * ------------------------------------------------------------------ */
+  Simulacao.prototype.passo = function () {
+    var self = this, rng = VA.rng, i, o;
+    this.tick++;
+    /* 1) mundo (a cada 4 passos, com crescimento ×4) */
+    if (this.tick % 4 === 0) {
+      this.mundo.atualizar(this.tick, 4, rng, function (tipo, tit, desc) { self.stats.evento(self.tick, tit, desc, tipo); });
+    }
+    /* 2) grade espacial */
+    var orgs = this.orgs;
+    this.grade.reconstruir(orgs);
+    /* 3) sentir/pensar/agir */
+    var lista = this.especies.lista;
+    for (i = 0; i < orgs.length; i++) {
+      o = orgs[i];
+      if (!o.vivo) continue;
+      o.sentir(this, i);
+      o.pensarEAgir(this);
+      /* acumula dados para detectar "alerta de perigo" */
+      var ac = lista[o.especie].acc;
+      if (o.ameacado) { ac.somAmeaca += o.sinalA; ac.nAmeaca++; }
+      else { ac.somCalmo += o.sinalA; ac.nCalmo++; }
+    }
+    /* 4) compacta (remove mortos) e adiciona novos */
+    var w = 0;
+    for (i = 0; i < orgs.length; i++) {
+      o = orgs[i];
+      if (o.vivo) orgs[w++] = o;
+      else delete this.porId[o.id];
+    }
+    orgs.length = w;
+    for (i = 0; i < this.novos.length; i++) {
+      o = this.novos[i];
+      if (o.vivo) { orgs.push(o); this.porId[o.id] = o; }
+    }
+    this.novos.length = 0;
+    /* 5) abiogênese */
+    if (orgs.length < this.cfg.popMinima) {
+      this.criarPrimordial(VA.Genoma.criarAleatorio(rng));
+      this.contadores.abiogenese++;
+      o = this.novos.pop(); orgs.push(o); this.porId[o.id] = o;
+    }
+    /* 6) estatísticas periódicas */
+    if (this.tick % this.cfg.intervaloAmostra === 0) {
+      this.especies.atualizar(orgs, rng, this.tick % 500 === 0);
+      this.stats.amostrar(this);
+    }
+  };
+
+  /* ------------------------------------------------------------------
+   * Reprodução
+   * ------------------------------------------------------------------ */
+  Simulacao.prototype.tentarReproduzir = function (o) {
+    var cfg = this.cfg;
+    if (this.orgs.length + this.novos.length >= cfg.popMaxima) { o.espera = 20; return; }
+    var t = o.gen.tr;
+    if (this.tick >= cfg.inicioSexuado && t.sexualidade > 0.35) {
+      var p = o.parceiro;
+      if (p && p.vivo && (t.sexualidade + p.gen.tr.sexualidade) / 2 > 0.35 && p.querReproduzir() &&
+          (p.especie === o.especie || VA.Genoma.distancia(o.gen, p.gen) <= cfg.limiarEspecie)) {
+        this.reproduzirSexuado(o, p);
+        return;
+      }
+      /* sem parceiro: procura por um tempo proporcional à sexualidade
+       * (gene evolui) antes de desistir e gerar sozinho; acima de 0.7
+       * não consegue mais se reproduzir sem parceiro */
+      o.procurando++;
+      if (t.sexualidade > 0.7 || o.procurando < t.sexualidade * 150) return;
+    }
+    o.procurando = 0;
+    this.reproduzirAssexuado(o);
+  };
+
+  Simulacao.prototype.reproduzirAssexuado = function (o) {
+    var rng = VA.rng;
+    var g = VA.Genoma.copiar(o.gen);
+    VA.Genoma.mutar(g, rng);
+    var e = o.energia * o.gen.tr.investimento;
+    o.energia -= e * 1.15;               /* custo extra de gerar sozinho */
+    this.nascer(g, o, null, e);
+  };
+
+  Simulacao.prototype.reproduzirSexuado = function (a, b) {
+    var rng = VA.rng;
+    var dom = a.energia >= b.energia ? a : b, out = dom === a ? b : a;
+    var g = VA.Genoma.cruzar(dom.gen, out.gen, rng);
+    VA.Genoma.mutar(g, rng);
+    var ea = a.energia * a.gen.tr.investimento * 0.5;
+    var eb = b.energia * b.gen.tr.investimento * 0.5;
+    a.energia -= ea * 1.05; b.energia -= eb * 1.05;
+    b.espera = VA.Organismo.ESPERA_REPRO;
+    a.procurando = 0; b.procurando = 0;
+    this.contadores.sexuados++;
+    this.especies.lista[a.especie].acc.sexuados++;
+    this.nascer(g, a, b, ea + eb);
+  };
+
+  Simulacao.prototype.nascer = function (g, pai, mae, energia) {
+    var rng = VA.rng;
+    var ang = pai.ang + Math.PI + rng.entre(-0.8, 0.8);
+    var d = pai.raio * 2 + 2;
+    var x = pai.x + Math.cos(ang) * d, y = pai.y + Math.sin(ang) * d;
+    if (this.mundo.bloqueado(x, y)) { x = pai.x; y = pai.y; }
+    var f = new VA.Organismo(g, x, y, 0, this.proxId++);
+    f.energia = Math.min(energia, f.maxE);
+    f.ang = rng.entre(-Math.PI, Math.PI);
+    f.paiId = pai.id;
+    f.maeId = mae ? mae.id : 0;
+    f.geracao = Math.max(pai.geracao, mae ? mae.geracao : 0) + 1;
+    f.nasc = this.tick;
+    f.espera = VA.Organismo.ESPERA_REPRO;
+    var espAntes = this.especies.prox;
+    f.especie = this.especies.atribuir(g, pai.especie, this.tick, rng, this.cfg.limiarEspecie);
+    if (this.especies.prox !== espAntes) this.contadores.especiacoes++;
+    this.especies.nasceu(f.especie);
+    pai.filhos++; if (mae) mae.filhos++;
+    pai.espera = VA.Organismo.ESPERA_REPRO;
+    this.contadores.nascimentos++;
+    this.novos.push(f);
+  };
+
+  /* ------------------------------------------------------------------
+   * Morte: vira carcaça (carne no chão) — alimento para carniceiros
+   * ------------------------------------------------------------------ */
+  Simulacao.prototype.matar = function (o, causa, assassino) {
+    if (!o.vivo) return;
+    o.vivo = false;
+    o.causaMorte = causa;
+    o.morte = this.tick;
+    this.mundo.depositarCarne(o.x, o.y, 25 * o.massa + Math.max(0, o.energia) * 0.6);
+    this.especies.morreu(o.especie, this.tick);
+    if (causa === 'predação') {
+      this.contadores.abates++;
+      if (assassino) {
+        assassino.abates++;
+        /* caça em grupo: outro membro da mesma espécie do assassino
+         * atacou esta presa nos últimos 40 passos */
+        var ag = o.agressores, ajudantes = 0;
+        for (var i = 0; i < ag.length; i++) {
+          if (ag[i].id !== assassino.id && ag[i].esp === assassino.especie && this.tick - ag[i].t < 40) ajudantes++;
+        }
+        if (ajudantes > 0) {
+          this.contadores.cacasGrupo++;
+          this.especies.lista[assassino.especie].acc.cacasGrupo++;
+        }
+      }
+    } else if (causa === 'fome') this.contadores.fome++;
+    else if (causa === 'velhice') this.contadores.velhice++;
+  };
+
+  /* Fração dos membros de uma espécie cujo cérebro tem conexão ativa
+   * e relevante partindo de um sentido social (som / cor-sinal). */
+  Simulacao.prototype.usaSinais = function (espId) {
+    var E = VA.Cerebro.E, n = 0, usa = 0;
+    for (var i = 0; i < this.orgs.length; i++) {
+      var o = this.orgs[i];
+      if (o.especie !== espId) continue;
+      n++;
+      var cons = o.gen.cer.cons;
+      for (var k = 0; k < cons.length; k++) {
+        var c = cons[k];
+        if (c.ativo && Math.abs(c.peso) > 0.3 && (c.de === E.SOM || c.de === E.SOM_DIR || c.de === E.SEM_SINAL)) { usa++; break; }
+      }
+    }
+    return n ? usa / n : 0;
+  };
+
+  /* Organismo mais próximo de um ponto (para seleção por clique) */
+  Simulacao.prototype.maisProximo = function (x, y, raioMax) {
+    var melhor = null, dm = raioMax * raioMax;
+    for (var i = 0; i < this.orgs.length; i++) {
+      var o = this.orgs[i], dx = o.x - x, dy = o.y - y, d = dx * dx + dy * dy;
+      if (d < dm + o.raio * o.raio) { dm = d; melhor = o; }
+    }
+    return melhor;
+  };
+
+  /* Insere cópias de um genoma (importação de organismo) */
+  Simulacao.prototype.inserirGenoma = function (gen, x, y, quantidade) {
+    for (var i = 0; i < quantidade; i++) {
+      var g = VA.Genoma.copiar(gen);
+      if (i > 0) VA.Genoma.mutar(g, VA.rng);
+      var o = new VA.Organismo(g, x + VA.rng.entre(-30, 30), y + VA.rng.entre(-30, 30), 0, this.proxId++);
+      if (this.mundo.bloqueado(o.x, o.y)) { o.x = x; o.y = y; }
+      o.x = VA.limitar(o.x, 2, this.cfg.largura - 2); o.y = VA.limitar(o.y, 2, this.cfg.altura - 2);
+      o.energia = o.maxE * 0.7;
+      o.ang = VA.rng.entre(-Math.PI, Math.PI);
+      o.nasc = this.tick;
+      o.especie = this.especies.classificar(g, this.tick, VA.rng, this.cfg.limiarEspecie);
+      this.especies.nasceu(o.especie);
+      this.orgs.push(o); this.porId[o.id] = o;
+    }
+  };
+
+  VA.Simulacao = Simulacao;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/persistencia.js ==== */
+/* =====================================================================
+ * persistencia.js — Salvar / carregar a simulação e exportar organismos
+ * ---------------------------------------------------------------------
+ * Formato: JSON compacto. Cérebros são gravados como arrays curtos:
+ *   nó  = [id, tipo, ativ, ordem]
+ *   con = [de, para, peso, ativo(0/1), inov]
+ * O estado do gerador aleatório também é salvo — ao carregar, a
+ * simulação continua EXATAMENTE como continuaria sem salvar.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+  var VERSAO = 1;
+  /* casas = undefined → precisão total (necessária para continuar a
+   * simulação de forma idêntica); exportação de organismo usa 5 casas */
+  function arred(v, casas) { return casas === undefined ? v : VA.arred(v, casas); }
+
+  /* ---------- genoma ---------- */
+  function genParaJSON(g, casas) {
+    var tr = {};
+    for (var k in g.tr) tr[k] = arred(g.tr[k], casas);
+    return {
+      tr: tr,
+      nos: g.cer.nos.filter(function (n) { return n.tipo === 2; }).map(function (n) { return [n.id, n.tipo, n.ativ, arred(n.ordem, casas)]; }),
+      cons: g.cer.cons.map(function (c) { return [c.de, c.para, arred(c.peso, casas), c.ativo ? 1 : 0, c.inov]; }),
+      mem: g.cer.mem
+    };
+  }
+  function genDeJSON(d) {
+    var C = VA.Cerebro, nos = [], i;
+    for (i = 0; i < C.NE; i++) nos.push({ id: i, tipo: 0, ativ: 0, ordem: 0 });
+    for (i = 0; i < C.NS; i++) nos.push({ id: C.NE + i, tipo: 1, ativ: 0, ordem: 1 });
+    d.nos.forEach(function (n) { nos.push({ id: n[0], tipo: n[1], ativ: n[2], ordem: n[3] }); });
+    var cons = d.cons.map(function (c) { return { de: c[0], para: c[1], peso: c[2], ativo: !!c[3], inov: c[4] }; });
+    cons.sort(function (a, b) { return a.inov - b.inov; });
+    var tr = {};
+    VA.Genoma.GENES.forEach(function (g) { tr[g.k] = d.tr[g.k] !== undefined ? d.tr[g.k] : (g.ini[0] + g.ini[1]) / 2; });
+    return { tr: tr, cer: { nos: nos, cons: cons, mem: d.mem || 0 } };
+  }
+  VA.genParaJSON = genParaJSON;
+  VA.genDeJSON = genDeJSON;
+
+  /* ---------- organismo ---------- */
+  var CAMPOS = ['id', 'x', 'y', 'ang', 'vel', 'energia', 'idade', 'dor', 'sinalA', 'sinalB', 'atacando', 'espera', 'procurando',
+    'especie', 'geracao', 'paiId', 'maeId', 'nasc', 'filhos', 'comeuPlanta', 'comeuCarnica', 'comeuPresa', 'abates'];
+  function orgParaJSON(o) {
+    var d = { g: genParaJSON(o.gen), m: Array.prototype.slice.call(o.mem) };
+    for (var i = 0; i < CAMPOS.length; i++) {
+      var v = o[CAMPOS[i]];
+      d[CAMPOS[i]] = v;
+    }
+    d.ag = o.agressores;
+    /* valores internos do cérebro (recorrência) para continuação exata */
+    d.fv = Array.prototype.slice.call(o.fen.val);
+    return d;
+  }
+  function orgDeJSON(d) {
+    var o = new VA.Organismo(genDeJSON(d.g), d.x, d.y, d.energia, d.id);
+    for (var i = 0; i < CAMPOS.length; i++) if (d[CAMPOS[i]] !== undefined) o[CAMPOS[i]] = d[CAMPOS[i]];
+    if (d.m) o.mem.set(d.m);
+    if (d.ag) o.agressores = d.ag;
+    if (d.fv && d.fv.length === o.fen.val.length) o.fen.val.set(d.fv);
+    return o;
+  }
+
+  /* ---------- simulação completa ---------- */
+  function salvar(sim) {
+    var lista = {};
+    for (var id in sim.especies.lista) {
+      var e = sim.especies.lista[id], c = {};
+      for (var k in e) c[k] = e[k];
+      c.rep = e.rep ? genParaJSON(e.rep) : null;
+      lista[id] = c;
+    }
+    var inov = VA.Inovacao;
+    return JSON.stringify({
+      formato: 'vida-artificial', versao: VERSAO,
+      cfg: sim.cfg, tick: sim.tick, proxId: sim.proxId, rng: VA.rng.estado, rngG: VA.rng._gaussExtra,
+      contadores: sim.contadores,
+      inovacao: { proxNo: inov.proxNo, proxInov: inov.proxInov, mapaCon: inov.mapaCon, mapaNo: inov.mapaNo },
+      mundo: sim.mundo.serializar(),
+      especies: { prox: sim.especies.prox, nVivas: sim.especies.nVivas, lista: lista },
+      stats: sim.stats.serializar(),
+      orgs: sim.orgs.map(orgParaJSON)
+    });
+  }
+
+  function carregar(texto) {
+    var d = typeof texto === 'string' ? JSON.parse(texto) : texto;
+    if (d.formato !== 'vida-artificial') throw new Error('Arquivo não é um estado da simulação.');
+    var sim = Object.create(VA.Simulacao.prototype);
+    sim.cfg = d.cfg;
+    sim.tick = d.tick;
+    sim.proxId = d.proxId;
+    sim.contadores = d.contadores;
+    VA.rng = new VA.Aleatorio(1);
+    VA.rng.estado = d.rng;
+    VA.rng._gaussExtra = d.rngG === undefined ? null : d.rngG;
+    var inov = VA.Inovacao;
+    inov.proxNo = d.inovacao.proxNo; inov.proxInov = d.inovacao.proxInov;
+    inov.mapaCon = d.inovacao.mapaCon; inov.mapaNo = d.inovacao.mapaNo;
+    sim.mundo = new VA.Mundo(sim.cfg, null, d.mundo);
+    sim.especies = new VA.Especies();
+    for (var id in d.especies.lista) {
+      var e = d.especies.lista[id];
+      if (e.rep) e.rep = genDeJSON(e.rep);
+    }
+    sim.especies.restaurar(d.especies);
+    sim.stats = new VA.Estatisticas();
+    sim.stats.restaurar(d.stats);
+    sim.grade = new VA.GradeEspacial(sim.cfg.largura, sim.cfg.altura, 50);
+    sim.novos = [];
+    sim.porId = {};
+    sim.orgs = d.orgs.map(orgDeJSON);
+    sim.orgs.forEach(function (o) { sim.porId[o.id] = o; });
+    return sim;
+  }
+
+  /* ---------- exportar / importar um organismo ---------- */
+  function exportarOrganismo(o, sim) {
+    var esp = sim.especies.lista[o.especie];
+    return JSON.stringify({
+      formato: 'vida-artificial-organismo', versao: VERSAO,
+      info: {
+        id: o.id, especie: esp ? esp.nome : '?', geracao: o.geracao, idade: o.idade,
+        papel: o.papel(), tick: sim.tick, complexidade: o.cx
+      },
+      genoma: genParaJSON(o.gen, 5)
+    }, null, 1);
+  }
+  function importarOrganismo(texto) {
+    var d = typeof texto === 'string' ? JSON.parse(texto) : texto;
+    if (d.formato !== 'vida-artificial-organismo') throw new Error('Arquivo não é um organismo exportado.');
+    var g = genDeJSON(d.genoma);
+    /* O organismo veio de outro mundo: renumera neurônios ocultos e
+     * inovações para o registro DESTE mundo, evitando colisões */
+    var inov = VA.Inovacao, C = VA.Cerebro, novoId = {};
+    g.cer.nos.forEach(function (n) {
+      if (n.tipo === 2) { novoId[n.id] = inov.proxNo++; n.id = novoId[n.id]; }
+    });
+    g.cer.cons.forEach(function (c) {
+      if (novoId[c.de] !== undefined) c.de = novoId[c.de];
+      if (novoId[c.para] !== undefined) c.para = novoId[c.para];
+      var k = c.de + ',' + c.para;
+      if (inov.mapaCon[k] === undefined) inov.mapaCon[k] = inov.proxInov++;
+      c.inov = inov.mapaCon[k];
+    });
+    g.cer.cons.sort(function (a, b) { return a.inov - b.inov; });
+    return { genoma: g, info: d.info };
+  }
+
+  VA.Persistencia = {
+    salvar: salvar, carregar: carregar,
+    exportarOrganismo: exportarOrganismo, importarOrganismo: importarOrganismo
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/render.js ==== */
+/* =====================================================================
+ * render.js — Desenho do mundo no <canvas>
+ * ---------------------------------------------------------------------
+ * - Terreno (biomas + plantas + carne + rochas) é pintado numa imagem
+ *   pequena (1 pixel por célula) e ampliada — muito barato.
+ * - Organismos: círculos com cor do genoma (ou espécie/dieta/energia),
+ *   traço de direção, anel de som e halo de cor-sinal.
+ * - Câmera com zoom (roda do mouse) e arrasto; pode seguir o selecionado.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  function Render(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cam = { x: 1200, y: 800, zoom: 0.5 };
+    this.modoCor = 'genoma';      /* genoma | especie | dieta | energia | papel */
+    this.mostrarSinais = true;
+    this.seguir = true;
+    this.terreno = null;
+    this.terrenoCtx = null;
+    this.terrenoImg = null;
+    this.quadro = 0;
+  }
+
+  Render.prototype.ajustarTamanho = function () {
+    var c = this.canvas, dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth, h = c.clientHeight;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    }
+    this.dpr = dpr;
+  };
+
+  Render.prototype.enquadrar = function (sim) {
+    this.ajustarTamanho();
+    var w = this.canvas.width / this.dpr, h = this.canvas.height / this.dpr;
+    this.cam.x = sim.cfg.largura / 2; this.cam.y = sim.cfg.altura / 2;
+    this.cam.zoom = Math.min(w / sim.cfg.largura, h / sim.cfg.altura) * 0.98;
+    /* tela estreita (celular): mostra ~700 unidades de largura para os
+     * organismos não ficarem minúsculos, centrado onde há mais vida */
+    if (w < 700 && sim.orgs.length + sim.novos.length) {
+      var lista = sim.orgs.length ? sim.orgs : sim.novos, sx = 0, sy = 0;
+      for (var i = 0; i < lista.length; i++) { sx += lista[i].x; sy += lista[i].y; }
+      this.cam.x = sx / lista.length; this.cam.y = sy / lista.length;
+      this.cam.zoom = w / 700;
+    }
+    this.terreno = null;
+  };
+
+  /* coordenadas de tela (px CSS) → mundo */
+  Render.prototype.telaParaMundo = function (sx, sy) {
+    var w = this.canvas.width / this.dpr, h = this.canvas.height / this.dpr;
+    return [(sx - w / 2) / this.cam.zoom + this.cam.x, (sy - h / 2) / this.cam.zoom + this.cam.y];
+  };
+
+  Render.prototype.atualizarTerreno = function (m) {
+    if (!this.terreno || this.terreno.width !== m.cols || this.terreno.height !== m.linhas) {
+      this.terreno = document.createElement('canvas');
+      this.terreno.width = m.cols; this.terreno.height = m.linhas;
+      this.terrenoCtx = this.terreno.getContext('2d');
+      this.terrenoImg = this.terrenoCtx.createImageData(m.cols, m.linhas);
+    }
+    var d = this.terrenoImg.data, B = VA.Mundo.BIOMAS;
+    var seca = m.seca.ativa ? 0.6 : 1;
+    for (var c = 0; c < m.n; c++) {
+      var i = c * 4;
+      if (m.bloq[c]) { d[i] = 70; d[i + 1] = 72; d[i + 2] = 78; d[i + 3] = 255; continue; }
+      var b = B[m.bioma[c]];
+      var p = m.planta[c] / 34;                     /* 0..1 */
+      var ca = m.carne[c] / 40; if (ca > 1) ca = 1;
+      var r = b.cor[0] + p * 20, g = b.cor[1] + p * 150 * seca, bl = b.cor[2] + p * 40;
+      r += ca * 190; g -= ca * 20; bl -= ca * 10;
+      d[i] = r > 255 ? 255 : r; d[i + 1] = g < 0 ? 0 : (g > 255 ? 255 : g); d[i + 2] = bl < 0 ? 0 : bl; d[i + 3] = 255;
+    }
+    this.terrenoCtx.putImageData(this.terrenoImg, 0, 0);
+  };
+
+  var CORES_PAPEL = { 'herbívoro': '#00ff88', 'predador': '#ff3333', 'carniceiro': '#b36bff', 'onívoro': '#ffb300', 'indefinido': '#7a8a80' };
+  Render.CORES_PAPEL = CORES_PAPEL;
+
+  Render.prototype.corDe = function (o, sim) {
+    switch (this.modoCor) {
+      case 'especie':
+        var e = sim.especies.lista[o.especie];
+        return e ? 'rgb(' + e.cor[0] + ',' + e.cor[1] + ',' + e.cor[2] + ')' : '#888';
+      case 'dieta':
+        var t = o.gen.tr.dieta;
+        return 'rgb(' + Math.round(40 + 215 * t) + ',' + Math.round(230 - 200 * t) + ',60)';
+      case 'energia':
+        var f = o.energia / o.maxE;
+        return 'rgb(' + Math.round(255 * (1 - f)) + ',' + Math.round(80 + 175 * f) + ',90)';
+      case 'papel':
+        return CORES_PAPEL[o.papel()];
+      default:
+        var tr = o.gen.tr;
+        /* clareia para enxergar no fundo escuro */
+        return 'rgb(' + Math.round(60 + tr.corR * 195) + ',' + Math.round(60 + tr.corG * 195) + ',' + Math.round(60 + tr.corB * 195) + ')';
+    }
+  };
+
+  Render.prototype.desenhar = function (sim, selecionado) {
+    this.ajustarTamanho();
+    var ctx = this.ctx, dpr = this.dpr, cam = this.cam, m = sim.mundo;
+    var W = this.canvas.width / dpr, H = this.canvas.height / dpr;
+    if (selecionado && this.seguir && selecionado.vivo) { cam.x = selecionado.x; cam.y = selecionado.y; }
+    /* não deixa a câmera sair do mundo (evita tela preta ao arrastar) */
+    if (cam.x < 0) cam.x = 0; else if (cam.x > m.largura) cam.x = m.largura;
+    if (cam.y < 0) cam.y = 0; else if (cam.y > m.altura) cam.y = m.altura;
+    if (!this.terreno || this.quadro % 8 === 0) this.atualizarTerreno(m);
+    this.quadro++;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#020403';
+    ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(dpr * cam.zoom, 0, 0, dpr * cam.zoom, dpr * (W / 2 - cam.x * cam.zoom), dpr * (H / 2 - cam.y * cam.zoom));
+    ctx.imageSmoothingEnabled = cam.zoom < 1.5;
+    ctx.drawImage(this.terreno, 0, 0, m.cols * m.cel, m.linhas * m.cel);
+
+    /* área visível (culling) */
+    var x0 = cam.x - W / 2 / cam.zoom - 20, x1 = cam.x + W / 2 / cam.zoom + 20;
+    var y0 = cam.y - H / 2 / cam.zoom - 20, y1 = cam.y + H / 2 / cam.zoom + 20;
+    var orgs = sim.orgs, i, o;
+    var detalhe = cam.zoom > 0.9;
+
+    /* sinais (som = anel; cor = halo) */
+    if (this.mostrarSinais) {
+      ctx.lineWidth = 1 / cam.zoom;
+      for (i = 0; i < orgs.length; i++) {
+        o = orgs[i];
+        if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1) continue;
+        if (o.sinalA > 0.25) {
+          ctx.strokeStyle = 'rgba(0,200,255,' + (o.sinalA * 0.5).toFixed(2) + ')';
+          ctx.beginPath();
+          ctx.arc(o.x, o.y, o.raio + 4 + ((sim.tick + o.id) % 12) * 1.5, 0, 6.2832);
+          ctx.stroke();
+        }
+        if (detalhe && Math.abs(o.sinalB) > 0.5) {
+          ctx.fillStyle = o.sinalB > 0 ? 'rgba(255,240,80,0.18)' : 'rgba(255,60,200,0.18)';
+          ctx.beginPath(); ctx.arc(o.x, o.y, o.raio * 1.9, 0, 6.2832); ctx.fill();
+        }
+      }
+    }
+
+    /* corpos */
+    for (i = 0; i < orgs.length; i++) {
+      o = orgs[i];
+      if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1) continue;
+      ctx.fillStyle = this.corDe(o, sim);
+      if (cam.zoom < 0.35) {
+        var s = o.raio * 1.6;
+        ctx.fillRect(o.x - s / 2, o.y - s / 2, s, s);
+      } else {
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.raio, 0, 6.2832); ctx.fill();
+      }
+    }
+    /* direção + ataque (só com zoom) */
+    if (detalhe) {
+      ctx.lineWidth = 1.2 / cam.zoom;
+      for (i = 0; i < orgs.length; i++) {
+        o = orgs[i];
+        if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1) continue;
+        var hx = Math.cos(o.ang), hy = Math.sin(o.ang);
+        ctx.strokeStyle = o.atacando > 0 ? '#ff3333' : 'rgba(0,0,0,0.75)';
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + hx * (o.raio + (o.atacando > 0 ? 5 : 1)), o.y + hy * (o.raio + (o.atacando > 0 ? 5 : 1))); ctx.stroke();
+      }
+    }
+
+    /* selecionado: anel + cone de visão + olfato */
+    if (selecionado && selecionado.vivo) {
+      o = selecionado;
+      var t = o.gen.tr;
+      ctx.lineWidth = 2 / cam.zoom;
+      ctx.strokeStyle = '#00ff88';
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.raio + 4, 0, 6.2832); ctx.stroke();
+      ctx.fillStyle = 'rgba(0,255,136,0.07)';
+      ctx.beginPath(); ctx.moveTo(o.x, o.y);
+      var meio = Math.min(Math.PI, t.campoVisao / 2);
+      ctx.arc(o.x, o.y, t.visao, o.ang - meio, o.ang + meio);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,179,0,0.35)';
+      ctx.setLineDash([4 / cam.zoom, 4 / cam.zoom]);
+      ctx.beginPath(); ctx.arc(o.x, o.y, t.olfato, 0, 6.2832); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  };
+
+  VA.Render = Render;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/graficos.js ==== */
+/* =====================================================================
+ * graficos.js — Gráficos em <canvas> sem bibliotecas
+ * ---------------------------------------------------------------------
+ *  - linhas(): séries temporais simples
+ *  - empilhado(): população por espécie (área empilhada)
+ *  - arvore(): árvore evolutiva (filogenia) ao longo do tempo
+ *  - linhaTempo(): marcos numa régua de tempo
+ *  - cerebro(): rede neural de um organismo com ativações ao vivo
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+  var COR_EIXO = '#1a3d2a', COR_TEXTO = '#5f9278', FONTE = '10px "Share Tech Mono", monospace';
+
+  /* Prepara o canvas para a densidade de pixels da tela */
+  function preparar(cv, alturaCss) {
+    var dpr = window.devicePixelRatio || 1;
+    /* a altura desejada é lida UMA vez do atributo height do HTML e
+     * guardada; medir clientHeight a cada quadro encolhia o gráfico
+     * (a borda de 2px era descontada a cada atualização) */
+    if (!cv._alturaCss) cv._alturaCss = +cv.getAttribute('height') || 140;
+    var w = cv.clientWidth || 360, h = alturaCss || cv._alturaCss;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      cv.style.height = h + 'px';
+    }
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
+  /* clareia cores de espécie muito escuras para aparecerem no fundo */
+  function corVisivel(c) {
+    var l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+    if (l >= 90) return rgb(c);
+    var f = 90 / Math.max(l, 1), k = 50;
+    return rgb([Math.min(255, c[0] * f + k), Math.min(255, c[1] * f + k), Math.min(255, c[2] * f + k)]);
+  }
+  VA.corVisivel = corVisivel;
+
+  function eixoX(ctx, w, h, t0, t1, margem) {
+    ctx.strokeStyle = COR_EIXO; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(margem, h - 14.5); ctx.lineTo(w, h - 14.5); ctx.stroke();
+    ctx.fillStyle = COR_TEXTO; ctx.font = FONTE; ctx.textAlign = 'left';
+    ctx.fillText(formatarT(t0), margem, h - 3);
+    ctx.textAlign = 'right'; ctx.fillText(formatarT(t1), w - 2, h - 3);
+  }
+  function formatarT(t) { return t >= 1e6 ? (t / 1e6).toFixed(1) + 'M' : t >= 1000 ? (t / 1000).toFixed(t >= 1e4 ? 0 : 1) + 'k' : String(t); }
+  VA.formatarT = formatarT;
+
+  /* Séries: [{campo, cor, nome, escala}] */
+  function linhas(cv, hist, series, legendaEl) {
+    var p = preparar(cv), ctx = p.ctx, w = p.w, h = p.h, m = 34;
+    if (legendaEl) legendaEl.innerHTML = series.map(function (s) { return '<span><i style="background:' + s.cor + '"></i>' + s.nome + '</span>'; }).join('');
+    if (hist.length < 2) { vazio(ctx, w, h); return; }
+    var max = 0, i, s;
+    for (s = 0; s < series.length; s++) for (i = 0; i < hist.length; i++) {
+      var v = hist[i][series[s].campo] * (series[s].escala || 1);
+      if (v > max) max = v;
+    }
+    if (max <= 0) max = 1;
+    var ah = h - 22, t0 = hist[0].t, t1 = hist[hist.length - 1].t, dt = (t1 - t0) || 1;
+    ctx.fillStyle = COR_TEXTO; ctx.font = FONTE; ctx.textAlign = 'right';
+    ctx.fillText(arredBonito(max), m - 4, 12);
+    ctx.fillText('0', m - 4, ah + 4);
+    ctx.strokeStyle = '#0f2419'; ctx.beginPath(); ctx.moveTo(m, ah / 2 + 4.5); ctx.lineTo(w, ah / 2 + 4.5); ctx.stroke();
+    for (s = 0; s < series.length; s++) {
+      ctx.strokeStyle = series[s].cor; ctx.lineWidth = 1.6; ctx.beginPath();
+      for (i = 0; i < hist.length; i++) {
+        var x = m + (hist[i].t - t0) / dt * (w - m - 2);
+        var y = 4 + ah - (hist[i][series[s].campo] * (series[s].escala || 1)) / max * ah;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    eixoX(ctx, w, h, t0, t1, m);
+  }
+  function arredBonito(v) { return v >= 100 ? Math.round(v).toString() : v >= 10 ? v.toFixed(0) : v.toFixed(2); }
+  function vazio(ctx, w, h) {
+    ctx.fillStyle = COR_TEXTO; ctx.font = FONTE; ctx.textAlign = 'center';
+    ctx.fillText('aguardando dados…', w / 2, h / 2);
+  }
+
+  /* População empilhada das espécies mais populosas do período */
+  function empilhado(cv, hist, especies, legendaEl, maxEsp) {
+    var p = preparar(cv), ctx = p.ctx, w = p.w, h = p.h, m = 34, i, k;
+    if (hist.length < 2) { vazio(ctx, w, h); if (legendaEl) legendaEl.innerHTML = ''; return; }
+    /* escolhe as espécies com maior soma no histórico recente */
+    var soma = {}, ini = Math.max(0, hist.length - 200);
+    for (i = ini; i < hist.length; i++) for (k in hist[i].porEsp) soma[k] = (soma[k] || 0) + hist[i].porEsp[k];
+    var top = Object.keys(soma).sort(function (a, b) { return soma[b] - soma[a]; }).slice(0, maxEsp || 10);
+    var maxPop = 1;
+    for (i = 0; i < hist.length; i++) if (hist[i].pop > maxPop) maxPop = hist[i].pop;
+    var ah = h - 22, t0 = hist[0].t, t1 = hist[hist.length - 1].t, dt = (t1 - t0) || 1;
+    var base = new Float32Array(hist.length);
+    var X = function (i) { return m + (hist[i].t - t0) / dt * (w - m - 2); };
+    var Y = function (v) { return 4 + ah - v / maxPop * ah; };
+    /* "outras" primeiro, como base cinza */
+    var camadas = top.map(function (id) { return { id: id, cor: especies.lista[id] ? corVisivel(especies.lista[id].cor) : '#666' }; });
+    camadas.push({ id: '_outras', cor: '#2a3a32' });
+    for (var c = 0; c < camadas.length; c++) {
+      var id = camadas[c].id;
+      ctx.fillStyle = camadas[c].cor;
+      ctx.globalAlpha = id === '_outras' ? 1 : 0.85;
+      ctx.beginPath();
+      var topo = new Float32Array(hist.length);
+      for (i = 0; i < hist.length; i++) {
+        var v;
+        if (id === '_outras') v = hist[i].pop - base[i];
+        else v = hist[i].porEsp[id] || 0;
+        topo[i] = base[i] + Math.max(0, v);
+        if (i === 0) ctx.moveTo(X(i), Y(topo[i])); else ctx.lineTo(X(i), Y(topo[i]));
+      }
+      for (i = hist.length - 1; i >= 0; i--) ctx.lineTo(X(i), Y(base[i]));
+      ctx.closePath(); ctx.fill();
+      base = topo;
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = COR_TEXTO; ctx.font = FONTE; ctx.textAlign = 'right';
+    ctx.fillText(String(maxPop), m - 4, 12); ctx.fillText('0', m - 4, ah + 4);
+    eixoX(ctx, w, h, t0, t1, m);
+    if (legendaEl) {
+      legendaEl.innerHTML = top.map(function (id) {
+        var e = especies.lista[id];
+        if (!e) return '';
+        return '<span' + (e.n ? '' : ' style="opacity:.5"') + '><i style="background:' + corVisivel(e.cor) + '"></i>' + e.nome + (e.n ? '' : ' †') + '</span>';
+      }).join('') + '<span><i style="background:#2a3a32"></i>outras</span>';
+    }
+  }
+
+  /* ------------------------------------------------------------------
+   * Árvore evolutiva. Retorna o layout (para hover/clique).
+   * ------------------------------------------------------------------ */
+  function arvore(cv, especies, tickAtual, larguraCss) {
+    var lista = especies.lista, ids = Object.keys(lista), i, e;
+    /* espécies relevantes: vivas ou que chegaram a 5+ indivíduos */
+    var rel = ids.map(function (k) { return lista[k]; }).filter(function (e) { return e.n > 0 || e.pico >= 5; });
+    rel.sort(function (a, b) { return (b.n > 0) - (a.n > 0) || b.pico - a.pico; });
+    rel = rel.slice(0, 350);
+    var incluir = {};
+    rel.forEach(function (e) {
+      var x = e, g = 0;
+      while (x && !incluir[x.id] && g++ < 1000) { incluir[x.id] = x; x = lista[x.paiId]; }
+    });
+    var filhos = {}, raizes = [];
+    for (var id in incluir) {
+      e = incluir[id];
+      if (e.paiId && incluir[e.paiId]) (filhos[e.paiId] = filhos[e.paiId] || []).push(e);
+      else raizes.push(e);
+    }
+    var ordenar = function (a, b) { return a.nasc - b.nasc; };
+    raizes.sort(ordenar);
+    var linhasL = [];
+    function visitar(e, prof) {
+      if (prof > 900) return;
+      linhasL.push(e);
+      var f = filhos[e.id];
+      if (f) { f.sort(ordenar); for (var j = 0; j < f.length; j++) visitar(f[j], prof + 1); }
+    }
+    raizes.forEach(function (r) { visitar(r, 0); });
+    var passoY = 7, mT = 12;
+    var altura = Math.max(200, linhasL.length * passoY + mT * 2);
+    var dpr = window.devicePixelRatio || 1, w = larguraCss || 360;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(altura * dpr);
+    cv.style.width = w + 'px'; cv.style.height = altura + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#050a08'; ctx.fillRect(0, 0, w, altura);
+    var tMax = Math.max(1, tickAtual), mx = 8;
+    var X = function (t) { return mx + t / tMax * (w - mx * 2); };
+    var linhaDe = {};
+    linhasL.forEach(function (e, k) { linhaDe[e.id] = k; });
+    /* conectores */
+    ctx.lineWidth = 1;
+    linhasL.forEach(function (e, k) {
+      if (e.paiId && linhaDe[e.paiId] !== undefined) {
+        var y0 = mT + linhaDe[e.paiId] * passoY, y1 = mT + k * passoY, x = X(e.nasc);
+        ctx.strokeStyle = 'rgba(95,146,120,0.45)';
+        ctx.beginPath(); ctx.moveTo(x + 0.5, y0); ctx.lineTo(x + 0.5, y1); ctx.stroke();
+      }
+    });
+    /* linhas das espécies */
+    linhasL.forEach(function (e, k) {
+      var y = mT + k * passoY, fim = e.n > 0 ? tickAtual : (e.extinta >= 0 ? e.extinta : e.nasc);
+      ctx.strokeStyle = e.n > 0 ? corVisivel(e.cor) : 'rgba(120,140,130,0.55)';
+      ctx.lineWidth = Math.max(1, Math.min(5, Math.log(1 + e.pico) * 0.9));
+      ctx.beginPath(); ctx.moveTo(X(e.nasc), y); ctx.lineTo(Math.max(X(fim), X(e.nasc) + 2), y); ctx.stroke();
+      if (e.n > 0) { ctx.fillStyle = corVisivel(e.cor); ctx.beginPath(); ctx.arc(X(fim), y, 2.5, 0, 6.283); ctx.fill(); }
+    });
+    return { linhas: linhasL, passoY: passoY, mT: mT, X: X, total: ids.length };
+  }
+
+  /* ------------------------------------------------------------------
+   * Linha do tempo de marcos
+   * ------------------------------------------------------------------ */
+  function linhaTempo(cv, marcos, tickAtual) {
+    var p = preparar(cv), ctx = p.ctx, w = p.w, h = p.h, mx = 10;
+    var tMax = Math.max(1, tickAtual);
+    ctx.strokeStyle = COR_EIXO; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(mx, h / 2); ctx.lineTo(w - mx, h / 2); ctx.stroke();
+    marcos.forEach(function (m, i) {
+      var x = mx + m.t / tMax * (w - 2 * mx);
+      var cor = m.tipo === 'marco' ? '#00ff88' : (m.tipo === 'crise' || m.tipo === 'seca') ? '#ffb300' : '#00aaff';
+      ctx.fillStyle = cor;
+      ctx.beginPath(); ctx.arc(x, h / 2, m.tipo === 'marco' ? 4 : 3, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = cor; ctx.globalAlpha = 0.4; ctx.lineWidth = 1;
+      var up = i % 2 === 0;
+      ctx.beginPath(); ctx.moveTo(x + 0.5, h / 2); ctx.lineTo(x + 0.5, up ? 8 : h - 8); ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+    ctx.fillStyle = COR_TEXTO; ctx.font = FONTE; ctx.textAlign = 'left'; ctx.fillText('0', mx, h - 2);
+    ctx.textAlign = 'right'; ctx.fillText(formatarT(tickAtual), w - mx, h - 2);
+  }
+
+  /* ------------------------------------------------------------------
+   * Cérebro em tempo real
+   * ------------------------------------------------------------------ */
+  function cerebro(cv, org) {
+    var p = preparar(cv, (cv.clientWidth || 360) * 430 / 360), ctx = p.ctx, w = p.w, h = p.h;
+    var C = VA.Cerebro, cer = org.gen.cer, fen = org.fen, val = fen.val;
+    var NE = C.NE, NS = C.NS;
+    var xE = 92, xS = w - 72, topo = 10, base = h - 10;
+    var pos = {};
+    /* entradas: mostra todas, mas memórias só se liberadas */
+    var entVis = [];
+    for (var i = 0; i < NE; i++) if (i < C.E.MEM0 || (i - C.E.MEM0) < cer.mem) entVis.push(i);
+    entVis.forEach(function (id, k) { pos[id] = [xE, topo + (k + 0.5) * (base - topo) / entVis.length]; });
+    var saiVis = [];
+    for (i = 0; i < NS; i++) if (i < C.S.MEM0 || (i - C.S.MEM0) < cer.mem) saiVis.push(NE + i);
+    saiVis.forEach(function (id, k) { pos[id] = [xS, topo + 20 + (k + 0.5) * (base - topo - 40) / saiVis.length]; });
+    /* ocultos: x pela 'ordem', y espalhado de forma estável pelo id */
+    var ordemDe = {};
+    cer.nos.forEach(function (n) {
+      ordemDe[n.id] = n.ordem;
+      if (n.tipo === 2) {
+        var hy = ((n.id * 2654435761) >>> 0) / 4294967296;
+        pos[n.id] = [xE + 26 + n.ordem * (xS - xE - 52), topo + 14 + hy * (base - topo - 28)];
+      }
+    });
+    function valor(id) { var ix = fen.mapa[id]; return ix === undefined ? 0 : val[ix]; }
+    /* conexões */
+    cer.cons.forEach(function (c) {
+      var a = pos[c.de], b = pos[c.para];
+      if (!a || !b || !c.ativo) return;
+      var fluxo = Math.min(1, Math.abs(valor(c.de) * c.peso));
+      var rec = ordemDe[c.de] >= ordemDe[c.para];
+      var alfa = 0.12 + 0.75 * fluxo;
+      ctx.strokeStyle = rec ? 'rgba(0,170,255,' + alfa.toFixed(2) + ')' : (c.peso > 0 ? 'rgba(0,255,136,' + alfa.toFixed(2) + ')' : 'rgba(255,51,51,' + alfa.toFixed(2) + ')');
+      ctx.lineWidth = 0.5 + Math.min(3, Math.abs(c.peso) * 0.7);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      if (rec || c.de === c.para) {
+        var mxp = (a[0] + b[0]) / 2, myp = Math.min(a[1], b[1]) - 30 - Math.abs(a[0] - b[0]) * 0.15;
+        if (c.de === c.para) ctx.bezierCurveTo(a[0] + 25, a[1] - 30, a[0] - 25, a[1] - 30, b[0], b[1]);
+        else ctx.quadraticCurveTo(mxp, myp, b[0], b[1]);
+      } else ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+    });
+    /* nós */
+    ctx.font = '9px "Share Tech Mono", monospace';
+    function no(id, rotulo, lado) {
+      var q = pos[id]; if (!q) return;
+      var v = valor(id);
+      var r = id >= NE + NS ? 5 : 4;
+      ctx.fillStyle = v >= 0 ? 'rgba(0,255,136,' + (0.15 + 0.85 * Math.min(1, v)).toFixed(2) + ')' : 'rgba(255,51,51,' + (0.15 + 0.85 * Math.min(1, -v)).toFixed(2) + ')';
+      ctx.strokeStyle = '#1a3d2a'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, 6.283); ctx.fill(); ctx.stroke();
+      if (rotulo) {
+        ctx.fillStyle = Math.abs(v) > 0.05 ? '#c8fce8' : '#5f9278';
+        ctx.textAlign = lado === 'e' ? 'right' : 'left';
+        ctx.fillText(rotulo, q[0] + (lado === 'e' ? -7 : 7), q[1] + 3);
+      }
+    }
+    entVis.forEach(function (id) { no(id, C.ENTRADAS[id], 'e'); });
+    saiVis.forEach(function (id) { no(id, C.SAIDAS[id - NE], 'd'); });
+    cer.nos.forEach(function (n) {
+      if (n.tipo === 2) no(n.id, '', '');
+    });
+    ctx.fillStyle = '#5f9278'; ctx.textAlign = 'center';
+    ctx.fillText('ocultos: ' + org.cx.ocultos + ' · conexões: ' + org.cx.conexoes + (cer.mem ? ' · memória: ' + cer.mem : ''), (xE + xS) / 2, h - 2);
+  }
+
+  VA.Graficos = { linhas: linhas, empilhado: empilhado, arvore: arvore, linhaTempo: linhaTempo, cerebro: cerebro, preparar: preparar };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/ui.js ==== */
+/* =====================================================================
+ * ui.js — Interface: painéis, abas, eventos de mouse/teclado, arquivos
+ * ---------------------------------------------------------------------
+ * O estado da aplicação fica em VA.App (criado em main.js):
+ *   App.sim, App.render, App.sel (organismo selecionado), App.pausado,
+ *   App.velocidade, App.turbo, App.ferramenta, App.importado
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+  var $ = function (id) { return document.getElementById(id); };
+  var UI = {};
+  VA.UI = UI;
+
+  function app() { return VA.App; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  UI.toast = function (msg, ms) {
+    var t = $('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(UI._toastT);
+    UI._toastT = setTimeout(function () { t.hidden = true; }, ms || 2600);
+  };
+
+  /* ------------------------------------------------------------------
+   * Inicialização dos controles
+   * ------------------------------------------------------------------ */
+  UI.iniciar = function () {
+    var A = app();
+    /* play/pause, passo, velocidades, turbo */
+    $('b-play').onclick = function () { UI.alternarPausa(); };
+    $('b-passo').onclick = function () { if (!A.pausado) UI.alternarPausa(); A.sim.passo(); UI.atualizarTudo(true); };
+    Array.prototype.forEach.call(document.querySelectorAll('.vel'), function (b) {
+      b.onclick = function () { UI.definirVelocidade(+b.getAttribute('data-v')); };
+    });
+    $('b-turbo').onclick = function () { UI.alternarTurbo(); };
+    /* arquivos */
+    $('b-salvar').onclick = UI.salvarArquivo;
+    $('b-carregar').onclick = function () { A.modoArquivo = 'estado'; $('arq-entrada').click(); };
+    $('arq-entrada').onchange = UI.lerArquivo;
+    $('b-rapido-s').onclick = UI.salvarSlot;
+    $('b-rapido-c').onclick = UI.carregarSlot;
+    /* abas */
+    Array.prototype.forEach.call(document.querySelectorAll('.aba'), function (b) {
+      b.onclick = function () { UI.abrirAba(b.getAttribute('data-aba')); };
+    });
+    /* ferramentas do mapa */
+    $('sel-cor').onchange = function () { A.render.modoCor = this.value; UI.legendaPapel(); };
+    $('sel-ferr').onchange = function () {
+      A.ferramenta = this.value;
+      if (A.ferramenta === 'inserir' && !A.importado) {
+        UI.mostrarTexto('Cole aqui o JSON de um organismo exportado', '');
+        $('modal-texto').placeholder = 'Cole o JSON e clique em "Usar este organismo" — ou use "Abrir arquivo".';
+      }
+    };
+    $('chk-sinais').onchange = function () { A.render.mostrarSinais = this.checked; };
+    $('chk-seguir').onchange = function () { A.render.seguir = this.checked; };
+    $('b-zoom-mais').onclick = function () { UI.zoom(1.4); };
+    $('b-zoom-menos').onclick = function () { UI.zoom(1 / 1.4); };
+    $('b-enquadrar').onclick = function () { A.render.enquadrar(A.sim); };
+    $('b-desselecionar').onclick = function () { UI.selecionar(null); };
+    $('b-exportar').onclick = UI.exportarSelecionado;
+    $('b-clonar').onclick = function () {
+      var o = A.sel; if (!o) return;
+      A.sim.inserirGenoma(o.gen, o.x, o.y, 10);
+      UI.toast('10 cópias (com mutações leves) inseridas');
+    };
+    $('b-novo').onclick = UI.novoMundo;
+    $('modal-fechar').onclick = function () { $('modal').hidden = true; };
+    $('modal-copiar').onclick = function () {
+      var t = $('modal-texto');
+      function selecionar() { t.focus(); t.select(); UI.toast('Texto selecionado — use Ctrl+C'); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t.value).then(function () { UI.toast('Copiado'); }, selecionar);
+      } else selecionar();
+    };
+    $('modal-importar').onclick = function () {
+      try {
+        var imp = VA.Persistencia.importarOrganismo($('modal-texto').value);
+        A.importado = imp.genoma; A.ferramenta = 'inserir'; $('sel-ferr').value = 'inserir';
+        $('modal').hidden = true;
+        UI.toast('Organismo pronto. Clique no mapa para inserir 5 cópias.', 4000);
+      } catch (e) { UI.toast('Texto inválido: ' + e.message, 4000); }
+    };
+    UI.montarFormularios();
+    UI.eventosMapa();
+    UI.eventosArvore();
+    UI.eventosTeclado();
+    UI.definirVelocidade(A.velocidade);
+    $('tab-especies').querySelector('tbody').onpointerdown = function (ev) {
+      var tr = ev.target.closest('tr'); if (!tr) return;
+      UI.selecionarDaEspecie(+tr.getAttribute('data-id'));
+    };
+  };
+
+  UI.alternarPausa = function () {
+    var A = app();
+    A.pausado = !A.pausado;
+    $('b-play').textContent = A.pausado ? '▶' : '⏸';
+    $('b-play').classList.toggle('ativo', A.pausado);
+  };
+  UI.definirVelocidade = function (v) {
+    var A = app();
+    A.velocidade = v;
+    Array.prototype.forEach.call(document.querySelectorAll('.vel'), function (b) {
+      b.classList.toggle('ativo', +b.getAttribute('data-v') === v);
+    });
+  };
+  UI.alternarTurbo = function () {
+    var A = app();
+    A.turbo = !A.turbo;
+    $('b-turbo').classList.toggle('ativo', A.turbo);
+    $('turbo-aviso').hidden = !A.turbo;
+    if (A.turbo && A.pausado) UI.alternarPausa();
+  };
+  UI.abrirAba = function (nome) {
+    var A = app();
+    A.aba = nome;
+    Array.prototype.forEach.call(document.querySelectorAll('.aba'), function (b) { b.classList.toggle('ativa', b.getAttribute('data-aba') === nome); });
+    Array.prototype.forEach.call(document.querySelectorAll('.conteudo'), function (c) { c.classList.toggle('ativa', c.id === 'aba-' + nome); });
+    UI.atualizarTudo(true);
+  };
+  UI.zoom = function (f, sx, sy) {
+    var r = app().render, cam = r.cam;
+    if (sx !== undefined) {
+      var antes = r.telaParaMundo(sx, sy);
+      cam.zoom = VA.limitar(cam.zoom * f, 0.08, 12);
+      var depois = r.telaParaMundo(sx, sy);
+      cam.x += antes[0] - depois[0]; cam.y += antes[1] - depois[1];
+    } else cam.zoom = VA.limitar(cam.zoom * f, 0.08, 12);
+  };
+
+  UI.legendaPapel = function () {
+    var A = app(), el = $('legenda-papel');
+    if (A.render.modoCor !== 'papel') { el.hidden = true; return; }
+    var c = VA.Render.CORES_PAPEL;
+    el.innerHTML = Object.keys(c).map(function (k) { return '<span><i style="background:' + c[k] + '"></i>' + k + '</span>'; }).join('');
+    el.hidden = false;
+  };
+
+  /* ------------------------------------------------------------------
+   * Mouse / toque no mapa
+   * ------------------------------------------------------------------ */
+  UI.eventosMapa = function () {
+    var A = app(), cv = $('tela');
+    var arrastando = false, moveu = false, ux = 0, uy = 0, pintando = false;
+    var toques = {}, pinca = null;          /* dedos ativos (zoom com dois dedos) */
+    function pt(ev) { var r = cv.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; }
+    function nToques() { return Object.keys(toques).length; }
+    function infoPinca() {
+      var k = Object.keys(toques), a = toques[k[0]], b = toques[k[1]];
+      return { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2 };
+    }
+    cv.addEventListener('pointerdown', function (ev) {
+      var p = pt(ev);
+      try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* ignora */ }
+      toques[ev.pointerId] = p;
+      if (nToques() === 2) {               /* segundo dedo: começa a pinça */
+        pinca = infoPinca(); arrastando = false; pintando = false; moveu = true;
+        return;
+      }
+      ux = p[0]; uy = p[1]; moveu = false;
+      if (A.ferramenta === 'obstaculo' || A.ferramenta === 'apagar' || A.ferramenta === 'comida') {
+        pintando = true; pintar(p);
+      } else arrastando = true;
+    });
+    cv.addEventListener('pointermove', function (ev) {
+      var p = pt(ev);
+      if (toques[ev.pointerId]) toques[ev.pointerId] = p;
+      if (pinca && nToques() >= 2) {
+        var q = infoPinca();
+        UI.zoom(q.d / pinca.d, q.cx, q.cy);
+        A.render.cam.x -= (q.cx - pinca.cx) / A.render.cam.zoom;
+        A.render.cam.y -= (q.cy - pinca.cy) / A.render.cam.zoom;
+        A.render.seguir = false; $('chk-seguir').checked = false;
+        pinca = q;
+        return;
+      }
+      if (pintando) { pintar(p); return; }
+      if (!arrastando) return;
+      var dx = p[0] - ux, dy = p[1] - uy;
+      /* no toque o dedo treme: tolerância maior antes de virar arrasto */
+      if (Math.abs(dx) + Math.abs(dy) > (ev.pointerType === 'touch' ? 10 : 4)) moveu = true;
+      if (moveu) {
+        A.render.cam.x -= dx / A.render.cam.zoom; A.render.cam.y -= dy / A.render.cam.zoom;
+        A.render.seguir = false; $('chk-seguir').checked = false;
+        ux = p[0]; uy = p[1];
+      }
+    });
+    function soltar(ev) {
+      var p = pt(ev);
+      delete toques[ev.pointerId];
+      if (pinca) { if (nToques() < 2) pinca = null; arrastando = false; return; }
+      if (arrastando && !moveu && ev.type === 'pointerup') clique(p, ev.pointerType === 'touch');
+      arrastando = false; pintando = false;
+    }
+    cv.addEventListener('pointerup', soltar);
+    cv.addEventListener('pointercancel', soltar);
+    cv.addEventListener('wheel', function (ev) {
+      ev.preventDefault();
+      var p = pt(ev);
+      UI.zoom(ev.deltaY < 0 ? 1.15 : 1 / 1.15, p[0], p[1]);
+    }, { passive: false });
+    function pintar(p) {
+      var w = A.render.telaParaMundo(p[0], p[1]);
+      A.sim.mundo.pintar(w[0], w[1], 30, A.ferramenta);
+      A.render.terreno = null;
+    }
+    function clique(p, toque) {
+      var w = A.render.telaParaMundo(p[0], p[1]);
+      if (A.ferramenta === 'inserir' && A.importado) {
+        A.sim.inserirGenoma(A.importado, w[0], w[1], 5);
+        UI.toast('5 organismos importados inseridos');
+        return;
+      }
+      /* raio de busca em pixels de tela: maior para dedo */
+      var o = A.sim.maisProximo(w[0], w[1], (toque ? 28 : 14) / A.render.cam.zoom + 4);
+      UI.selecionar(o);
+      if (o) {
+        A.render.seguir = true; $('chk-seguir').checked = true;
+        if (A.render.cam.zoom < 1.2) A.render.cam.zoom = 1.6;
+      }
+    }
+  };
+
+  UI.eventosTeclado = function () {
+    var A = app(), vels = [1, 2, 5, 10, 50, 100, 1000];
+    document.addEventListener('keydown', function (ev) {
+      if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT') return;
+      if (ev.key === ' ') { ev.preventDefault(); UI.alternarPausa(); }
+      else if (ev.key === 't' || ev.key === 'T') UI.alternarTurbo();
+      else if (ev.key === 'f' || ev.key === 'F') { A.render.seguir = !A.render.seguir; $('chk-seguir').checked = A.render.seguir; }
+      else if (ev.key === '+' || ev.key === '=') UI.definirVelocidade(vels[Math.min(vels.length - 1, vels.indexOf(A.velocidade) + 1)]);
+      else if (ev.key === '-') UI.definirVelocidade(vels[Math.max(0, vels.indexOf(A.velocidade) - 1)]);
+      else if (ev.key === 'Escape') UI.selecionar(null);
+    });
+  };
+
+  /* ------------------------------------------------------------------
+   * Seleção
+   * ------------------------------------------------------------------ */
+  UI.selecionar = function (o) {
+    var A = app();
+    A.sel = o;
+    $('org-vazio').hidden = !!o;
+    $('org-info').hidden = !o;
+    if (o) UI.abrirAba('org');
+    UI.atualizarTudo(true);
+  };
+  UI.selecionarDaEspecie = function (espId) {
+    var A = app(), membros = A.sim.orgs.filter(function (o) { return o.especie === espId; });
+    if (!membros.length) { UI.toast('Espécie extinta'); return; }
+    membros.sort(function (a, b) { return b.idade - a.idade; });
+    UI.selecionar(membros[0]);
+    A.render.seguir = true; $('chk-seguir').checked = true;
+    if (A.render.cam.zoom < 1.2) A.render.cam.zoom = 1.6;
+  };
+
+  /* ------------------------------------------------------------------
+   * Atualização dos painéis (chamada ~4x/s; cérebro a cada quadro)
+   * ------------------------------------------------------------------ */
+  UI.atualizarTudo = function (forcar) {
+    var A = app();
+    UI.status();
+    if (A.aba === 'org') { if (A.sel) UI.painelOrganismo(); else UI.tabelaEspecies(forcar); }
+    else if (A.aba === 'graf') UI.painelGraficos();
+    else if (A.aba === 'arv') UI.painelArvore();
+    else if (A.aba === 'marcos') UI.painelMarcos(forcar);
+    else if (A.aba === 'mundo') UI.painelMundo();
+  };
+
+  UI.status = function () {
+    var A = app(), s = A.sim, m = s.mundo;
+    $('st-passo').textContent = s.tick.toLocaleString('pt-BR');
+    var P = s.cfg.periodoEstacao, ano = Math.floor(s.tick / P) + 1;
+    var f = (s.tick % P) / P;
+    var estN = ['primavera', 'verão', 'outono', 'inverno'][Math.floor(((f + 0.0) % 1) * 4)];
+    var estS = ['outono', 'inverno', 'primavera', 'verão'][Math.floor(((f + 0.0) % 1) * 4)];
+    $('st-estacao').textContent = 'ano ' + ano + ' · norte: ' + estN + ' · sul: ' + estS;
+    $('st-pop').textContent = s.orgs.length.toLocaleString('pt-BR');
+    $('st-esp').textContent = s.especies.nVivas;
+    var g = 0; for (var i = 0; i < s.orgs.length; i++) if (s.orgs[i].geracao > g) g = s.orgs[i].geracao;
+    $('st-ger').textContent = g;
+    $('st-vel').textContent = Math.round(A.passosSeg || 0).toLocaleString('pt-BR');
+    $('turbo-vel').textContent = Math.round(A.passosSeg || 0).toLocaleString('pt-BR');
+    $('st-seca').hidden = !m.seca.ativa;
+  };
+
+  UI.tabelaEspecies = function (forcar) {
+    /* no máximo 1x/s: redesenhar a tabela durante um toque faz o toque falhar */
+    var agora = Date.now();
+    if (!forcar && UI._tabT && agora - UI._tabT < 1000) return;
+    UI._tabT = agora;
+    var A = app(), vivas = A.sim.especies.vivas().slice(0, 25);
+    var html = vivas.map(function (e) {
+      var r = e.resumo;
+      return '<tr data-id="' + e.id + '"><td><i style="background:' + VA.corVisivel(e.cor) + '"></i></td><td>' + esc(e.nome) + '</td><td>' + e.n +
+        '</td><td>' + e.papel + '</td><td>' + (r ? r.ocultos.toFixed(1) + 'n ' + r.conexoes.toFixed(0) + 'c' : '—') + '</td></tr>';
+    }).join('');
+    $('tab-especies').querySelector('tbody').innerHTML = html;
+  };
+
+  UI.painelOrganismo = function () {
+    var A = app(), o = A.sel, s = A.sim, t = o.gen.tr;
+    var esp = s.especies.lista[o.especie];
+    $('o-cor').style.background = 'rgb(' + Math.round(t.corR * 255) + ',' + Math.round(t.corG * 255) + ',' + Math.round(t.corB * 255) + ')';
+    $('o-nome').textContent = (esp ? esp.nome : 'espécie ?') + ' #' + o.id;
+    $('o-sub').textContent = (o.vivo ? o.papel() : 'MORTO (' + o.causaMorte + ' no passo ' + o.morte + ')') + ' · geração ' + o.geracao;
+    var fe = Math.max(0, o.energia / o.maxE), fi = Math.min(1, o.idade / t.longevidade);
+    $('o-energia').textContent = Math.max(0, o.energia).toFixed(1) + ' / ' + o.maxE.toFixed(0);
+    $('o-energia-b').style.width = (fe * 100).toFixed(1) + '%';
+    $('o-idade').textContent = o.idade + ' / ' + Math.round(t.longevidade);
+    $('o-idade-b').style.width = (fi * 100).toFixed(1) + '%';
+    var dados = [
+      ['filhos', o.filhos], ['abates', o.abates],
+      ['comeu planta', o.comeuPlanta.toFixed(0)], ['comeu carniça', o.comeuCarnica.toFixed(0)],
+      ['comeu de presas', o.comeuPresa.toFixed(0)], ['velocidade', o.vel.toFixed(2)],
+      ['massa', o.massa.toFixed(2)], ['custo/passo', o.custoBase.toFixed(3)],
+      ['posição', Math.round(o.x) + ', ' + Math.round(o.y)], ['nasceu', 'passo ' + o.nasc]
+    ];
+    $('o-dados').innerHTML = dados.map(function (d) { return '<div><span>' + d[0] + '</span>' + d[1] + '</div>'; }).join('');
+    $('o-cx').textContent = o.cx.ocultos + ' ocultos · ' + o.cx.conexoes + ' conexões' + (o.cx.memoria ? ' · ' + o.cx.memoria + ' memória' : '');
+    /* ações atuais */
+    var C = VA.Cerebro;
+    var html = '';
+    for (var i = 0; i < C.S.MEM0 + o.cx.memoria; i++) {
+      var v = o.sai[i];
+      var esq = v < 0 ? 50 + v * 50 : 50, larg = Math.abs(v) * 50;
+      html += '<div class="a"><span>' + C.SAIDAS[i] + '</span><div class="barra"><i style="left:' + esq.toFixed(1) + '%;width:' + larg.toFixed(1) + '%;background:' + (v > 0 ? 'var(--green2)' : 'var(--red)') + '"></i></div></div>';
+    }
+    $('o-acoes').innerHTML = html;
+    /* genes */
+    $('o-genes').innerHTML = VA.Genoma.GENES.map(function (g) {
+      var v = t[g.k], f = (v - g.min) / (g.max - g.min);
+      return '<div class="gene"><span title="' + g.nome + '">' + g.nome + '</span><div class="barra"><i style="width:' + (f * 100).toFixed(1) + '%"></i></div><b>' + (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2)) + '</b></div>';
+    }).join('');
+    /* linhagem */
+    var anc = s.especies.ancestrais(o.especie);
+    var pai = s.porId[o.paiId], mae = s.porId[o.maeId];
+    var lin = '<div>pai: #' + (o.paiId || '—') + (pai ? ' (vivo)' : '') + (o.maeId ? ' · mãe: #' + o.maeId + (mae ? ' (viva)' : '') : ' · reprodução ' + (o.paiId ? 'assexuada' : 'primordial')) + '</div>';
+    lin += '<div style="margin:4px 0 2px;color:var(--muted)">espécie → ancestrais:</div>';
+    lin += anc.slice(0, 12).map(function (e, k) {
+      return '<div class="esp' + (e.n ? '' : ' extinta') + '" style="padding-left:' + Math.min(k, 8) * 8 + 'px"><i style="background:' + VA.corVisivel(e.cor) + '"></i>' + esc(e.nome) +
+        ' <span style="color:var(--muted)">· surgiu passo ' + e.nasc + (e.n ? ' · ' + e.n + ' vivos' : ' · extinta') + '</span></div>';
+    }).join('');
+    if (anc.length > 12) lin += '<div style="color:var(--muted)">… +' + (anc.length - 12) + ' ancestrais</div>';
+    $('o-linhagem').innerHTML = lin;
+  };
+
+  UI.cerebroAoVivo = function () {
+    var A = app();
+    if (A.aba === 'org' && A.sel && !A.turbo) VA.Graficos.cerebro($('tela-cerebro'), A.sel);
+  };
+
+  UI.painelGraficos = function () {
+    var A = app(), s = A.sim, h = s.stats.hist, G = VA.Graficos;
+    G.empilhado($('g-pop'), h, s.especies, $('lg-pop'), 10);
+    G.linhas($('g-papeis'), h, [
+      { campo: 'herb', cor: '#00ff88', nome: 'herbívoros' }, { campo: 'pred', cor: '#ff3333', nome: 'predadores' },
+      { campo: 'carn', cor: '#b36bff', nome: 'carniceiros' }, { campo: 'oniv', cor: '#ffb300', nome: 'onívoros' }
+    ], $('lg-papeis'));
+    G.linhas($('g-cerebro'), h, [
+      { campo: 'ocultos', cor: '#00ff88', nome: 'neurônios ocultos' }, { campo: 'conexoes', cor: '#00aaff', nome: 'conexões ÷ 5', escala: 0.2 },
+      { campo: 'memoria', cor: '#ffb300', nome: 'células de memória' }
+    ], $('lg-cerebro'));
+    G.linhas($('g-genes'), h, [
+      { campo: 'tamanho', cor: '#00ff88', nome: 'tamanho ÷ 14', escala: 1 / 14 }, { campo: 'velocidade', cor: '#00aaff', nome: 'velocidade ÷ 4', escala: 0.25 },
+      { campo: 'dieta', cor: '#ff3333', nome: 'dieta' }, { campo: 'sexualidade', cor: '#b36bff', nome: 'sexualidade' }
+    ], $('lg-genes'));
+    G.linhas($('g-recursos'), h, [
+      { campo: 'planta', cor: '#00cc6a', nome: 'plantas' }, { campo: 'carne', cor: '#ff3333', nome: 'carne (carcaças)' }
+    ], $('lg-recursos'));
+    var c = s.contadores;
+    var nomes = { nascimentos: 'nascimentos', sexuados: 'cruzamentos', abates: 'abates', fome: 'mortes por fome', velhice: 'mortes por velhice',
+      canibalismo: 'ataques intraespécie', especiacoes: 'especiações', cacasGrupo: 'caças em grupo', abiogenese: 'abiogênese' };
+    $('contadores').innerHTML = Object.keys(nomes).map(function (k) { return '<div><span>' + nomes[k] + '</span>' + (c[k] || 0).toLocaleString('pt-BR') + '</div>'; }).join('');
+  };
+
+  UI.painelArvore = function () {
+    var A = app(), cv = $('g-arvore'), rol = $('arv-rolagem');
+    A.arvLayout = VA.Graficos.arvore(cv, A.sim.especies, A.sim.tick, rol.clientWidth - 2);
+  };
+  UI.eventosArvore = function () {
+    var A = app(), cv = $('g-arvore');
+    function especieEm(ev) {
+      var L = A.arvLayout; if (!L) return null;
+      var r = cv.getBoundingClientRect();
+      var k = Math.round((ev.clientY - r.top - L.mT) / L.passoY);
+      return L.linhas[k] || null;
+    }
+    cv.addEventListener('mousemove', function (ev) {
+      var e = especieEm(ev);
+      if (!e) return;
+      var rr = e.resumo;
+      $('arv-info').innerHTML = '<b style="color:' + VA.corVisivel(e.cor) + '">' + esc(e.nome) + '</b> · surgiu no passo ' + e.nasc +
+        (e.n ? ' · ' + e.n + ' vivos' : ' · extinta no passo ' + e.extinta) + ' · pico ' + e.pico + ' · ' + e.papel +
+        (rr ? '<br>dieta ' + rr.dieta.toFixed(2) + ' · tamanho ' + rr.tamanho.toFixed(1) + ' · cérebro ' + rr.ocultos.toFixed(1) + ' ocultos / ' + rr.conexoes.toFixed(0) + ' conexões' : '');
+    });
+    cv.addEventListener('click', function (ev) {
+      var e = especieEm(ev);
+      if (e && e.n > 0) UI.selecionarDaEspecie(e.id);
+    });
+  };
+
+  UI.painelMarcos = function (forcar) {
+    var A = app(), s = A.sim, m = s.stats.marcos;
+    VA.Graficos.linhaTempo($('g-linha-tempo'), m, s.tick);
+    if (!forcar && UI._nMarcos === m.length) return;
+    UI._nMarcos = m.length;
+    $('lista-marcos').innerHTML = m.slice().reverse().map(function (x) {
+      return '<li class="' + x.tipo + '"><div class="t">passo ' + x.t.toLocaleString('pt-BR') + '</div><div class="ti">' + esc(x.titulo) + '</div>' + (x.desc ? '<div class="d">' + esc(x.desc) + '</div>' : '') + '</li>';
+    }).join('');
+  };
+
+  UI.painelMundo = function () { /* formulários são estáticos; nada a atualizar */ };
+
+  /* ------------------------------------------------------------------
+   * Formulários de configuração
+   * ------------------------------------------------------------------ */
+  var CAMPOS_VIVO = [
+    { k: 'fertilidade', nome: 'Fertilidade das plantas', tipo: 'range', min: 0.2, max: 3, passo: 0.05 },
+    { k: 'amplitudeEstacao', nome: 'Força das estações', tipo: 'range', min: 0, max: 1, passo: 0.05 },
+    { k: 'secas', nome: 'Secas aleatórias', tipo: 'check' },
+    { k: 'popMaxima', nome: 'População máxima', tipo: 'number', min: 100, max: 20000, passo: 100 },
+    { k: 'popMinima', nome: 'População mínima (abiogênese)', tipo: 'number', min: 0, max: 500, passo: 5 },
+    { k: 'inicioSexuado', nome: 'Sexuado liberado a partir do passo', tipo: 'number', min: 0, max: 1e7, passo: 1000 },
+    { k: 'limiarEspecie', nome: 'Distância para nova espécie', tipo: 'number', min: 0.5, max: 20, passo: 0.1 }
+  ];
+  var CAMPOS_NOVO = [
+    { k: 'semente', nome: 'Semente (0 = aleatória)', tipo: 'number', min: 0, max: 2e9, passo: 1 },
+    { k: 'largura', nome: 'Largura do mundo', tipo: 'number', min: 600, max: 8000, passo: 100 },
+    { k: 'altura', nome: 'Altura do mundo', tipo: 'number', min: 400, max: 6000, passo: 100 },
+    { k: 'obstaculos', nome: 'Obstáculos (0–2)', tipo: 'number', min: 0, max: 2, passo: 0.25 },
+    { k: 'periodoEstacao', nome: 'Passos por ano', tipo: 'number', min: 1000, max: 100000, passo: 500 },
+    { k: 'popInicial', nome: 'População inicial', tipo: 'number', min: 10, max: 3000, passo: 10 }
+  ];
+  function campoHTML(c, valor, prefixo) {
+    var id = prefixo + c.k, ent;
+    if (c.tipo === 'check') ent = '<input type="checkbox" id="' + id + '"' + (valor ? ' checked' : '') + '>';
+    else ent = '<input type="' + c.tipo + '" id="' + id + '" min="' + c.min + '" max="' + c.max + '" step="' + c.passo + '" value="' + valor + '">';
+    return '<label for="' + id + '">' + c.nome + (c.tipo === 'range' ? ' <b id="' + id + '-v" style="font-weight:400;color:var(--muted)">' + valor + '</b>' : '') + '</label>' + ent;
+  }
+  UI.montarFormularios = function () {
+    var A = app();
+    var cfg = A.sim.cfg;
+    $('form-vivo').innerHTML = CAMPOS_VIVO.map(function (c) { return campoHTML(c, cfg[c.k], 'fv-'); }).join('');
+    $('form-novo').innerHTML = CAMPOS_NOVO.map(function (c) { return campoHTML(c, c.k === 'semente' ? 0 : cfg[c.k], 'fn-'); }).join('');
+    CAMPOS_VIVO.forEach(function (c) {
+      var el = $('fv-' + c.k);
+      el.oninput = el.onchange = function () {
+        var v = c.tipo === 'check' ? el.checked : +el.value;
+        if (c.tipo !== 'check' && isNaN(v)) return;
+        A.sim.cfg[c.k] = v;
+        if (c.tipo === 'range') $('fv-' + c.k + '-v').textContent = v;
+      };
+    });
+  };
+  UI.novoMundo = function () {
+    var A = app(), cfg = {};
+    CAMPOS_VIVO.forEach(function (c) { var el = $('fv-' + c.k); cfg[c.k] = c.tipo === 'check' ? el.checked : +el.value; });
+    CAMPOS_NOVO.forEach(function (c) { cfg[c.k] = +$('fn-' + c.k).value; });
+    /* confirmação na própria página (confirm() é bloqueado em alguns visualizadores) */
+    var b = $('b-novo');
+    if (!UI._confirmaNovo) {
+      UI._confirmaNovo = true;
+      b.textContent = 'Clique de novo para confirmar (o mundo atual será perdido)';
+      setTimeout(function () { UI._confirmaNovo = false; b.textContent = 'Criar novo mundo'; }, 4000);
+      return;
+    }
+    UI._confirmaNovo = false; b.textContent = 'Criar novo mundo';
+    VA.iniciarSimulacao(new VA.Simulacao(cfg), true);
+    UI.toast('Novo mundo criado — semente ' + A.sim.cfg.semente);
+  };
+
+  /* ------------------------------------------------------------------
+   * Arquivos: salvar/carregar estado e exportar organismos
+   * ------------------------------------------------------------------ */
+  function baixar(nome, texto) {
+    var blob = new Blob([texto], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+  UI.salvarArquivo = function () {
+    var s = app().sim;
+    var txt = VA.Persistencia.salvar(s);
+    baixar('vida-artificial-passo' + s.tick + '.json', txt);
+    UI.toast('Download do estado iniciado (' + (txt.length / 1048576).toFixed(1) + ' MB). Se nenhum arquivo aparecer, use "⇩ Slot" para salvar no navegador.', 5000);
+  };
+  UI.lerArquivo = function () {
+    var A = app(), arq = this.files[0], input = this;
+    if (!arq) return;
+    var leitor = new FileReader();
+    leitor.onload = function () {
+      try {
+        if (A.modoArquivo === 'organismo') {
+          var imp = VA.Persistencia.importarOrganismo(leitor.result);
+          A.importado = imp.genoma;
+          A.ferramenta = 'inserir'; $('sel-ferr').value = 'inserir';
+          UI.toast('Organismo carregado (' + (imp.info ? imp.info.especie : '') + '). Clique no mapa para inserir 5 cópias.', 4000);
+        } else {
+          VA.iniciarSimulacao(VA.Persistencia.carregar(leitor.result), false);
+          UI.toast('Estado carregado — passo ' + A.sim.tick);
+        }
+      } catch (e) {
+        UI.toast('Erro ao carregar: ' + e.message, 4000);
+      }
+      input.value = '';
+    };
+    leitor.readAsText(arq);
+  };
+  UI.salvarSlot = function () {
+    try {
+      var txt = VA.Persistencia.salvar(app().sim);
+      localStorage.setItem('vida-artificial-slot', txt);
+      UI.toast('Salvo no navegador (' + (txt.length / 1048576).toFixed(1) + ' MB)');
+    } catch (e) {
+      UI.toast('Não coube no armazenamento do navegador — use "Salvar" (arquivo).', 4000);
+    }
+  };
+  UI.carregarSlot = function () {
+    var txt = null;
+    try { txt = localStorage.getItem('vida-artificial-slot'); } catch (e) { txt = null; }
+    if (!txt) { UI.toast('Nenhum estado salvo no navegador.'); return; }
+    try { VA.iniciarSimulacao(VA.Persistencia.carregar(txt), false); UI.toast('Estado carregado — passo ' + app().sim.tick); }
+    catch (e) { UI.toast('Erro ao carregar: ' + e.message, 4000); }
+  };
+  /* Painel com o texto (para copiar), útil onde downloads são bloqueados */
+  UI.mostrarTexto = function (titulo, texto) {
+    $('modal-titulo').textContent = titulo;
+    $('modal-texto').value = texto;
+    $('modal').hidden = false;
+  };
+  UI.exportarSelecionado = function () {
+    var A = app(), o = A.sel; if (!o) return;
+    var txt = VA.Persistencia.exportarOrganismo(o, A.sim);
+    try { baixar('organismo-' + o.id + '.json', txt); } catch (e) { /* download bloqueado */ }
+    UI.mostrarTexto('Organismo #' + o.id + ' (JSON)', txt);
+    UI.toast('Organismo exportado. Use a ferramenta "inserir organismo importado" para trazê-lo de volta (em qualquer mundo).', 4000);
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ==== js/main.js ==== */
+/* =====================================================================
+ * main.js — Inicialização e laço de tempo
+ * ---------------------------------------------------------------------
+ * Velocidade N = N passos por quadro (~60 quadros/s → 1x ≈ 60 passos/s).
+ * Cada quadro tem um ORÇAMENTO de tempo: se N passos não couberem, a
+ * simulação roda o máximo possível e a interface continua responsiva
+ * (a taxa real aparece em "passos/s").
+ * TURBO: não desenha o mundo e usa quase todo o quadro para simular.
+ * ===================================================================== */
+(function (raiz) {
+  'use strict';
+  var VA = raiz.VA = raiz.VA || {};
+
+  var App = VA.App = {
+    sim: null, render: null, sel: null,
+    pausado: false, velocidade: 1, turbo: false,
+    ferramenta: 'selecionar', importado: null, aba: 'org',
+    passosSeg: 0
+  };
+
+  /* Troca a simulação ativa (novo mundo / carregamento) */
+  VA.iniciarSimulacao = function (sim, popular) {
+    App.sim = sim;
+    if (popular) sim.popular();
+    App.sel = null;
+    App.render.enquadrar(sim);
+    VA.UI.selecionar(null);
+    VA.UI.montarFormularios();
+    VA.UI._nMarcos = -1;
+    VA.UI.atualizarTudo(true);
+  };
+
+  function iniciar() {
+    App.render = new VA.Render(document.getElementById('tela'));
+    /* celular / tela pequena: limita a população para manter a fluidez */
+    var celular = window.matchMedia && window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+    App.sim = new VA.Simulacao(celular ? { popMaxima: 1500 } : {});
+    App.sim.popular();
+    VA.UI.iniciar();
+    App.render.enquadrar(App.sim);
+    VA.UI.atualizarTudo(true);
+
+    var ultimoPainel = 0, contPassos = 0, inicioMedida = performance.now();
+    function quadro() {
+      var agora = performance.now();
+      if (!App.pausado) {
+        var orcamento = App.turbo ? 50 : 24;   /* ms de simulação por quadro */
+        var alvo = App.turbo ? 1e9 : App.velocidade;
+        var n = 0, ini = performance.now();
+        while (n < alvo) {
+          App.sim.passo();
+          n++;
+          if ((n & 3) === 0 && performance.now() - ini > orcamento) break;
+          if (n === 1 && performance.now() - ini > orcamento) break;
+        }
+        contPassos += n;
+      }
+      if (agora - inicioMedida > 1000) {
+        App.passosSeg = contPassos * 1000 / (agora - inicioMedida);
+        contPassos = 0; inicioMedida = agora;
+      }
+      if (!App.turbo) {
+        App.render.desenhar(App.sim, App.sel);
+        VA.UI.cerebroAoVivo();
+      }
+      if (agora - ultimoPainel > (App.turbo ? 500 : 250)) {
+        ultimoPainel = agora;
+        VA.UI.atualizarTudo(false);
+      }
+      requestAnimationFrame(quadro);
+    }
+    requestAnimationFrame(quadro);
+    window.addEventListener('resize', function () { App.render.ajustarTamanho(); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+  else iniciar();
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+</body>
+</html>
