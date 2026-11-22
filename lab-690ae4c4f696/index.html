@@ -2337,7 +2337,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
   }
 
   Render.prototype.ajustarTamanho = function () {
-    var c = this.canvas, dpr = window.devicePixelRatio || 1;
+    var c = this.canvas, dpr = VA.dprCanvas ? VA.dprCanvas() : Math.min(2, window.devicePixelRatio || 1);
     var w = c.clientWidth, h = c.clientHeight;
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
       c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
@@ -2521,7 +2521,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
 
   /* Prepara o canvas para a densidade de pixels da tela */
   function preparar(cv, alturaCss) {
-    var dpr = window.devicePixelRatio || 1;
+    var dpr = VA.dprCanvas();
     /* a altura desejada é lida UMA vez do atributo height do HTML e
      * guardada; medir clientHeight a cada quadro encolhia o gráfico
      * (a borda de 2px era descontada a cada atualização) */
@@ -2536,6 +2536,10 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     ctx.clearRect(0, 0, w, h);
     return { ctx: ctx, w: w, h: h };
   }
+
+  /* densidade de pixels limitada a 2x: em telas 3x a diferença é
+   * invisível e a memória gasta é 2,25 vezes maior */
+  VA.dprCanvas = function () { return Math.min(2, window.devicePixelRatio || 1); };
 
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
   /* clareia cores de espécie muito escuras para aparecerem no fundo */
@@ -2668,9 +2672,13 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     }
     raizes.forEach(function (r) { visitar(r, 0); });
     var passoY = 7, mT = 12;
-    var altura = Math.max(200, linhasL.length * passoY + mT * 2);
-    var dpr = window.devicePixelRatio || 1, w = larguraCss || 360;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(altura * dpr);
+    var altura = Math.max(210, Math.ceil((linhasL.length * passoY + mT * 2) / 140) * 140);   /* degraus: menos realocações */
+    var dpr = VA.dprCanvas(), w = larguraCss || 360;
+    /* só realoca o canvas quando o tamanho muda: realocar a cada
+     * atualização esgota a memória de canvas do Safari (iPhone) e os
+     * outros desenhos (como o cérebro) passam a aparecer em branco */
+    var nw = Math.round(w * dpr), nh = Math.round(altura * dpr);
+    if (cv.width !== nw || cv.height !== nh) { cv.width = nw; cv.height = nh; }
     cv.style.width = w + 'px'; cv.style.height = altura + 'px';
     var ctx = cv.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2915,6 +2923,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     A.aba = nome;
     Array.prototype.forEach.call(document.querySelectorAll('.aba'), function (b) { b.classList.toggle('ativa', b.getAttribute('data-aba') === nome); });
     Array.prototype.forEach.call(document.querySelectorAll('.conteudo'), function (c) { c.classList.toggle('ativa', c.id === 'aba-' + nome); });
+    UI._arvT = 0;
     UI.atualizarTudo(true);
   };
   UI.zoom = function (f, sx, sy) {
@@ -3174,6 +3183,9 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
   };
 
   UI.painelArvore = function () {
+    var agora = Date.now();
+    if (UI._arvT && agora - UI._arvT < 2000) return;   /* no máximo a cada 2 s */
+    UI._arvT = agora;
     var A = app(), cv = $('g-arvore'), rol = $('arv-rolagem');
     A.arvLayout = VA.Graficos.arvore(cv, A.sim.especies, A.sim.tick, rol.clientWidth - 2);
   };
