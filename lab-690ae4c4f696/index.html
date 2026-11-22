@@ -475,6 +475,20 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
   }
   VA.criarRuido = criarRuido;
 
+  /* Cor de exibição de uma espécie: matiz pelo "ângulo áureo" (137,5°)
+   * a partir do id — espécies vizinhas na história ficam com cores bem
+   * diferentes. (A cor do GENOMA é outra coisa: é herdada e muda devagar,
+   * por isso espécies aparentadas têm cores genéticas quase iguais.) */
+  var cacheCorEsp = {};
+  VA.corEspecie = function (e) {
+    if (!e) return '#888';
+    var c = cacheCorEsp[e.id];
+    if (c) return c;
+    var h = (e.id * 137.508) % 360;
+    var s = 70 + (e.id % 3) * 10, l = 52 + (e.id % 4) * 6;
+    return (cacheCorEsp[e.id] = 'hsl(' + h.toFixed(1) + ',' + s + '%,' + l + '%)');
+  };
+
   /* ------------------------------------------------------------------
    * Grade espacial (hash espacial com ordenação por contagem).
    * Reconstruída a cada passo em O(n), sem criar objetos novos:
@@ -1690,6 +1704,40 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     }
   };
 
+  /* Reclassificação periódica (estilo NEAT): todo organismo que se
+   * afastou demais do representante da própria espécie vai para a
+   * espécie viva mais próxima dentro do limiar ou funda uma nova (filha
+   * da atual). Como os membros de um grupo divergente são próximos entre
+   * si, todos acabam juntos na mesma espécie nova — é assim que uma
+   * população grande que evoluiu em direções diferentes se divide.
+   * Retorna o número de espécies criadas. */
+  Especies.prototype.reclassificar = function (orgs, tick, rng, limiar) {
+    var dist = VA.Genoma.distancia, criadas = 0, i, k;
+    var cand = [];
+    for (var id in this.lista) { var e = this.lista[id]; if (e.n > 0 && e.rep) cand.push(e); }
+    for (i = 0; i < orgs.length; i++) {
+      var o = orgs[i];
+      if (!o.vivo) continue;
+      var atual = this.lista[o.especie];
+      if (atual && atual.rep && dist(o.gen, atual.rep) <= limiar) continue;
+      var melhor = null, dm = limiar;
+      for (k = 0; k < cand.length; k++) {
+        if (cand[k] === atual) continue;
+        var d = dist(o.gen, cand[k].rep);
+        if (d <= dm) { dm = d; melhor = cand[k]; }
+      }
+      if (!melhor) {
+        melhor = this.criar(o.gen, o.especie, tick, rng);
+        cand.push(melhor);
+        criadas++;
+      }
+      this.morreu(o.especie, tick);
+      o.especie = melhor.id;
+      this.nasceu(melhor.id);
+    }
+    return criadas;
+  };
+
   /* Cadeia de ancestrais (espécie → mãe → avó ...) */
   Especies.prototype.ancestrais = function (id) {
     var cad = [], e = this.lista[id], guard = 0;
@@ -1890,7 +1938,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     popInicial: 300,
     popMinima: 30,            /* abaixo disso surgem organismos primordiais */
     popMaxima: 3500,          /* limite de segurança de desempenho */
-    limiarEspecie: 4.0,       /* distância genética para nova espécie */
+    limiarEspecie: 3.0,       /* distância genética para nova espécie */
     inicioSexuado: 15000,     /* a partir deste passo a reprodução sexuada é possível */
     intervaloAmostra: 100
   };
@@ -1993,6 +2041,9 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
       o = this.novos.pop(); orgs.push(o); this.porId[o.id] = o;
     }
     /* 6) estatísticas periódicas */
+    if (this.tick % 1000 === 0) {
+      this.contadores.especiacoes += this.especies.reclassificar(orgs, this.tick, rng, this.cfg.limiarEspecie);
+    }
     if (this.tick % this.cfg.intervaloAmostra === 0) {
       this.especies.atualizar(orgs, rng, this.tick % 500 === 0);
       this.stats.amostrar(this);
@@ -2396,7 +2447,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     switch (this.modoCor) {
       case 'especie':
         var e = sim.especies.lista[o.especie];
-        return e ? 'rgb(' + e.cor[0] + ',' + e.cor[1] + ',' + e.cor[2] + ')' : '#888';
+        return VA.corEspecie(e);
       case 'dieta':
         var t = o.gen.tr.dieta;
         return 'rgb(' + Math.round(40 + 215 * t) + ',' + Math.round(230 - 200 * t) + ',60)';
@@ -2609,7 +2660,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     var X = function (i) { return m + (hist[i].t - t0) / dt * (w - m - 2); };
     var Y = function (v) { return 4 + ah - v / maxPop * ah; };
     /* "outras" primeiro, como base cinza */
-    var camadas = top.map(function (id) { return { id: id, cor: especies.lista[id] ? corVisivel(especies.lista[id].cor) : '#666' }; });
+    var camadas = top.map(function (id) { return { id: id, cor: VA.corEspecie(especies.lista[id]) }; });
     camadas.push({ id: '_outras', cor: '#2a3a32' });
     for (var c = 0; c < camadas.length; c++) {
       var id = camadas[c].id;
@@ -2636,7 +2687,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
       legendaEl.innerHTML = top.map(function (id) {
         var e = especies.lista[id];
         if (!e) return '';
-        return '<span' + (e.n ? '' : ' style="opacity:.5"') + '><i style="background:' + corVisivel(e.cor) + '"></i>' + e.nome + (e.n ? '' : ' †') + '</span>';
+        return '<span' + (e.n ? '' : ' style="opacity:.5"') + '><i style="background:' + VA.corEspecie(e) + '"></i>' + e.nome + (e.n ? '' : ' †') + '</span>';
       }).join('') + '<span><i style="background:#2a3a32"></i>outras</span>';
     }
   }
@@ -2699,10 +2750,10 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     /* linhas das espécies */
     linhasL.forEach(function (e, k) {
       var y = mT + k * passoY, fim = e.n > 0 ? tickAtual : (e.extinta >= 0 ? e.extinta : e.nasc);
-      ctx.strokeStyle = e.n > 0 ? corVisivel(e.cor) : 'rgba(120,140,130,0.55)';
+      ctx.strokeStyle = e.n > 0 ? VA.corEspecie(e) : 'rgba(120,140,130,0.55)';
       ctx.lineWidth = Math.max(1, Math.min(5, Math.log(1 + e.pico) * 0.9));
       ctx.beginPath(); ctx.moveTo(X(e.nasc), y); ctx.lineTo(Math.max(X(fim), X(e.nasc) + 2), y); ctx.stroke();
-      if (e.n > 0) { ctx.fillStyle = corVisivel(e.cor); ctx.beginPath(); ctx.arc(X(fim), y, 2.5, 0, 6.283); ctx.fill(); }
+      if (e.n > 0) { ctx.fillStyle = VA.corEspecie(e); ctx.beginPath(); ctx.arc(X(fim), y, 2.5, 0, 6.283); ctx.fill(); }
     });
     return { linhas: linhasL, passoY: passoY, mT: mT, X: X, total: ids.length };
   }
@@ -3100,7 +3151,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     var A = app(), vivas = A.sim.especies.vivas().slice(0, 25);
     var html = vivas.map(function (e) {
       var r = e.resumo;
-      return '<tr data-id="' + e.id + '"><td><i style="background:' + VA.corVisivel(e.cor) + '"></i></td><td>' + esc(e.nome) + '</td><td>' + e.n +
+      return '<tr data-id="' + e.id + '"><td><i style="background:' + VA.corEspecie(e) + '"></i></td><td>' + esc(e.nome) + '</td><td>' + e.n +
         '</td><td>' + e.papel + '</td><td>' + (r ? r.ocultos.toFixed(1) + 'n ' + r.conexoes.toFixed(0) + 'c' : '—') + '</td></tr>';
     }).join('');
     $('tab-especies').querySelector('tbody').innerHTML = html;
@@ -3146,7 +3197,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
     var lin = '<div>pai: #' + (o.paiId || '—') + (pai ? ' (vivo)' : '') + (o.maeId ? ' · mãe: #' + o.maeId + (mae ? ' (viva)' : '') : ' · reprodução ' + (o.paiId ? 'assexuada' : 'primordial')) + '</div>';
     lin += '<div style="margin:4px 0 2px;color:var(--muted)">espécie → ancestrais:</div>';
     lin += anc.slice(0, 12).map(function (e, k) {
-      return '<div class="esp' + (e.n ? '' : ' extinta') + '" style="padding-left:' + Math.min(k, 8) * 8 + 'px"><i style="background:' + VA.corVisivel(e.cor) + '"></i>' + esc(e.nome) +
+      return '<div class="esp' + (e.n ? '' : ' extinta') + '" style="padding-left:' + Math.min(k, 8) * 8 + 'px"><i style="background:' + VA.corEspecie(e) + '"></i>' + esc(e.nome) +
         ' <span style="color:var(--muted)">· surgiu passo ' + e.nasc + (e.n ? ' · ' + e.n + ' vivos' : ' · extinta') + '</span></div>';
     }).join('');
     if (anc.length > 12) lin += '<div style="color:var(--muted)">… +' + (anc.length - 12) + ' ancestrais</div>';
@@ -3201,7 +3252,7 @@ h3 small{font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spaci
       var e = especieEm(ev);
       if (!e) return;
       var rr = e.resumo;
-      $('arv-info').innerHTML = '<b style="color:' + VA.corVisivel(e.cor) + '">' + esc(e.nome) + '</b> · surgiu no passo ' + e.nasc +
+      $('arv-info').innerHTML = '<b style="color:' + VA.corEspecie(e) + '">' + esc(e.nome) + '</b> · surgiu no passo ' + e.nasc +
         (e.n ? ' · ' + e.n + ' vivos' : ' · extinta no passo ' + e.extinta) + ' · pico ' + e.pico + ' · ' + e.papel +
         (rr ? '<br>dieta ' + rr.dieta.toFixed(2) + ' · tamanho ' + rr.tamanho.toFixed(1) + ' · cérebro ' + rr.ocultos.toFixed(1) + ' ocultos / ' + rr.conexoes.toFixed(0) + ' conexões' : '');
     });
