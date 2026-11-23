@@ -63,6 +63,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(5,10,8,0.92);backdrop-fi
 .logo-text{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.5)}
 .logo-sub{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted)}
 .hdr nav{display:flex;gap:22px;align-items:center}
+.hdr-home{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--muted);text-decoration:none;border:1px solid var(--border);border-radius:3px;padding:6px 10px;white-space:nowrap}
+.hdr-home:hover{color:var(--green);border-color:var(--green2)}
+.hdr-esq{display:flex;align-items:center;gap:14px;min-width:0}
+@media(max-width:400px){.hdr-esq{gap:10px}.hdr-home{padding:5px 8px;font-size:12px;letter-spacing:1px}}
 .hdr nav a{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--muted);text-decoration:none;transition:color .2s}
 .hdr nav a:hover{color:var(--green)}
 
@@ -330,7 +334,8 @@ footer a{color:var(--muted)}
 
 <header>
   <div class="hdr">
-    <a class="logo" href="index.html"><div class="logo-icon">🛡️</div><div><div class="logo-text">PREPPERS BR</div><div class="logo-sub">MANUAL DE CAMPO</div></div></a>
+    <div class="hdr-esq"><a class="hdr-home" href="index.html" title="Voltar ao site PREPPERS BR">◂ SITE</a>
+    <a class="logo" href="index.html"><div class="logo-icon">🛡️</div><div><div class="logo-text">PREPPERS BR</div><div class="logo-sub">MANUAL DE CAMPO</div></div></a></div>
     <nav>
       <a href="#conteudo">CONTEÚDO</a>
       <a href="#sumario">SUMÁRIO</a>
