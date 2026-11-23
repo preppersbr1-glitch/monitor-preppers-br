@@ -74,6 +74,10 @@ button:disabled{opacity:.4;cursor:default}
 #menuItem b{color:var(--ouro);font-size:11px;padding:2px}
 #menuItem .ds{font-size:10px;color:#aaa;padding:0 2px 4px;max-width:180px}
 #cobre{position:fixed;inset:0;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#cobre .voltaSite{text-align:center;margin-top:14px;padding-top:10px;border-top:1px solid #444}
+#cobre .voltaSite a{color:#8fd0a8;font-size:14px;text-decoration:none;display:inline-block;padding:6px 10px;border:1px solid #3a5a48;border-radius:3px}
+#cobre .voltaSite a:hover{color:#00ff88;border-color:#00cc6a}
+.btnSite{display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:11px;background:linear-gradient(#4d4d4d,#363636);color:#9fe8bd;border:1px solid;border-color:#6a6a6a #151515 #151515 #6a6a6a;padding:4px 8px;cursor:pointer}
 #cobre .caixa{max-width:480px;width:100%;background:linear-gradient(#3a3a3a,#262626);border:2px solid;border-color:var(--borda1) var(--borda2) var(--borda2) var(--borda1);padding:16px;max-height:92vh;overflow-y:auto}
 #cobre h1{color:var(--ouro);font-family:Georgia,serif;letter-spacing:4px;margin:0 0 4px;text-align:center;font-size:34px;text-shadow:2px 2px 0 #000,0 0 12px rgba(232,192,96,.35)}
 #cobre p{line-height:1.5;font-size:13px}
@@ -204,7 +208,7 @@ body.mobile .colL,body.mobile .colR{width:auto}
     </div><div class="colR">
     <div class="painel"><div class="tit">Equipamento</div><div id="equip"></div></div>
     <div class="painel"><div class="tit">Mochila</div><div id="mochila"></div></div>
-    <div class="painel" style="display:flex;gap:4px;flex-wrap:wrap"><button id="bAjuda">Ajuda</button><button id="bNovo">Novo personagem</button></div>
+    <div class="painel" style="display:flex;gap:4px;flex-wrap:wrap"><a id="bSite" class="btnSite" href="../index.html" title="Voltar ao site PREPPERS BR">🏠 Site</a><button id="bAjuda">Ajuda</button><button id="bNovo">Novo personagem</button></div>
   </div></div>
 </div>
 <div id="menuItem" class="janela esc"></div>
@@ -2575,7 +2579,9 @@ function salvar(){
 function carregar(){ try{ let s=localStorage.getItem(KEY); if(s) return JSON.parse(s); s=localStorage.getItem(KEY_ORIGINAL); if(s){ const o=JSON.parse(s); o.doOriginal=1; return o; } return null; }catch(e){ return null; } }
 
 // ---------------------------------------------------------------- TELAS
-function mostrarCobre(html){ $("#cobreBox").innerHTML=html; $("#cobre").classList.remove("esc"); }
+// toda tela por cima do jogo (início, login, ajuda, morte...) tem o caminho de volta ao site
+function irAoSite(e){ try{ if(rodando) salvar(); }catch(x){} }
+function mostrarCobre(html){ $("#cobreBox").innerHTML=html+'<div class="voltaSite"><a href="../index.html">🏠 Voltar ao site PREPPERS BR</a></div>'; $("#cobreBox .voltaSite a").onclick=irAoSite; $("#cobre").classList.remove("esc"); }
 function esconderCobre(){ $("#cobre").classList.add("esc"); }
 function telaInicial(){
   rodando=false; const s=carregar();
@@ -2663,7 +2669,7 @@ $("#hbCura").onclick=()=>rodando&&usarMelhor("cura"); $("#hbComer").onclick=()=>
 $("#hbBeber").onclick=()=>rodando&&usarMelhor("bebida"); $("#hbRad").onclick=()=>rodando&&usarMelhor("antirad");
 $("#hbAlvo").onclick=()=>rodando&&proximoAlvo();
 $("#hbCam").onclick=trocarCamera; $("#mCam").onclick=trocarCamera;
-$("#bAjuda").onclick=ajuda;
+$("#bAjuda").onclick=ajuda; $("#bSite").onclick=irAoSite;
 $("#bNovo").onclick=()=>{ salvar(); desconectarOnline(); telaInicial(); };
 document.querySelectorAll("#dpad button").forEach(b=>{
   const d=b.dataset.d.split(",").map(Number);

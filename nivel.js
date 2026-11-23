@@ -87,7 +87,7 @@
 
   var timer = setTimeout(function () {
     gate('📡', 'SEM CONEXÃO', 'Não foi possível conferir seu acesso agora. Verifique a internet e tente de novo.',
-      '<a class="pbr-btn p" href="" onclick="location.reload();return false">TENTAR DE NOVO</a>');
+      '<a class="pbr-btn p" href="" onclick="location.reload();return false">TENTAR DE NOVO</a><a class="pbr-btn g" href="' + BASE + 'index.html">VOLTAR AO INÍCIO</a>');
   }, 15000);
 
   sdk().then(function () {
@@ -118,13 +118,15 @@
         window.PBR.user = user; window.PBR.level = level;
         if (ok) { open(); loadContent(); }
         else gate('⭐', 'CONTEÚDO ' + NAMES[NEED], 'Seu plano atual é <b>' + (NAMES[level] || level) + '</b>. Este conteúdo faz parte do plano <b>' + NAMES[NEED] + '</b> ou superior.',
-          '<a class="pbr-btn p" href="' + BASE + 'membros.html">VER PLANOS</a><a class="pbr-btn g" href="' + BASE + 'cursos.html">VOLTAR</a>');
+          '<a class="pbr-btn p" href="' + BASE + 'membros.html">VER PLANOS</a>' +
+          (/curso-/.test(location.pathname) ? '<a class="pbr-btn g" href="' + BASE + 'cursos.html">VER OUTROS CURSOS</a>' : '') +
+          '<a class="pbr-btn g" href="' + BASE + 'index.html">VOLTAR AO INÍCIO</a>');
         resolveReady({ user: user, level: level, ok: ok });
       });
     });
   }).catch(function () {
     clearTimeout(timer);
     gate('📡', 'SEM CONEXÃO', 'Não foi possível carregar o sistema de login. Verifique a internet e tente de novo.',
-      '<a class="pbr-btn p" href="" onclick="location.reload();return false">TENTAR DE NOVO</a>');
+      '<a class="pbr-btn p" href="" onclick="location.reload();return false">TENTAR DE NOVO</a><a class="pbr-btn g" href="' + BASE + 'index.html">VOLTAR AO INÍCIO</a>');
   });
 })();
